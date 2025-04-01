@@ -1,0 +1,150 @@
+#version 430
+// workgroup size, largest guaranteed is 1024
+layout (local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
+
+// sim parameters
+layout(location=0) uniform float dt;
+layout(location=1) uniform float moveSpeed;
+layout(location=2) uniform float senseRadius;
+layout(location=3) uniform float rotSpeed;
+layout(location=4) uniform float cohesion_wt;
+layout(location=5) uniform float avoidance_wt;
+layout(location=6) uniform float alignment_wt;
+layout(location=7) uniform vec3 world_size; // world bounding box size. always centered on 0, 0, 0
+layout(location=8) uniform vec3 cell_count;
+
+// ssbos
+layout(std430, binding=0) buffer ssbo0 { vec4 positions[]; }; // remember these are technically spec'd to 280MB max each! a vec4 is 16B, an int is 4
+layout(std430, binding=1) buffer ssbo1 { vec4 directions[]; };
+layout(std430, binding=2) buffer ssbo2 { int segment_start[]; };
+layout(std430, binding=3) buffer ssbo3 { int segment_length[]; };
+layout(std430, binding=4) buffer ssbo4 { int ids_sorted[]; };
+
+const float PI = 3.14159;
+
+bool outbounds(vec3 p) {
+    vec3 max = world_size / 2;
+    return any(greaterThan(p, max)) || any(lessThan(p, -max));
+}
+
+vec3 world_to_grid(vec3 p) {
+    return p + 0.5f * world_size;
+}
+
+// need to add bounds check for this (return -1 if the point passed makes no sense)
+int cell_index(vec3 p, vec3 cell_size) {
+    vec3 p_g = floor(p / cell_size);
+    int xpart = int(cell_count.x * cell_count.x * p_g.x);
+    int ypart = int(cell_count.y * p_g.y);
+    int zpart = int(p_g.z);
+    return xpart + ypart + zpart;
+}
+
+void main() {
+    vec3 cell_size = world_size / cell_count;
+    uint index = gl_GlobalInvocationID.x;
+    vec4 position = positions[index];
+    vec4 direction = directions[index];
+
+    vec3 cohesion = {0, 0, 0};
+    vec3 avoidance = {0, 0, 0};
+    vec3 alignment = {0, 0, 0};
+
+    uint cohesion_amount = 0;
+    uint alignment_amount = 0;
+
+    // this isn't quite there yet
+    // maybe better to keep a one-time write ssbo of grid cells and their neighbors?
+    // then we just get our cell with cell_index, peep the lookup table and iterate over our neighbors there
+    // similar idea to counting sort actually - and we only need to run it once at the start since the cell layout never changes
+    /*int[27] cells = int[27](
+    -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1
+    );
+    int p = 0;
+    vec3 c = floor(pos_grid / cell_size); // center point (grid cell you are in)
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            for (int z = -1; z <= 1; z++) {
+                vec3 offset = vec3(x, y, z);
+                vec3 point = c + offset;
+                if (point.x > 0 && point.y > 0 && point.z > 0
+                && point.x < cell_count.x && point.y < cell_count.y && point.z < cell_count.z)
+                    cells[p++] = cell_index(c + offset, cell_size);
+            }
+        }
+    }*/
+
+    // this is good - but we still have to check all cells around us
+    vec3 pos_grid = world_to_grid(position.xyz);
+    int grid_cell = cell_index(pos_grid, cell_size);
+    for (int i = 0; i < segment_length[grid_cell]; i++) {
+        int neighbor_id = ids_sorted[segment_start[grid_cell] + i];
+        if (neighbor_id != index) {
+            vec4 other_p = positions[neighbor_id];
+            vec4 other_d = directions[neighbor_id];
+            vec3 diff = position.xyz - other_p.xyz;
+
+            if (distance(other_p, position) < senseRadius) {
+                float d = length(diff);
+                if (d != 0.0f) {
+                    avoidance += diff / d;
+                }
+            }
+            if (distance(other_p, position) < senseRadius * 2) {
+                cohesion += other_p.xyz;
+                cohesion_amount ++;
+                alignment += other_d.xyz;
+                alignment_amount ++;
+            }
+        }
+    }
+
+    // old serial code! works without the space partitioning but is a lot slower
+    /*for (uint i = 0; i < positions.length(); i++) {
+        // conditionals are bad when different fragments can take different paths
+        if (i != index) { // such as this one
+            vec4 other_p = positions[i];
+            vec4 other_d = directions[i];
+            vec3 diff = position.xyz - other_p.xyz;
+
+            if (distance(other_p, position) < senseRadius) {
+                float d = length(diff);
+                if (d != 0.0f) {
+                    avoidance += diff / d;
+                }
+            }
+            if (distance(other_p, position) < senseRadius * 2) {
+                cohesion += other_p.xyz;
+                cohesion_amount ++;
+                alignment += other_d.xyz;
+                alignment_amount ++;
+            }
+        }
+    }*/
+
+    if (cohesion_amount > 0) {
+        cohesion /= cohesion_amount;
+    }
+    cohesion = normalize(cohesion - position.xyz);
+
+    if(alignment_amount > 0) {
+        alignment /= alignment_amount;
+    }
+
+    vec3 steer_dir = cohesion * cohesion_wt + avoidance * avoidance_wt + (alignment - direction.xyz) * alignment_wt;
+
+    float ip = exp(-rotSpeed * dt);
+
+    // bounce off edges
+    if (outbounds(position.xyz)) {
+        direction -= (position) * 0.5f;
+    }
+
+    direction.xyz = mix(steer_dir, normalize(direction.xyz), ip);
+    position.xyz += (direction.xyz * moveSpeed * dt);
+
+    positions[index] = position;
+    directions[index] = direction;
+}
