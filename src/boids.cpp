@@ -24,8 +24,8 @@ float alignment_wt = 1.f;
 float cam_speed = 1.f;
 float time_scale = 1.f;
 
-int width = 1920;
-int height = 1080;
+int width = 800;
+int height = 600;
 
 bool draw_bounds = true;
 
