@@ -7,12 +7,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(INCLUDE_DIR "include")
 include_directories(${INCLUDE_DIR})
 
-# SOURCES
-set(PROJECT_SOURCE_DIR "src")
-
-# BOIDS SOURCES
-set(BOIDS_SOURCES "${PROJECT_SOURCE_DIR}/boids.cpp")
-
 # RAYLIB
 set(RAYLIB_VERSION 5.5)
 find_package(raylib ${RAYLIB_VERSION} QUIET)
@@ -34,19 +28,27 @@ endif ()
 # platform-specific raylib config
 # Web
 if (${PLATFORM} STREQUAL "Web")
-    set_target_properties(boids PROPERTIES SUFFIX ".html")
-    set_target_properties(smartboids PROPERTIES SUFFIX ".html")
+    set_target_properties(swarmulator PROPERTIES SUFFIX ".html")
+    set_target_properties(swarmulator PROPERTIES SUFFIX ".html")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s USE_GLFW=3 -s ASSERTIONS=1 -s WASM=1 -s ASYNCIFY -s GL_ENABLE_GET_PROC_ADDRESS=1")
 endif ()
 # Apple
 if (APPLE)
-    target_link_libraries(boids "-framework IOKit")
-    target_link_libraries(boids "-framework Cocoa")
-    target_link_libraries(boids "-framework OpenGL")
-    target_link_libraries(smartboids "-framework IOKit")
-    target_link_libraries(smartboids "-framework Cocoa")
-    target_link_libraries(smartboids "-framework OpenGL")
+    target_link_libraries(swarmulator "-framework IOKit")
+    target_link_libraries(swarmulator "-framework Cocoa")
+    target_link_libraries(swarmulator "-framework OpenGL")
 endif ()
 
-add_executable(boids ${BOIDS_SOURCES})
-target_link_libraries(boids raylib)
+# OPENMP
+find_package(OpenMP)
+
+add_executable(swarmulator
+        main.cpp
+        Agent.cpp
+        Agent.h
+        StaticGrid.cpp
+        StaticGrid.h
+        include/v3ops.h
+        include/util.h
+)
+target_link_libraries(swarmulator raylib OpenMP::OpenMP_CXX)
