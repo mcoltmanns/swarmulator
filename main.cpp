@@ -16,10 +16,10 @@
 
 int main(int argc, char** argv) {
     int agent_count = 4096;
-    int window_w = 800;
-    int window_h = 600;
-    constexpr Vector3 world_size = {1.f, 1.f, 1.f};
-    constexpr int subdivisions = 10; // choose such that size / count > agent sense diameter (10-20 are good numbers)
+    int window_w = 1080;
+    int window_h = 720;
+    constexpr Vector3 world_size = {1.5f, 1.5f, 1.5f};
+    constexpr int subdivisions = 20; // choose such that size / count > agent sense diameter (10-20 are good numbers)
     float time_scale = 1.f;
     float cam_speed = 1.f;
     float agent_scale = 1.f;
@@ -78,7 +78,7 @@ int main(int argc, char** argv) {
     auto positions = static_cast<Vector4*>(RL_CALLOC(agent_count, sizeof(Vector4)));
     auto rotations = static_cast<Vector4*>(RL_CALLOC(agent_count, sizeof(Vector4)));
     for (int i = 0; i < agent_count; i++) {
-        const auto p = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
+        const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
         agents.push_back(new swarmulator::Agent(xyz(p), xyz(r)));
         positions[i] = p;
@@ -105,6 +105,7 @@ int main(int argc, char** argv) {
         // partition agents in their spaces
         grid.sort_agents(agents);
         // update all the agents
+#pragma omp parallel for
         for (int i = 0; i < agent_count; i++) {
             auto agent = agents[i];
             // if oob, bounce
