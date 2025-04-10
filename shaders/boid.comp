@@ -1,0 +1,113 @@
+#version 430
+
+layout (local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
+
+// agent struct (must match Agent_SSBO declared in Agent.h)
+struct Agent {
+    vec4 position;
+    vec4 rotation;
+    vec2 signals;
+};
+
+// simulation parameters
+layout(location=0) uniform float dt;
+layout(location=1) uniform vec4 world_size;
+layout(location=2) uniform int subdivisions;
+layout(location=3) uniform vec4 cell_size;
+
+// agent parameters
+layout(location=4) uniform float move_speed;
+layout(location=5) uniform float rot_speed;
+layout(location=6) uniform float sense_range;
+
+// agent buffer
+layout(std430, binding=0) buffer agents_ssbo { Agent agents[]; };
+
+// space partitioning buffers
+layout(std430, binding=1) buffer agents_sorted_ssbo { int agent_groups[]; };
+layout(std430, binding=2) buffer agents_groups_start_ssbo { int agent_group_start[]; };
+layout(std430, binding=3) buffer agents_groups_length_ssbo { int agent_group_length[]; };
+
+const float PI = 3.14159;
+
+bool outbounds(vec3 p) {
+    vec4 max = world_size / 2;
+    return any(greaterThanEqual(p, max.xyz)) || any(lessThanEqual(p, -max.xyz));
+}
+
+vec3 world_to_grid(vec3 p) {
+    return p + 0.5f * world_size.xyz;
+}
+
+int grid_cell_index(vec3 p_g) {
+    vec3 min = vec3(0, 0, 0);
+    bool oob = any(lessThan(p_g, min)) || any(greaterThanEqual(p_g, world_size));
+    vec3 i3 = floor(p_g / cell_size.xyz);
+    return oob ? -1 : subdivisions * subdivisions + int(i3.x) + subdivisions * int(i3).y + int(i3).z;
+}
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    Agent myself = agents[id];
+
+    vec4 cohesion = {0, 0, 0, 0};
+    vec4 avoidance = {0, 0, 0, 0};
+    vec4 alignment = {0, 0, 0, 0};
+
+    uint cohesion_amount = 0;
+    uint alignment_amount = 0;
+
+    /*vec3 pos_grid = world_to_grid(myself.position.xyz);
+    // for every cell around us
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            for (int z = -1; z <= 1; z++) {
+                vec3 offset = {x, y, z};
+                int cell_index = grid_cell_index(pos_grid + offset);
+                if (cell_index != -1) {
+                    for (int i = 0; i < agent_group_length[cell_index]; i++) {
+                        int neighbor_id = agent_groups[agent_group_start[cell_index] + i];
+                        if (neighbor_id != id) {
+                            Agent neighbor = agents[neighbor_id];
+                            // do stuff here
+                            vec4 diff = myself.position - neighbor.position;
+
+                            if (distance(myself.position, neighbor.position) < sense_range) {
+                                float d = length(diff);
+                                if (d != 0.0f) {
+                                    avoidance += diff / d;
+                                }
+                            }
+                            if (distance(myself.position, neighbor.position) < sense_range * 2) {
+                                cohesion += neighbor.position;
+                                cohesion_amount++;
+                                alignment += neighbor.rotation;
+                                alignment_amount ++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }*/
+
+    if (cohesion_amount > 0) {
+        cohesion /= cohesion_amount;
+    }
+    cohesion = normalize(cohesion - myself.position);
+    if (alignment_amount > 0) {
+        alignment /= alignment_amount;
+    }
+
+    vec4 steer_dir = cohesion + avoidance + (alignment - myself.rotation);
+    float ip = exp(-rot_speed * dt);
+
+    if (outbounds(myself.position.xyz)) {
+        myself.rotation -= myself.position * 0.5f;
+    }
+
+    myself.rotation = mix(steer_dir, normalize(myself.rotation), ip);
+    myself.position += myself.rotation * move_speed * dt;
+
+    agents[id] = myself;
+}

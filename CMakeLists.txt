@@ -44,8 +44,7 @@ find_package(OpenMP)
 
 add_executable(swarmulator
         main.cpp
-        Agent.cpp
-        Agent.h
+        agent.h
         StaticGrid.cpp
         StaticGrid.h
         include/v3ops.h

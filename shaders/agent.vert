@@ -1,4 +1,12 @@
 #version 430
+
+// agent struct (must match Agent_SSBO declared in Agent.h)
+struct Agent {
+    vec4 position;
+    vec4 rotation;
+    vec4 signals;
+};
+
 // vertex position of the agent
 layout (location=0) in vec3 vertexPosition;
 
@@ -9,16 +17,15 @@ layout (location=2) uniform float particleScale;
 
 // data buffers we're reading from
 // buffer of agents
-layout(std430, binding=0) buffer ssbo0 { vec4 positions[]; };
-layout(std430, binding=1) buffer ssbo1 {vec4 directions[]; };
+layout(std430, binding=0) buffer agents_ssbo { Agent agents[]; };
 
 // only output frag color
 out vec4 fragColor;
 
 void main() {
     // get position and direction info from buffers
-    vec3 position = positions[gl_InstanceID].xyz;
-    vec3 direction = directions[gl_InstanceID].xyz;
+    vec3 position = agents[gl_InstanceID].position.xyz;
+    vec3 direction = agents[gl_InstanceID].rotation.xyz;
 
     // change color depending on direction
     fragColor.rgb = abs(direction) + 0.2; // direction vectors get normed in the compute shader

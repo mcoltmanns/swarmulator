@@ -3,9 +3,6 @@
 //
 
 #include "StaticGrid.h"
-#include <omp.h>
-
-#include <iostream>
 
 #include "raymath.h"
 #include "v3ops.h"
@@ -43,63 +40,70 @@ namespace swarmulator::util {
 
     StaticGrid::StaticGrid(const Vector3 world_size, const int subdivisions) {
         world_size_ = world_size;
-        cell_size_ = Vector3(world_size.x / static_cast<float>(subdivisions), world_size.y / static_cast<float>(subdivisions), world_size.z / static_cast<float>(subdivisions));
+        cell_size_ = Vector3(world_size.x / static_cast<float>(subdivisions),
+                             world_size.y / static_cast<float>(subdivisions),
+                             world_size.z / static_cast<float>(subdivisions));
         axis_cell_count_ = subdivisions;
         total_cell_count_ = subdivisions * subdivisions * subdivisions;
     }
 
-    // sort an array of agents into the grid
-    void StaticGrid::sort_agents(const std::vector<Agent *> &in) {
-        sorted = std::vector<Agent *>(in.size());
-        segment_start = std::vector<uint32_t>(total_cell_count_, 0);
-        segment_length = std::vector<uint32_t>(total_cell_count_, 0);
+    /*uint32_t StaticGrid::add_agent(const agent::Agent &agent) {
+        agents_.push_back(agent);
+        return agents_.size() - 1;
+    }
+
+    void StaticGrid::remove_agent(const uint32_t agent_id) {
+        agents_.erase(agents_.begin() + agent_id);
+    }*/
+
+    // sort the agent array
+    void StaticGrid::sort_agents(const std::vector<agent::Agent> &in) {
+        sorted_ = std::vector<uint32_t>(in.size());
+        segment_start_ = std::vector<uint32_t>(total_cell_count_, 0);
+        segment_length_ = std::vector<uint32_t>(total_cell_count_, 0);
 
         // count the number of agents in each cell
         for (int i = 0; i < in.size(); i++) {
-            auto agent_pos = in[i]->get_position();
-            auto pos_grid = agent_pos + 0.5f * world_size_;
+            auto pos_grid = xyz(in[i].position) + 0.5f * world_size_;
             const auto cell = cell_index(pos_grid);
             if (cell != -1) { // only add agents if they're in bounds
-                ++segment_start[cell];
-                ++segment_length[cell];
+                ++segment_start_[cell];
+                ++segment_length_[cell];
             }
         }
 
         // compute prefix sum
         // not really worth the effort to parallelize
         for (int i = 1; i <= total_cell_count_; i++) {
-            segment_start[i] += segment_start[i - 1];
+            segment_start_[i] += segment_start_[i - 1];
         }
 
         // sort agents into their cells
         for (int i = in.size() - 1; i >= 0; i--) {
-            auto agent_pos = in[i]->get_position();
-            auto pos_grid = agent_pos + 0.5f * world_size_;
+            auto pos_grid = xyz(in[i].position) + 0.5f * world_size_;
             const auto cell = cell_index(pos_grid);
             if (cell != -1) { // only sort agents if they're inbounds
-                sorted[--segment_start[cell]] = in[i];
+                sorted_[--segment_start_[cell]] = i;
             }
         }
     }
 
-    std::unique_ptr<std::vector<Agent *>> StaticGrid::get_neighborhood(const Agent &agent) const {
-        auto neighborhood = std::make_unique<std::vector<Agent *>>();
-        const auto agent_pos = agent.get_position();
-        const auto agent_pos_grid = agent_pos + 0.5f * world_size_;
+    /*std::unique_ptr<std::vector<uint32_t>> StaticGrid::get_neighborhood(const uint32_t agent_id) const {
+        auto neighborhood = std::make_unique<std::vector<uint32_t>>();
+        const auto agent_pos_grid = xyz(agents_[agent_id].position) + 0.5f * world_size_;
 
         // iterate over every cell in the neighborhood
         // this is not worth parallelizing - at worst 3^3=27 iterations
         for (const auto n_i = neighborhood_indices(agent_pos_grid); const auto neighborhood_cell : n_i) {
             // iterate over every agent in the current neighborhood cell
-            for (int i = 0; i < segment_length[neighborhood_cell]; i++) {
+            for (int i = 0; i < segment_length_[neighborhood_cell]; i++) {
                 // add the agent to the neighborhood vector if it isn't the agent we're getting the neighborhood of
-                auto neighbor = sorted[segment_start[neighborhood_cell] + i];
-                if (neighbor != &agent) {
+                if (auto neighbor = sorted_[segment_start_[neighborhood_cell] + i]; neighbor != agent_id) {
                     neighborhood->push_back(neighbor);
                 }
             }
         }
 
         return neighborhood;
-    }
+    }*/
 } // swarmulator::util

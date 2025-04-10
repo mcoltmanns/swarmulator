@@ -18,8 +18,8 @@ int main(int argc, char** argv) {
     int agent_count = 4096;
     int window_w = 800;
     int window_h = 600;
-    constexpr Vector3 world_size = {1.f, 1.f, 1.f};
-    constexpr int subdivisions = 15; // choose such that size / count > agent sense diameter (10-20 are good numbers)
+    constexpr Vector3 world_size = {1.5f, 1.5f, 1.5f};
+    constexpr int subdivisions = 20; // choose such that size / count > agent sense diameter (10-20 are good numbers)
     float time_scale = 1.f;
     float cam_speed = 1.f;
     float agent_scale = 1.f;
@@ -59,6 +59,10 @@ int main(int argc, char** argv) {
 
     // init agents
     Shader agent_shader = LoadShader("shaders/agent.vert", "shaders/agent.frag");
+    auto *cs_src = LoadFileText("shaders/boid.comp");
+    auto cs_compiled = rlCompileShader(cs_src, RL_COMPUTE_SHADER);
+    auto agent_compute = rlLoadComputeShaderProgram(cs_compiled);
+    UnloadFileText(cs_src);
     //swarmulator::Agent::init_vao(); // initialize the vao
     auto agent_vao = rlLoadVertexArray();
     rlEnableVertexArray(agent_vao);
@@ -72,20 +76,17 @@ int main(int argc, char** argv) {
     rlSetVertexAttribute(0, 3, RL_FLOAT, false, 0, 0);
     rlDisableVertexArray();
     // initialize all the agents
-    std::vector<swarmulator::Agent *> agents;
+    std::vector<swarmulator::agent::Agent> agents;
     agents.reserve(agent_count);
-    // also initialize the position and rotation buffers that we will pass to the shaders
-    auto positions = static_cast<Vector4*>(RL_CALLOC(agent_count, sizeof(Vector4)));
-    auto rotations = static_cast<Vector4*>(RL_CALLOC(agent_count, sizeof(Vector4)));
     for (int i = 0; i < agent_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
-        agents.push_back(new swarmulator::Agent(xyz(p), xyz(r)));
-        positions[i] = p;
-        rotations[i] = r;
+        agents.emplace_back(p, r, Vector4(0, 0, 0, 0));
     }
-    auto pos_ssbo = rlLoadShaderBuffer(agent_count * sizeof(Vector4), positions, RL_DYNAMIC_COPY);
-    auto rot_ssbo = rlLoadShaderBuffer(agent_count * sizeof(Vector4), rotations, RL_DYNAMIC_COPY);
+    auto agents_ssbo = rlLoadShaderBuffer(agents.size() * sizeof(swarmulator::agent::Agent), agents.data(), RL_DYNAMIC_COPY);
+    auto agent_group_ssbo = rlLoadShaderBuffer(grid.sorted().size() * sizeof(uint32_t), grid.sorted().data(), RL_DYNAMIC_COPY);
+    auto agent_group_start_ssbo = rlLoadShaderBuffer(grid.segment_start().size() * sizeof(uint32_t), grid.segment_start().data(), RL_DYNAMIC_COPY);
+    auto agent_group_length_ssbo = rlLoadShaderBuffer(grid.segment_length().size() * sizeof(uint32_t), grid.segment_length().data(), RL_DYNAMIC_COPY);
 
     while (!WindowShouldClose()) {
         const float dt = GetFrameTime() * time_scale;
@@ -104,27 +105,26 @@ int main(int argc, char** argv) {
         // COMPUTE
         // partition agents in their spaces
         grid.sort_agents(agents);
+        // pass that info to the compute shader
+        rlUpdateShaderBuffer(agent_group_ssbo, grid.sorted().data(), grid.sorted().size() * sizeof(uint32_t), 0);
+        rlUpdateShaderBuffer(agent_group_start_ssbo, grid.segment_start().data(), grid.segment_start().size() * sizeof(uint32_t), 0);
+        rlUpdateShaderBuffer(agent_group_length_ssbo, grid.segment_length().data(), grid.segment_length().size() * sizeof(uint32_t), 0);
         // update all the agents
-#pragma omp parallel for
-        for (int i = 0; i < agent_count; i++) {
-            auto agent = agents[i];
-            // if oob, bounce
-            if (agent->get_position().x <= -world_size.x / 2. || agent->get_position().x >= world_size.x / 2.
-                || agent->get_position().y <= -world_size.y / 2. || agent->get_position().y >= world_size.y / 2.
-                || agent->get_position().z <= -world_size.z / 2. || agent->get_position().z >= world_size.z / 2.) {
-                agent->set_direction(agent->get_direction() - 0.5f * agent->get_position());
-            }
-            auto neighborhood = grid.get_neighborhood(*agent);
-            agent->update(*neighborhood, dt);
-            positions[i].x = agent->get_position().x;
-            positions[i].y = agent->get_position().y;
-            positions[i].z = agent->get_position().z;
-            rotations[i].x = agent->get_direction().x;
-            rotations[i].y = agent->get_direction().y;
-            rotations[i].z = agent->get_direction().z;
-        }
-        rlUpdateShaderBuffer(pos_ssbo, positions, agent_count * sizeof(Vector4), 0);
-        rlUpdateShaderBuffer(rot_ssbo, rotations, agent_count * sizeof(Vector4), 0);
+        rlEnableShader(agent_compute);
+        rlSetUniform(0, &dt, RL_SHADER_UNIFORM_FLOAT, 1);
+        rlSetUniform(1, &world_size, RL_SHADER_UNIFORM_VEC3, 1);
+        rlSetUniform(2, &subdivisions, RL_SHADER_UNIFORM_INT, 1);
+        auto csize = grid.cell_size();
+        rlSetUniform(3, &csize, RL_SHADER_UNIFORM_VEC3, 1);
+        rlSetUniform(4, &swarmulator::agent::move_speed, RL_SHADER_UNIFORM_FLOAT, 1);
+        rlSetUniform(5, &swarmulator::agent::rot_speed, RL_SHADER_UNIFORM_FLOAT, 1);
+        rlSetUniform(6, &swarmulator::agent::sense_range, RL_SHADER_UNIFORM_FLOAT, 1);
+        rlBindShaderBuffer(agents_ssbo, 0);
+        rlBindShaderBuffer(agent_group_ssbo, 1);
+        rlBindShaderBuffer(agent_group_start_ssbo, 2);
+        rlBindShaderBuffer(agent_group_length_ssbo, 3);
+        rlDisableShader();
+        rlCheckErrors();
 
         // DRAW
         BeginDrawing();
@@ -138,14 +138,13 @@ int main(int argc, char** argv) {
         SetShaderValueMatrix(agent_shader, 1, view);
         SetShaderValue(agent_shader, 2, &agent_scale, SHADER_UNIFORM_FLOAT);
         // send agents to draw shader
-        rlBindShaderBuffer(pos_ssbo, 0);
-        rlBindShaderBuffer(rot_ssbo, 1);
+        rlBindShaderBuffer(agents_ssbo, 0);
         // instanced agent draw
         rlEnableVertexArray(agent_vao);
         rlDrawVertexArrayInstanced(0, 3, agent_count);
         rlDisableVertexArray();
         rlDisableShader();
-        rlCheckErrors();
+        //rlCheckErrors();
 
         if (draw_bounds) {
             DrawCubeWiresV((Vector3){0, 0, 0}, world_size, DARKGRAY);
@@ -159,10 +158,5 @@ int main(int argc, char** argv) {
     }
 
     CloseWindow();
-    for (const auto &agent : agents) {
-        delete agent;
-    }
-    RL_FREE(positions);
-    RL_FREE(rotations);
     return 0;
 }
