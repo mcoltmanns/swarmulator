@@ -16,10 +16,10 @@
 
 int main(int argc, char** argv) {
     int agent_count = 4096;
-    int window_w = 1080;
-    int window_h = 720;
-    constexpr Vector3 world_size = {1.5f, 1.5f, 1.5f};
-    constexpr int subdivisions = 20; // choose such that size / count > agent sense diameter (10-20 are good numbers)
+    int window_w = 800;
+    int window_h = 600;
+    constexpr Vector3 world_size = {1.f, 1.f, 1.f};
+    constexpr int subdivisions = 15; // choose such that size / count > agent sense diameter (10-20 are good numbers)
     float time_scale = 1.f;
     float cam_speed = 1.f;
     float agent_scale = 1.f;
