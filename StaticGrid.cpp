@@ -55,7 +55,6 @@ namespace swarmulator::util {
         segment_length = std::vector<uint32_t>(total_cell_count_, 0);
 
         // count the number of agents in each cell
-#pragma omp for
         for (int i = 0; i < in.size(); i++) {
             auto agent_pos = in[i]->get_position();
             auto pos_grid = agent_pos + 0.5f * world_size_;
@@ -73,7 +72,6 @@ namespace swarmulator::util {
         }
 
         // sort agents into their cells
-#pragma omp for
         for (int i = in.size() - 1; i >= 0; i--) {
             auto agent_pos = in[i]->get_position();
             auto pos_grid = agent_pos + 0.5f * world_size_;

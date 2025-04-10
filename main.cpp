@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
     int window_w = 800;
     int window_h = 600;
     constexpr Vector3 world_size = {1.f, 1.f, 1.f};
-    constexpr int subdivisions = 10; // choose such that size / count > agent sense diameter (10-20 are good numbers)
+    constexpr int subdivisions = 15; // choose such that size / count > agent sense diameter (10-20 are good numbers)
     float time_scale = 1.f;
     float cam_speed = 1.f;
     float agent_scale = 1.f;
@@ -105,6 +105,7 @@ int main(int argc, char** argv) {
         // partition agents in their spaces
         grid.sort_agents(agents);
         // update all the agents
+#pragma omp parallel for
         for (int i = 0; i < agent_count; i++) {
             auto agent = agents[i];
             // if oob, bounce
