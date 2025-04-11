@@ -29,7 +29,8 @@ private:
 
 public:
     Agent();
-    Agent(const Vector3 position, const Vector3 rotation) : position_(position), direction_(rotation) {};
+  void directional_update(const std::vector<Agent *> &neighborhood, float dt);
+  Agent(const Vector3 position, const Vector3 rotation) : position_(position), direction_(rotation) {};
     ~Agent() = default;
 
     void update(const std::vector<Agent *> &neighborhood, float dt);

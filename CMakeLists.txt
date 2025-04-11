@@ -50,5 +50,6 @@ add_executable(swarmulator
         StaticGrid.h
         include/v3ops.h
         include/util.h
+        include/raygui.h
 )
 target_link_libraries(swarmulator raylib OpenMP::OpenMP_CXX)

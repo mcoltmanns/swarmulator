@@ -2,6 +2,8 @@
 // Created by moltmanns on 4/2/25.
 //
 
+#define RAYGUI_IMPLEMENTATION
+
 #include <cstdio>
 #include <ctime>
 #include <iostream>
@@ -13,6 +15,8 @@
 #include "util.h"
 #include "v3ops.h"
 #include "raymath.h"
+#include "raygui.h"
+
 
 int main(int argc, char** argv) {
     int agent_count = 4096;
@@ -93,7 +97,7 @@ int main(int argc, char** argv) {
         PollInputEvents();
         if (IsKeyDown(KEY_SPACE)) draw_bounds = !draw_bounds;
         // camera
-        const auto cam_speed_factor = time_scale == 0 ? dt : (dt / time_scale);
+        const auto cam_speed_factor = time_scale == 0 ? GetFrameTime() : (dt / time_scale);
         if (IsKeyDown(KEY_D)) CameraYaw(&camera, cam_speed * cam_speed_factor, true);
         if (IsKeyDown(KEY_A)) CameraYaw(&camera, -cam_speed * cam_speed_factor, true);
         if (IsKeyDown(KEY_W)) CameraPitch(&camera, -cam_speed * cam_speed_factor, true, true, false);
@@ -147,10 +151,14 @@ int main(int argc, char** argv) {
         rlDisableShader();
         rlCheckErrors();
 
+        // gui
         if (draw_bounds) {
             DrawCubeWiresV((Vector3){0, 0, 0}, world_size, DARKGRAY);
         }
         EndMode3D();
+        if (draw_bounds) {
+            GuiSlider((Rectangle){static_cast<float>(window_w) - 250, 10, 200, 10}, "Time scale", TextFormat("%.5f", time_scale), &time_scale, 0, 10);
+        }
         DrawFPS(0, 0);
         DrawText(TextFormat("%zu agents", agent_count), 0, 20, 18, DARKGREEN);
         DrawText(TextFormat("%zu threads", omp_get_max_threads()), 0, 40, 18, DARKGREEN);
