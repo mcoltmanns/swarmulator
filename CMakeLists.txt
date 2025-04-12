@@ -4,8 +4,8 @@ project(swarmulator_cpp)
 set(CMAKE_CXX_STANDARD 20)
 
 # EXTERNAL HEADERS
-set(INCLUDE_DIR "include")
-include_directories(${INCLUDE_DIR})
+set(EXTERNAL_DIR "external")
+include_directories(${EXTERNAL_DIR})
 
 # RAYLIB
 set(RAYLIB_VERSION 5.5)
@@ -43,13 +43,15 @@ endif ()
 find_package(OpenMP)
 
 add_executable(swarmulator
-        main.cpp
-        Agent.cpp
-        Agent.h
-        StaticGrid.cpp
-        StaticGrid.h
-        include/v3ops.h
-        include/util.h
-        include/raygui.h
+        src/main.cpp
+        src/agent/Agent.cpp
+        src/agent/Agent.h
+        src/util/StaticGrid.cpp
+        src/util/StaticGrid.h
+        external/v3ops.h
+        external/util.h
+        external/raygui.h
+        src/agent/NeuralAgent.cpp
+        src/agent/NeuralAgent.h
 )
 target_link_libraries(swarmulator raylib OpenMP::OpenMP_CXX)

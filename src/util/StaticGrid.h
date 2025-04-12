@@ -10,7 +10,7 @@
 #include <vector>
 #include <memory>
 
-#include "Agent.h"
+#include "../agent/Agent.h"
 #include "raylib.h"
 
 
@@ -23,7 +23,7 @@ private:
     int axis_cell_count_ = 0;
     int total_cell_count_ = 0;
 
-    std::vector<Agent *> sorted{};
+    std::vector<agent::Agent *> sorted{};
     std::vector<uint32_t> segment_start{};
     std::vector<uint32_t> segment_length{};
 
@@ -38,10 +38,10 @@ public:
     StaticGrid(Vector3 world_size, int subdivisions);
     ~StaticGrid() = default;
 
-    void sort_agents(const std::vector<Agent *> &in);
+    void sort_agents(const std::vector<agent::Agent *> &in);
     // get all neighbors of a given agent (agents in that agent's cell and neighboring cells)
     // return does not include agent passed
-    [[nodiscard]] std::unique_ptr<std::vector<Agent *>> get_neighborhood(const Agent &agent) const;
+    [[nodiscard]] std::unique_ptr<std::vector<agent::Agent *>> get_neighborhood(const agent::Agent &agent) const;
 };
 
 } // util

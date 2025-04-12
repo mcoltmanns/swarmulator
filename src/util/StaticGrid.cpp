@@ -49,8 +49,8 @@ namespace swarmulator::util {
     }
 
     // sort an array of agents into the grid
-    void StaticGrid::sort_agents(const std::vector<Agent *> &in) {
-        sorted = std::vector<Agent *>(in.size());
+    void StaticGrid::sort_agents(const std::vector<agent::Agent *> &in) {
+        sorted = std::vector<agent::Agent *>(in.size());
         segment_start = std::vector<uint32_t>(total_cell_count_, 0);
         segment_length = std::vector<uint32_t>(total_cell_count_, 0);
 
@@ -82,8 +82,8 @@ namespace swarmulator::util {
         }
     }
 
-    std::unique_ptr<std::vector<Agent *>> StaticGrid::get_neighborhood(const Agent &agent) const {
-        auto neighborhood = std::make_unique<std::vector<Agent *>>();
+    std::unique_ptr<std::vector<agent::Agent *>> StaticGrid::get_neighborhood(const agent::Agent &agent) const {
+        auto neighborhood = std::make_unique<std::vector<agent::Agent *>>();
         const auto agent_pos = agent.get_position();
         const auto agent_pos_grid = agent_pos + 0.5f * world_size_;
 

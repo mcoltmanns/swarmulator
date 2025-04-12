@@ -9,10 +9,10 @@
 
 #include "raylib.h"
 
-namespace swarmulator {
+namespace swarmulator::agent {
 
 class Agent {
-private:
+protected:
     Vector3 position_ = Vector3(0, 0, 0);
     Vector3 direction_ = Vector3(0, 0, 0);
 
@@ -29,11 +29,10 @@ private:
 
 public:
     Agent();
-  void directional_update(const std::vector<Agent *> &neighborhood, float dt);
-  Agent(const Vector3 position, const Vector3 rotation) : position_(position), direction_(rotation) {};
-    ~Agent() = default;
+    Agent(const Vector3 position, const Vector3 rotation) : position_(position), direction_(rotation) {};
+    virtual ~Agent() = default;
 
-    void update(const std::vector<Agent *> &neighborhood, float dt);
+    virtual void update(const std::vector<Agent *> &neighborhood, float dt);
 
     void set_position(const Vector3 position) { position_ = position; }
     void set_direction(const Vector3 rotation) { direction_ = rotation; }

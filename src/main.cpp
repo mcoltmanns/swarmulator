@@ -10,7 +10,7 @@
 #include <omp.h>
 #include <string>
 
-#include "StaticGrid.h"
+#include "util/StaticGrid.h"
 #include "rlgl.h"
 #include "util.h"
 #include "v3ops.h"
@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
     rlSetVertexAttribute(0, 3, RL_FLOAT, false, 0, 0);
     rlDisableVertexArray();
     // initialize all the agents
-    std::vector<swarmulator::Agent *> agents;
+    std::vector<swarmulator::agent::Agent *> agents;
     agents.reserve(agent_count);
     // also initialize the position and rotation buffers that we will pass to the shaders
     auto positions = static_cast<Vector4*>(RL_CALLOC(agent_count, sizeof(Vector4)));
@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < agent_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
-        agents.push_back(new swarmulator::Agent(xyz(p), xyz(r)));
+        agents.push_back(new swarmulator::agent::Agent(xyz(p), xyz(r)));
         positions[i] = p;
         rotations[i] = r;
     }
