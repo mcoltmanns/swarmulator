@@ -10,12 +10,12 @@
 #include <omp.h>
 #include <string>
 
-#include "util/StaticGrid.h"
-#include "rlgl.h"
-#include "util.h"
-#include "v3ops.h"
-#include "raymath.h"
 #include "raygui.h"
+#include "raymath.h"
+#include "rlgl.h"
+#include "util/StaticGrid.h"
+#include "util/util.h"
+#include "v3ops.h"
 
 
 int main(int argc, char** argv) {
@@ -61,9 +61,12 @@ int main(int argc, char** argv) {
     // init space partitioning grid
     auto grid = swarmulator::util::StaticGrid(world_size, subdivisions);
 
-    // init agents
+    // init spheres
+    auto objects = std::vector<swarmulator::env::Sphere *>();
+
+    // init agents (shaders and mesh)
+    // TODO: make these shaders position-independent! (probably a constexpr string somewhere is best)
     Shader agent_shader = LoadShader("shaders/agent.vert", "shaders/agent.frag");
-    //swarmulator::Agent::init_vao(); // initialize the vao
     auto agent_vao = rlLoadVertexArray();
     rlEnableVertexArray(agent_vao);
     constexpr Vector3 mesh[] = {
@@ -119,7 +122,7 @@ int main(int argc, char** argv) {
                 agent->set_direction(agent->get_direction() - 0.5f * agent->get_position());
             }
             auto neighborhood = grid.get_neighborhood(*agent);
-            agent->update(*neighborhood, dt);
+            agent->update(*neighborhood, objects, dt);
             positions[i].x = agent->get_position().x;
             positions[i].y = agent->get_position().y;
             positions[i].z = agent->get_position().z;

@@ -11,7 +11,7 @@ namespace swarmulator::agent {
 class NeuralAgent final : public Agent {
 public:
     ~NeuralAgent() override = default;
-    void update(const std::vector<Agent *> &neighborhood, float dt) override;
+    void update(const std::vector<Agent *> &neighborhood, const std::vector<env::Sphere*> &objects, float dt) override;
 };
 
 } // agent

@@ -3,9 +3,6 @@
 //
 
 #include "StaticGrid.h"
-#include <omp.h>
-
-#include <iostream>
 
 #include "raymath.h"
 #include "v3ops.h"
@@ -55,11 +52,10 @@ namespace swarmulator::util {
         segment_length = std::vector<uint32_t>(total_cell_count_, 0);
 
         // count the number of agents in each cell
-        for (int i = 0; i < in.size(); i++) {
-            auto agent_pos = in[i]->get_position();
+        for (const auto &agent : in) {
+            auto agent_pos = agent->get_position();
             auto pos_grid = agent_pos + 0.5f * world_size_;
-            const auto cell = cell_index(pos_grid);
-            if (cell != -1) { // only add agents if they're in bounds
+            if (const auto cell = cell_index(pos_grid); cell != -1) { // only add agents if they're in bounds
                 ++segment_start[cell];
                 ++segment_length[cell];
             }
@@ -72,12 +68,12 @@ namespace swarmulator::util {
         }
 
         // sort agents into their cells
-        for (int i = in.size() - 1; i >= 0; i--) {
-            auto agent_pos = in[i]->get_position();
+        for (auto it = in.rbegin(); it != in.rend(); ++it) { // careful! need to iterate in reverse here
+            const auto agent = *it;
+            auto agent_pos = agent->get_position();
             auto pos_grid = agent_pos + 0.5f * world_size_;
-            const auto cell = cell_index(pos_grid);
-            if (cell != -1) { // only sort agents if they're inbounds
-                sorted[--segment_start[cell]] = in[i];
+            if (const auto cell = cell_index(pos_grid); cell != -1) {
+                sorted[--segment_start[cell]] = agent;
             }
         }
     }

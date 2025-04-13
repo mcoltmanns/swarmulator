@@ -7,8 +7,8 @@
 #ifndef STATICGRID_H
 #define STATICGRID_H
 #include <cstdint>
-#include <vector>
 #include <memory>
+#include <vector>
 
 #include "../agent/Agent.h"
 #include "raylib.h"

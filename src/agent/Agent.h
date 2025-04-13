@@ -7,6 +7,7 @@
 #include <vector>
 
 
+#include "../env/Sphere.h"
 #include "raylib.h"
 
 namespace swarmulator::agent {
@@ -32,7 +33,7 @@ public:
     Agent(const Vector3 position, const Vector3 rotation) : position_(position), direction_(rotation) {};
     virtual ~Agent() = default;
 
-    virtual void update(const std::vector<Agent *> &neighborhood, float dt);
+    virtual void update(const std::vector<Agent *> &neighborhood, const std::vector<env::Sphere*> &objects, float dt);
 
     void set_position(const Vector3 position) { position_ = position; }
     void set_direction(const Vector3 rotation) { direction_ = rotation; }

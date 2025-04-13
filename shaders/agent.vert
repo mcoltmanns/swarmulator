@@ -1,11 +1,11 @@
 #version 430
 // vertex position of the agent
-layout (location=0) in vec3 vertexPosition;
+layout (location=0) in vec3 vertex_position;
 
 // constant inputs
-layout (location=0) uniform mat4 projectionMatrix;
-layout (location=1) uniform mat4 viewMatrix;
-layout (location=2) uniform float particleScale;
+layout (location=0) uniform mat4 projection_matrix;
+layout (location=1) uniform mat4 view_matrix;
+layout (location=2) uniform float agent_scale;
 
 // data buffers we're reading from
 // buffer of agents
@@ -24,13 +24,13 @@ void main() {
     fragColor.rgb = abs(direction) + 0.2; // direction vectors get normed in the compute shader
     fragColor.a = 1.0;
 
-    float scale = 0.005 * particleScale;
-    vec3 vertexView = vertexPosition * scale;
+    float scale = 0.005 * agent_scale;
+    vec3 vertexView = vertex_position * scale;
 
     // right now triangle points towards the camera
     // make it point in the direction of its movement in view space
     // first, find angle of direction in view space
-    vec2 dirView = (viewMatrix * vec4(direction, 0)).xy;
+    vec2 dirView = (view_matrix * vec4(direction, 0)).xy;
     float dirAngle = atan(dirView.y, dirView.x);
 
     // triangle tip is at 90 degrees in view space
@@ -42,7 +42,7 @@ void main() {
     vec2 yv = vec2(-sin(rot), cos(rot));
     vertexView.xy = vertexView.x * xv + vertexView.y * yv;
 
-    vertexView += (viewMatrix * vec4(position, 1)).xyz;
+    vertexView += (view_matrix * vec4(position, 1)).xyz;
 
-    gl_Position = projectionMatrix * vec4(vertexView, 1);
+    gl_Position = projection_matrix * vec4(vertexView, 1);
 }

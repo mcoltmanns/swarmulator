@@ -7,7 +7,8 @@
 #include "raymath.h"
 
 namespace swarmulator::agent {
-    void NeuralAgent::update(const std::vector<Agent *> &neighborhood, float dt) {
+    void NeuralAgent::update(const std::vector<Agent *> &neighborhood, const std::vector<env::Sphere *> &objects,
+                             float dt) {
         for (const auto neighbor : neighborhood) {
             const auto distance = Vector3Distance(position_, neighbor->get_position());
             if (neighbor == this || distance > sense_range_) {

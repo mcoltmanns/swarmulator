@@ -5,12 +5,11 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include <raylib.h>
 #include <rcamera.h>
 #include <string>
-#include <algorithm>
 
 inline float randfloat() {
     return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);

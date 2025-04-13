@@ -6,6 +6,7 @@
 
 #include <iostream>
 
+#include "../env/Sphere.h"
 #include "raymath.h"
 #include "rlgl.h"
 #include "v3ops.h"
@@ -13,7 +14,7 @@
 namespace swarmulator::agent {
     Agent::Agent() = default;
 
-    void Agent::update(const std::vector<Agent *> &neighborhood, const float dt) {
+    void Agent::update(const std::vector<Agent *> &neighborhood, const std::vector<env::Sphere*> &objects, const float dt) {
         Vector3 cohesion = {0, 0, 0};
         u_int32_t coc = 0;
         Vector3 avoidance = {0, 0, 0};
@@ -52,7 +53,6 @@ namespace swarmulator::agent {
         const auto steer_dir = cohesion_wt_ * cohesion + avoidance_wt_ * avoidance + alignment_wt_ * (alignment - direction_);
 
         const float ip = std::exp(-rot_speed_ * dt);
-
 
         direction_ = Vector3Lerp(steer_dir, Vector3Normalize(direction_), ip);
         position_ = position_ + direction_ * 0.06 * dt; // 0.06 here is move speed

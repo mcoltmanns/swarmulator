@@ -49,9 +49,13 @@ add_executable(swarmulator
         src/util/StaticGrid.cpp
         src/util/StaticGrid.h
         external/v3ops.h
-        external/util.h
+        src/util/util.h
         external/raygui.h
         src/agent/NeuralAgent.cpp
         src/agent/NeuralAgent.h
+        src/env/Sphere.cpp
+        src/env/Sphere.h
+        src/Simulation.cpp
+        src/Simulation.h
 )
 target_link_libraries(swarmulator raylib OpenMP::OpenMP_CXX)
