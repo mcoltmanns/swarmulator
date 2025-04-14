@@ -14,7 +14,9 @@
 namespace swarmulator::agent {
     Agent::Agent() = default;
 
-    void Agent::update(const std::vector<Agent *> &neighborhood, const std::vector<env::Sphere*> &objects, const float dt) {
+    void Agent::update(const std::vector<Agent *> &neighborhood,
+                       const std::vector<env::Sphere *> &objects,
+                       const float dt) {
         Vector3 cohesion = {0, 0, 0};
         u_int32_t coc = 0;
         Vector3 avoidance = {0, 0, 0};

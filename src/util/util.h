@@ -11,6 +11,7 @@
 #include <rcamera.h>
 #include <string>
 
+// get a random float between 0 and 1
 inline float randfloat() {
     return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 }

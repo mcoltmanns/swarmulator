@@ -42,6 +42,10 @@ endif ()
 # OPENMP
 find_package(OpenMP)
 
+# FANN
+# need fann-dev and fann 2
+find_package(fann)
+
 add_executable(swarmulator
         src/main.cpp
         src/agent/Agent.cpp
@@ -55,7 +59,5 @@ add_executable(swarmulator
         src/agent/NeuralAgent.h
         src/env/Sphere.cpp
         src/env/Sphere.h
-        src/Simulation.cpp
-        src/Simulation.h
 )
-target_link_libraries(swarmulator raylib OpenMP::OpenMP_CXX)
+target_link_libraries(swarmulator fann raylib OpenMP::OpenMP_CXX)

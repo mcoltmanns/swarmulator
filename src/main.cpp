@@ -16,6 +16,7 @@
 #include "util/StaticGrid.h"
 #include "util/util.h"
 #include "v3ops.h"
+#include "agent/NeuralAgent.h"
 
 
 int main(int argc, char** argv) {
@@ -87,7 +88,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < agent_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
-        agents.push_back(new swarmulator::agent::Agent(xyz(p), xyz(r)));
+        agents.push_back(new swarmulator::agent::NeuralAgent(xyz(p), xyz(r)));
         positions[i] = p;
         rotations[i] = r;
     }
@@ -114,7 +115,7 @@ int main(int argc, char** argv) {
         // update all the agents
 #pragma omp parallel for
         for (int i = 0; i < agent_count; i++) {
-            auto agent = agents[i];
+            auto agent = dynamic_cast<swarmulator::agent::NeuralAgent *>(agents[i]);
             // if oob, bounce
             if (agent->get_position().x <= -world_size.x / 2. || agent->get_position().x >= world_size.x / 2.
                 || agent->get_position().y <= -world_size.y / 2. || agent->get_position().y >= world_size.y / 2.
