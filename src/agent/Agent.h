@@ -13,6 +13,13 @@
 
 namespace swarmulator::agent {
 
+typedef struct {
+    Vector4 position;
+    Vector4 direction;
+    Vector2 signals; // for communicative agent signals
+    Vector2 info; // for additional info (agent type, etc)
+} SSBOAgent;
+
 class Agent {
 protected:
     Vector3 position_ = Vector3(0, 0, 0);
@@ -43,8 +50,7 @@ public:
     [[nodiscard]] Vector3 get_position() const { return position_; }
     [[nodiscard]] Vector3 get_direction() const { return direction_; }
 
-    [[nodiscard]] static unsigned int get_vao() { return vao_; }
-    static void init_vao();
+    virtual void to_ssbo(SSBOAgent *out) const;
 };
 
 } // swarmulator

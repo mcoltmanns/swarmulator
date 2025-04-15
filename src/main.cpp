@@ -23,6 +23,7 @@ int main(int argc, char** argv) {
     int agent_count = 4096;
     int window_w = 800;
     int window_h = 600;
+    int max_agents = 50000;
     constexpr Vector3 world_size = {1.f, 1.f, 1.f};
     constexpr int subdivisions = 20; // choose such that size / count > agent sense diameter (10-20 are good numbers)
     float time_scale = 1.f;
@@ -82,19 +83,17 @@ int main(int argc, char** argv) {
     // initialize all the agents
     std::vector<swarmulator::agent::Agent *> agents;
     agents.reserve(agent_count);
-    // also initialize the position and rotation buffers that we will pass to the shaders
-    auto positions = static_cast<Vector4*>(RL_CALLOC(agent_count, sizeof(Vector4)));
-    auto rotations = static_cast<Vector4*>(RL_CALLOC(agent_count, sizeof(Vector4)));
+    // also initialize the agent data buffer we will pass to the shaders
+    auto agents_data = static_cast<swarmulator::agent::SSBOAgent*>(RL_CALLOC(agent_count, sizeof(swarmulator::agent::SSBOAgent)));
     for (int i = 0; i < agent_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
         agents.push_back(new swarmulator::agent::NeuralAgent(xyz(p), xyz(r)));
-        positions[i] = p;
-        rotations[i] = r;
+        agents[i]->to_ssbo(&agents_data[i]);
     }
-    auto pos_ssbo = rlLoadShaderBuffer(agent_count * sizeof(Vector4), positions, RL_DYNAMIC_COPY);
-    auto rot_ssbo = rlLoadShaderBuffer(agent_count * sizeof(Vector4), rotations, RL_DYNAMIC_COPY);
+    auto agents_ssbo = rlLoadShaderBuffer(max_agents * sizeof(swarmulator::agent::SSBOAgent), agents_data, RL_DYNAMIC_COPY);
 
+    uint_fast64_t frames = 0;
     while (!WindowShouldClose()) {
         const float dt = GetFrameTime() * time_scale;
         // INPUT
@@ -124,15 +123,9 @@ int main(int argc, char** argv) {
             }
             auto neighborhood = grid.get_neighborhood(*agent);
             agent->update(*neighborhood, objects, dt);
-            positions[i].x = agent->get_position().x;
-            positions[i].y = agent->get_position().y;
-            positions[i].z = agent->get_position().z;
-            rotations[i].x = agent->get_direction().x;
-            rotations[i].y = agent->get_direction().y;
-            rotations[i].z = agent->get_direction().z;
+            agent->to_ssbo(&agents_data[i]);
         }
-        rlUpdateShaderBuffer(pos_ssbo, positions, agent_count * sizeof(Vector4), 0);
-        rlUpdateShaderBuffer(rot_ssbo, rotations, agent_count * sizeof(Vector4), 0);
+        rlUpdateShaderBuffer(agents_ssbo, agents_data, agent_count * sizeof(swarmulator::agent::SSBOAgent), 0);
 
         // DRAW
         BeginDrawing();
@@ -145,9 +138,10 @@ int main(int argc, char** argv) {
         SetShaderValueMatrix(agent_shader, 0, projection);
         SetShaderValueMatrix(agent_shader, 1, view);
         SetShaderValue(agent_shader, 2, &agent_scale, SHADER_UNIFORM_FLOAT);
+        const auto size = agents.size();
+        SetShaderValue(agent_shader, 3, &size, SHADER_UNIFORM_INT);
         // send agents to draw shader
-        rlBindShaderBuffer(pos_ssbo, 0);
-        rlBindShaderBuffer(rot_ssbo, 1);
+        rlBindShaderBuffer(agents_ssbo, 0);
         // instanced agent draw
         rlEnableVertexArray(agent_vao);
         rlDrawVertexArrayInstanced(0, 3, agent_count);
@@ -166,6 +160,7 @@ int main(int argc, char** argv) {
         DrawFPS(0, 0);
         DrawText(TextFormat("%zu agents", agent_count), 0, 20, 18, DARKGREEN);
         DrawText(TextFormat("%zu threads", omp_get_max_threads()), 0, 40, 18, DARKGREEN);
+        DrawText(TextFormat("%zu iterations", frames++), 0, 60, 18, DARKGREEN);
 
         EndDrawing();
     }
@@ -174,7 +169,6 @@ int main(int argc, char** argv) {
     for (const auto &agent : agents) {
         delete agent;
     }
-    RL_FREE(positions);
-    RL_FREE(rotations);
+    RL_FREE(agents_data);
     return 0;
 }

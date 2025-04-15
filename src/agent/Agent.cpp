@@ -60,19 +60,16 @@ namespace swarmulator::agent {
         position_ = position_ + direction_ * 0.06 * dt; // 0.06 here is move speed
     }
 
-    unsigned int Agent::vao_ = 0;
-
-    void Agent::init_vao() {
-        vao_ = rlLoadVertexArray();
-        rlEnableVertexArray(vao_);
-        constexpr Vector3 mesh[] = {
-            {-0.86, -0.5, 0},
-            {0.86, -0.5, 0},
-            {0, 1, 0}
-        };
-        rlEnableVertexAttribute(vao_);
-        rlLoadVertexBuffer(mesh, sizeof(mesh), false);
-        rlSetVertexAttribute(0, 3, RL_FLOAT, false, 0, 0);
-        rlDisableVertexArray();
+    void Agent::to_ssbo(SSBOAgent *out) const {
+        out->position.x = position_.x;
+        out->position.y = position_.y;
+        out->position.z = position_.z;
+        out->direction.x = direction_.x;
+        out->direction.y = direction_.y;
+        out->direction.z = direction_.z;
+        out->signals.x = 0;
+        out->signals.y = 0;
+        out->info.x = 0;
+        out->info.y = 0;
     }
 } // swarmulator

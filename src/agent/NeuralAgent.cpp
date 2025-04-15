@@ -14,22 +14,28 @@ NeuralAgent::NeuralAgent() {
     sensory_input_.fill(0);
     signal_output_.fill(0);
     steering_output_.fill(0);
+    last_output_.fill(0);
 
-    brain_.randomize_weights(-1.f, 1.f);
+    brain_.randomize_weights(-1, 1);
+    brain_.set_activation_function_output(FANN::activation_function_enum::SIGMOID_SYMMETRIC); // range -1 to 1
+    brain_.set_activation_function_hidden(FANN::activation_function_enum::SIGMOID_SYMMETRIC);
 }
 
 NeuralAgent::NeuralAgent(const Vector3 position, const Vector3 rotation) : Agent(position, rotation) {
     sensory_input_.fill(0);
     signal_output_.fill(0);
     steering_output_.fill(0);
+    last_output_.fill(0);
 
-    brain_.randomize_weights(-1.f, 1.f);
+    brain_.randomize_weights(-1, 1);
+    brain_.set_activation_function_output(FANN::activation_function_enum::SIGMOID_SYMMETRIC); // range -1 to 1
+    brain_.set_activation_function_hidden(FANN::activation_function_enum::SIGMOID_SYMMETRIC);
 }
 
 void NeuralAgent::update(const std::vector<Agent *> &neighborhood, const std::vector<env::Sphere *> &objects, const float dt) {
     // get information from your neighbors
     for (const auto n_a: neighborhood) {
-        const auto neighbor = static_cast<NeuralAgent*>(n_a);
+        const auto neighbor = dynamic_cast<NeuralAgent*>(n_a);
         const auto distance = Vector3Distance(position_, neighbor->get_position());
         // if the neighbor is yourself or the neighbor is too far, go to the next
         // neighbor
@@ -77,23 +83,41 @@ void NeuralAgent::update(const std::vector<Agent *> &neighborhood, const std::ve
             }
         }
     }
+    // copy in the old outputs
+    sensory_input_[12] = last_output_[0];
+    sensory_input_[13] = last_output_[1];
+    sensory_input_[14] = last_output_[2];
+    sensory_input_[15] = last_output_[3];
+    sensory_input_[16] = last_output_[4];
+
     // run everything through the network
-    const auto opt = brain_.run(sensory_input_.data());
-    steering_output_[0] = opt[0];
-    steering_output_[1] = opt[1];
-    steering_output_[2] = opt[2];
-    signal_output_[0] = opt[3];
-    signal_output_[1] = opt[4];
+    const auto out = brain_.run(sensory_input_.data());
 
     // apply the steering
     const Vector3 steer_dir = {
-        steering_output_[0],
-        steering_output_[1],
-        steering_output_[2]
+        out[0],
+        out[1],
+        out[2]
     };
+    // apply the signals
+    signal_output_[0] = out[3];
+    signal_output_[1] = out[4];
     const float ip = std::exp(-rot_speed_ * dt);
     direction_ = Vector3Lerp(steer_dir, Vector3Normalize(direction_), ip);
     position_ = position_ + direction_ * 0.06 * dt;
+}
+
+void NeuralAgent::to_ssbo(SSBOAgent *out) const {
+    out->position.x = position_.x;
+    out->position.y = position_.y;
+    out->position.z = position_.z;
+    out->direction.x = direction_.x;
+    out->direction.y = direction_.y;
+    out->direction.z = direction_.z;
+    out->signals.x = signal_output_[0];
+    out->signals.y = signal_output_[1];
+    out->info.x = 0;
+    out->info.y = 0;
 }
 
 // create a new agent, mutate his weights by a given amount

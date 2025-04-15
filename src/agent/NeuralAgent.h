@@ -14,7 +14,7 @@ namespace swarmulator::agent {
 
 class NeuralAgent final : public Agent {
 private:
-    static constexpr unsigned int num_inputs_ = 12 ;//+ 9; // 2 signals * 6 directions + hidden outputs from last timestep
+    static constexpr unsigned int num_inputs_ = 12 + 5; // 2 signals * 6 directions + 5 outputs from last timestep
     static constexpr unsigned int num_outputs_ = 5; // x, y, z steerage + 2 signals
     static constexpr unsigned int num_hidden_ = 9; // average seems good for hidden
 
@@ -23,16 +23,20 @@ private:
     std::array<fann_type, 12> sensory_input_; // sensory inputs
     std::array<fann_type, 2> signal_output_;
     std::array<fann_type, 3> steering_output_;
+    std::array<fann_type, 5> last_output_;
+
 public:
     NeuralAgent();
-    NeuralAgent(const Vector3 position, const Vector3 rotation);
+    NeuralAgent(Vector3 position, Vector3 rotation);
     ~NeuralAgent() override = default;
 
     void update(const std::vector<Agent *> &neighborhood,
-                const std::vector<env::Sphere *> &objects, float dt);
+                const std::vector<env::Sphere *> &objects, float dt) override;
 
-    std::array<fann_type, 2> get_signals() const { return signal_output_; }
-    fann_type get_signal(const int idx) const { return signal_output_[idx]; }
+    void to_ssbo(SSBOAgent *out) const override;
+
+    [[nodiscard]] std::array<fann_type, 2> get_signals() const { return signal_output_; }
+    [[nodiscard]] fann_type get_signal(const int idx) const { return signal_output_[idx]; }
 
     NeuralAgent *mutate(float mutation_chance = 0.5f);
 };
