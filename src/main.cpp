@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
     int agent_count = 4096;
     int window_w = 800;
     int window_h = 600;
-    int max_agents = 50000;
+    int max_agents = 1024 * 1024;
     constexpr Vector3 world_size = {1.f, 1.f, 1.f};
     constexpr int subdivisions = 20; // choose such that size / count > agent sense diameter (10-20 are good numbers)
     float time_scale = 1.f;
@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
     std::vector<swarmulator::agent::Agent *> agents;
     agents.reserve(agent_count);
     // also initialize the agent data buffer we will pass to the shaders
-    auto agents_data = static_cast<swarmulator::agent::SSBOAgent*>(RL_CALLOC(agent_count, sizeof(swarmulator::agent::SSBOAgent)));
+    auto agents_data = static_cast<swarmulator::agent::SSBOAgent*>(RL_CALLOC(max_agents, sizeof(swarmulator::agent::SSBOAgent)));
     for (int i = 0; i < agent_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
@@ -114,7 +114,7 @@ int main(int argc, char** argv) {
         // update all the agents
 #pragma omp parallel for
         for (int i = 0; i < agent_count; i++) {
-            auto agent = dynamic_cast<swarmulator::agent::NeuralAgent *>(agents[i]);
+            auto agent = agents[i];
             // if oob, bounce
             if (agent->get_position().x <= -world_size.x / 2. || agent->get_position().x >= world_size.x / 2.
                 || agent->get_position().y <= -world_size.y / 2. || agent->get_position().y >= world_size.y / 2.
@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
             GuiSlider((Rectangle){static_cast<float>(window_w) - 250, 10, 200, 10}, "Time scale", TextFormat("%.5f", time_scale), &time_scale, 0, 10);
         }
         DrawFPS(0, 0);
-        DrawText(TextFormat("%zu agents", agent_count), 0, 20, 18, DARKGREEN);
+        DrawText(TextFormat("%zu/%zu agents", agent_count, max_agents), 0, 20, 18, DARKGREEN);
         DrawText(TextFormat("%zu threads", omp_get_max_threads()), 0, 40, 18, DARKGREEN);
         DrawText(TextFormat("%zu iterations", frames++), 0, 60, 18, DARKGREEN);
 

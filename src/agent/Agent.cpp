@@ -8,7 +8,6 @@
 
 #include "../env/Sphere.h"
 #include "raymath.h"
-#include "rlgl.h"
 #include "v3ops.h"
 
 namespace swarmulator::agent {
