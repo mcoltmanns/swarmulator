@@ -11,6 +11,8 @@
 #include <vector>
 
 #include "../agent/Agent.h"
+#include "../agent/NeuralAgent.h"
+#include "v3ops.h"
 #include "raylib.h"
 
 
@@ -23,7 +25,7 @@ private:
     int axis_cell_count_ = 0;
     int total_cell_count_ = 0;
 
-    std::vector<agent::Agent *> sorted{};
+    std::vector<agent::NeuralAgent *> sorted{};
     std::vector<uint32_t> segment_start{};
     std::vector<uint32_t> segment_length{};
 
@@ -38,7 +40,41 @@ public:
     StaticGrid(Vector3 world_size, int subdivisions);
     ~StaticGrid() = default;
 
-    void sort_agents(const std::vector<agent::Agent *> &in);
+    // sort an array of agents into the grid
+    // not so great to put it here but have to for the template to work (must be in same translation unit as declaration)
+    template<class T>
+    void sort_agents(const std::vector<T *> &in) {
+        static_assert(std::is_base_of_v<agent::Agent, T>, "agents must derive from swarmulator::agent::Agent");
+        sorted = std::vector<T *>(in.size());
+        segment_start = std::vector<uint32_t>(total_cell_count_, 0);
+        segment_length = std::vector<uint32_t>(total_cell_count_, 0);
+
+        // count the number of agents in each cell
+        for (const auto &agent : in) {
+            auto agent_pos = agent->get_position();
+            auto pos_grid = agent_pos + 0.5f * world_size_;
+            if (const auto cell = cell_index(pos_grid); cell != -1) { // only add agents if they're in bounds
+                ++segment_start[cell];
+                ++segment_length[cell];
+            }
+        }
+
+        // compute prefix sum
+        // not really worth the effort to parallelize
+        for (int i = 1; i <= total_cell_count_; i++) {
+            segment_start[i] += segment_start[i - 1];
+        }
+
+        // sort agents into their cells
+        for (auto it = in.rbegin(); it != in.rend(); ++it) { // careful! need to iterate in reverse here
+            const auto agent = *it;
+            auto agent_pos = agent->get_position();
+            auto pos_grid = agent_pos + 0.5f * world_size_;
+            if (const auto cell = cell_index(pos_grid); cell != -1) {
+                sorted[--segment_start[cell]] = agent;
+            }
+        }
+    }
     // get all neighbors of a given agent (agents in that agent's cell and neighboring cells)
     // return does not include agent passed
     [[nodiscard]] std::unique_ptr<std::vector<agent::Agent *>> get_neighborhood(const agent::Agent &agent) const;

@@ -8,6 +8,10 @@
 #include "v3ops.h"
 
 
+namespace swarmulator::agent {
+    class NeuralAgent;
+}
+
 namespace swarmulator::util {
     int StaticGrid::cell_index(const Vector3 &pos_grid) const {
         if (pos_grid.x < 0 || pos_grid.x >= world_size_.x
@@ -45,38 +49,7 @@ namespace swarmulator::util {
         total_cell_count_ = subdivisions * subdivisions * subdivisions;
     }
 
-    // sort an array of agents into the grid
-    void StaticGrid::sort_agents(const std::vector<agent::Agent *> &in) {
-        sorted = std::vector<agent::Agent *>(in.size());
-        segment_start = std::vector<uint32_t>(total_cell_count_, 0);
-        segment_length = std::vector<uint32_t>(total_cell_count_, 0);
 
-        // count the number of agents in each cell
-        for (const auto &agent : in) {
-            auto agent_pos = agent->get_position();
-            auto pos_grid = agent_pos + 0.5f * world_size_;
-            if (const auto cell = cell_index(pos_grid); cell != -1) { // only add agents if they're in bounds
-                ++segment_start[cell];
-                ++segment_length[cell];
-            }
-        }
-
-        // compute prefix sum
-        // not really worth the effort to parallelize
-        for (int i = 1; i <= total_cell_count_; i++) {
-            segment_start[i] += segment_start[i - 1];
-        }
-
-        // sort agents into their cells
-        for (auto it = in.rbegin(); it != in.rend(); ++it) { // careful! need to iterate in reverse here
-            const auto agent = *it;
-            auto agent_pos = agent->get_position();
-            auto pos_grid = agent_pos + 0.5f * world_size_;
-            if (const auto cell = cell_index(pos_grid); cell != -1) {
-                sorted[--segment_start[cell]] = agent;
-            }
-        }
-    }
 
     std::unique_ptr<std::vector<agent::Agent *>> StaticGrid::get_neighborhood(const agent::Agent &agent) const {
         auto neighborhood = std::make_unique<std::vector<agent::Agent *>>();

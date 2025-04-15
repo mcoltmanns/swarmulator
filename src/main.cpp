@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
     int agent_count = 4096;
     int window_w = 800;
     int window_h = 600;
-    int max_agents = 1024 * 1024;
+    int max_agents = 25000; // we can go higher, but this provides nice performance
     constexpr Vector3 world_size = {1.f, 1.f, 1.f};
     constexpr int subdivisions = 20; // choose such that size / count > agent sense diameter (10-20 are good numbers)
     float time_scale = 1.f;
@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
     rlSetVertexAttribute(0, 3, RL_FLOAT, false, 0, 0);
     rlDisableVertexArray();
     // initialize all the agents
-    std::vector<swarmulator::agent::Agent *> agents;
+    std::vector<swarmulator::agent::NeuralAgent *> agents;
     agents.reserve(agent_count);
     // also initialize the agent data buffer we will pass to the shaders
     auto agents_data = static_cast<swarmulator::agent::SSBOAgent*>(RL_CALLOC(max_agents, sizeof(swarmulator::agent::SSBOAgent)));
