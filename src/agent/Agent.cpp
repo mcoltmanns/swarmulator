@@ -13,8 +13,8 @@
 namespace swarmulator::agent {
     Agent::Agent() = default;
 
-    void Agent::update(const std::vector<Agent *> &neighborhood,
-                       const std::vector<env::Sphere *> &objects,
+    void Agent::update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
+                       const std::vector<std::shared_ptr<env::Sphere>> &objects,
                        const float dt) {
         Vector3 cohesion = {0, 0, 0};
         u_int32_t coc = 0;
@@ -22,10 +22,10 @@ namespace swarmulator::agent {
         u_int32_t alc = 0;
         Vector3 alignment = {0, 0, 0};
 
-        for (const auto neighbor : neighborhood) {
+        for (const auto &neighbor : neighborhood) {
             // do stuff
             // default behavior is boids
-            if (neighbor == this) {
+            if (neighbor.get() == this) {
                 continue;
             }
             const auto diff = position_ - neighbor->position_;
@@ -56,7 +56,7 @@ namespace swarmulator::agent {
         const float ip = std::exp(-rot_speed_ * dt);
 
         direction_ = Vector3Lerp(steer_dir, Vector3Normalize(direction_), ip);
-        position_ = position_ + direction_ * 0.06 * dt; // 0.06 here is move speed
+        position_ = position_ + direction_ * move_speed_ * dt; // 0.06 here is move speed
     }
 
     void Agent::to_ssbo(SSBOAgent *out) const {

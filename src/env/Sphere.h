@@ -26,7 +26,7 @@ public:
     void setPosition(const Vector3& position) { position_ = position; }
     void setRadius(const float radius) { radius_ = radius; }
 
-    bool intersect(const Vector3& point) const;
+    [[nodiscard]] bool intersect(const Vector3& point) const;
 
     // the idea is that there won't be super many spheres, so we don't lose on much by using raylib draw calls
     void draw() const { DrawSphere(position_, radius_, color_); };

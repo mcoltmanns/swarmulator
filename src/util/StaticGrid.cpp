@@ -50,9 +50,9 @@ namespace swarmulator::util {
     }
 
 
-
-    std::unique_ptr<std::vector<agent::Agent *>> StaticGrid::get_neighborhood(const agent::Agent &agent) const {
-        auto neighborhood = std::make_unique<std::vector<agent::Agent *>>();
+    std::unique_ptr<std::vector<std::shared_ptr<agent::Agent>>> StaticGrid::get_neighborhood(
+        const agent::Agent &agent) const {
+        auto neighborhood = std::make_unique<std::vector<std::shared_ptr<agent::Agent>>>();
         const auto agent_pos = agent.get_position();
         const auto agent_pos_grid = agent_pos + 0.5f * world_size_;
 
@@ -63,7 +63,7 @@ namespace swarmulator::util {
             for (int i = 0; i < segment_length[neighborhood_cell]; i++) {
                 // add the agent to the neighborhood vector if it isn't the agent we're getting the neighborhood of
                 auto neighbor = sorted[segment_start[neighborhood_cell] + i];
-                if (neighbor != &agent) {
+                if (neighbor.get() != &agent) {
                     neighborhood->push_back(neighbor);
                 }
             }

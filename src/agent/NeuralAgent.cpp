@@ -4,8 +4,6 @@
 
 #include "NeuralAgent.h"
 
-#include <iostream>
-
 #include "raymath.h"
 #include "../util/util.h"
 
@@ -32,10 +30,17 @@ NeuralAgent::NeuralAgent(const Vector3 position, const Vector3 rotation) : Agent
     brain_.set_activation_function_hidden(FANN::activation_function_enum::SIGMOID_SYMMETRIC);
 }
 
-void NeuralAgent::update(const std::vector<Agent *> &neighborhood, const std::vector<env::Sphere *> &objects, const float dt) {
+void NeuralAgent::update(const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::vector<std::shared_ptr<env::Sphere>> &objects, const float dt) {
+    if (energy_ <= 0) {
+        alive_ = false;
+        return;
+    }
     // get information from your neighbors
-    for (const auto n_a: neighborhood) {
-        const auto neighbor = dynamic_cast<NeuralAgent*>(n_a);
+    for (const auto& n_a: neighborhood) {
+        if (n_a == nullptr) {
+            continue;
+        }
+        const auto neighbor = dynamic_cast<NeuralAgent*>(n_a.get());
         const auto distance = Vector3Distance(position_, neighbor->get_position());
         // if the neighbor is yourself or the neighbor is too far, go to the next
         // neighbor
@@ -103,8 +108,9 @@ void NeuralAgent::update(const std::vector<Agent *> &neighborhood, const std::ve
     signal_output_[0] = out[3];
     signal_output_[1] = out[4];
     const float ip = std::exp(-rot_speed_ * dt);
-    direction_ = Vector3Lerp(steer_dir, Vector3Normalize(direction_), ip);
-    position_ = position_ + direction_ * 0.06 * dt;
+    direction_ = Vector3Lerp(steer_dir, Vector3Normalize(direction_), ip); // rotate
+    position_ = position_ + direction_ * move_speed_ * dt; // then move
+    energy_ = energy_ - (signal_cost_ * (std::abs(signal_output_[0]) + std::abs(signal_output_[1])) + basic_cost_) * dt; // adjust your energy
 }
 
 void NeuralAgent::to_ssbo(SSBOAgent *out) const {

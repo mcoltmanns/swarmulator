@@ -59,5 +59,7 @@ add_executable(swarmulator
         src/agent/NeuralAgent.h
         src/env/Sphere.cpp
         src/env/Sphere.h
+        src/agent/ForageAgent.cpp
+        src/agent/ForageAgent.h
 )
 target_link_libraries(swarmulator fann raylib OpenMP::OpenMP_CXX)

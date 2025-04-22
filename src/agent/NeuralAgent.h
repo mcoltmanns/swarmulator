@@ -12,7 +12,7 @@
 
 namespace swarmulator::agent {
 
-class NeuralAgent final : public Agent {
+class NeuralAgent : public Agent {
 private:
     static constexpr unsigned int num_inputs_ = 12 + 5; // 2 signals * 6 directions + 5 outputs from last timestep
     static constexpr unsigned int num_outputs_ = 5; // x, y, z steerage + 2 signals
@@ -25,13 +25,18 @@ private:
     std::array<fann_type, 3> steering_output_;
     std::array<fann_type, 5> last_output_;
 
+protected:
+    float energy_ = 1;
+    float signal_cost_ = 0.1;
+    float basic_cost_ = 0.1;
+
 public:
     NeuralAgent();
     NeuralAgent(Vector3 position, Vector3 rotation);
     ~NeuralAgent() override = default;
 
-    void update(const std::vector<Agent *> &neighborhood,
-                const std::vector<env::Sphere *> &objects, float dt) override;
+    void update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
+                const std::vector<std::shared_ptr<env::Sphere>> &objects, float dt) override;
 
     void to_ssbo(SSBOAgent *out) const override;
 
