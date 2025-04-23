@@ -61,5 +61,7 @@ add_executable(swarmulator
         src/agent/ForageAgent.cpp
         src/agent/ForageAgent.h
         src/Simulation.h
+        src/agent/Boid.cpp
+        src/agent/Boid.h
 )
 target_link_libraries(swarmulator fann raylib OpenMP::OpenMP_CXX)

@@ -19,6 +19,7 @@
 #include "util/StaticGrid.h"
 #include "util/util.h"
 #include "v3ops.h"
+#include "agent/Boid.h"
 #include "agent/NeuralAgent.h"
 
 
@@ -69,7 +70,7 @@ int main(int argc, char** argv) {
         CAMERA_PERSPECTIVE
     };
 
-    auto simulation = Simulation<swarmulator::agent::NeuralAgent>(world_size, subdivisions);
+    auto simulation = Simulation<swarmulator::agent::Agent>(world_size, subdivisions);
 
     // init agents (shaders and mesh)
     // TODO: make these shaders position-independent! (probably a constexpr string somewhere is best)
@@ -89,7 +90,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < init_agent_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
-        simulation.add_agent(std::make_shared<swarmulator::agent::NeuralAgent>(xyz(p), xyz(r)));
+        simulation.add_agent(std::make_shared<swarmulator::agent::Boid>(xyz(p), xyz(r)));
     }
     // initialize the spheres
     for (int i = 0; i < init_sphere_count; i++) {

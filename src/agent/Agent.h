@@ -23,11 +23,6 @@ typedef struct {
 } SSBOAgent;
 
 class Agent {
-private:
-    float cohesion_wt_ = 1;
-    float avoidance_wt_ = 1;
-    float alignment_wt_ = 1;
-
 protected:
     Vector3 position_ = Vector3(0, 0, 0);
     Vector3 direction_ = Vector3(0, 0, 0);
@@ -40,7 +35,7 @@ protected:
     size_t id_ = 0;
 
 public:
-    Agent();
+    Agent() = default;
     Agent(const Vector3 position, const Vector3 rotation) : position_(position), direction_(rotation) {};
     virtual ~Agent() = default;
 

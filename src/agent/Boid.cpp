@@ -1,0 +1,57 @@
+//
+// Created by moltmanns on 4/23/25.
+//
+
+#include "Boid.h"
+#include "v3ops.h"
+
+#include "raymath.h"
+
+
+namespace swarmulator::agent {
+    std::shared_ptr<Agent> Boid::update(const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::vector<std::shared_ptr<env::Sphere>> &objects, const float dt) {
+        Vector3 cohesion = {0, 0, 0};
+        u_int32_t coc = 0;
+        Vector3 avoidance = {0, 0, 0};
+        u_int32_t alc = 0;
+        Vector3 alignment = {0, 0, 0};
+
+        for (const auto &neighbor : neighborhood) {
+            // do stuff
+            // default behavior is boids
+            if (neighbor.get() == this) {
+                continue;
+            }
+            const auto diff = position_ - neighbor->get_position();
+            const auto dist = Vector3Distance(neighbor->get_position(), position_);
+            if (dist < sense_range_) {
+                auto d = Vector3Length(diff);
+                avoidance = avoidance + diff / d;
+            }
+            if (dist < sense_range_ * 2) {
+                cohesion = cohesion + neighbor->get_position();
+                coc++;
+                alignment = alignment + neighbor->get_direction();
+                alc++;
+            }
+        }
+
+        if (coc > 0) {
+            cohesion = cohesion / static_cast<float>(coc);
+        }
+        cohesion = Vector3Normalize(cohesion - position_);
+
+        if (alc > 0) {
+            alignment = alignment / static_cast<float>(alc);
+        }
+
+        const auto steer_dir = cohesion_wt_ * cohesion + avoidance_wt_ * avoidance + alignment_wt_ * (alignment - direction_);
+
+        const float ip = std::exp(-rot_speed_ * dt);
+
+        direction_ = Vector3Lerp(steer_dir, Vector3Normalize(direction_), ip);
+        position_ = position_ + direction_ * move_speed_ * dt; // 0.06 here is move speed
+        return nullptr;
+    }
+} // agent
+// swarmulator

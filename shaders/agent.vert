@@ -28,8 +28,9 @@ void main() {
     vec3 direction = agents[gl_InstanceID].direction.xyz;
 
     // change color depending on direction
-    fragColor.rgb = abs(direction) + 0.2; // direction vectors get normed in the compute shader
-    fragColor.a = gl_InstanceID >= num_agents ? 0.0 : 1.0; // only show this agent if they're alive
+    fragColor.rgb = abs(normalize(direction));
+    fragColor.a = gl_InstanceID >= num_agents ? 0.0 : 1.0; // only show this agent if the data we're reading from isn't junk
+    // don't return early here because branches are expensive!
 
     float scale = 0.005 * agent_scale;
     vec3 vertexView = vertex_position * scale;
