@@ -11,9 +11,11 @@ namespace swarmulator::agent {
 
 class ForageAgent : public NeuralAgent {
 private:
-    float energy = 1;
-    float reproduction_threshold = 0.8;
     float eat_cooldown = 0.5;
+
+public:
+    ForageAgent();
+    ~ForageAgent() override = default;
 };
 
 } // agent

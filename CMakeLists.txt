@@ -50,7 +50,6 @@ add_executable(swarmulator
         src/main.cpp
         src/agent/Agent.cpp
         src/agent/Agent.h
-        src/util/StaticGrid.cpp
         src/util/StaticGrid.h
         external/v3ops.h
         src/util/util.h
@@ -61,5 +60,6 @@ add_executable(swarmulator
         src/env/Sphere.h
         src/agent/ForageAgent.cpp
         src/agent/ForageAgent.h
+        src/Simulation.h
 )
 target_link_libraries(swarmulator fann raylib OpenMP::OpenMP_CXX)
