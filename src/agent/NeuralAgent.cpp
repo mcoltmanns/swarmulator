@@ -4,6 +4,8 @@
 
 #include "NeuralAgent.h"
 
+#include <iostream>
+
 #include "raymath.h"
 #include "../util/util.h"
 
@@ -30,11 +32,7 @@ NeuralAgent::NeuralAgent(const Vector3 position, const Vector3 rotation) : Agent
     brain_.set_activation_function_hidden(FANN::activation_function_enum::SIGMOID_SYMMETRIC);
 }
 
-void NeuralAgent::update(const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::vector<std::shared_ptr<env::Sphere>> &objects, const float dt) {
-    if (energy_ <= 0) {
-        alive_ = false;
-        return;
-    }
+std::shared_ptr<Agent> NeuralAgent::update(const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::vector<std::shared_ptr<env::Sphere>> &objects, const float dt) {
     // get information from your neighbors
     for (const auto& n_a: neighborhood) {
         if (n_a == nullptr) {
@@ -111,6 +109,12 @@ void NeuralAgent::update(const std::vector<std::shared_ptr<Agent>> &neighborhood
     direction_ = Vector3Lerp(steer_dir, Vector3Normalize(direction_), ip); // rotate
     position_ = position_ + direction_ * move_speed_ * dt; // then move
     energy_ = energy_ - (signal_cost_ * (std::abs(signal_output_[0]) + std::abs(signal_output_[1])) + basic_cost_) * dt; // adjust your energy
+
+    if (energy_ > reproduction_threshold_) {
+        return reproduce();
+    }
+
+    return nullptr;
 }
 
 void NeuralAgent::to_ssbo(SSBOAgent *out) const {
@@ -129,7 +133,7 @@ void NeuralAgent::to_ssbo(SSBOAgent *out) const {
 // create a new agent, mutate his weights by a given amount
 // weights have a mutation_chance chance of being incremented or decremented by a random float between -1 and 1
 // weights are clamped to between -1 and 1
-NeuralAgent * NeuralAgent::mutate(const float mutation_chance) {
+std::shared_ptr<NeuralAgent> NeuralAgent::reproduce(const float mutation_chance) {
     std::vector<fann_connection> old_conns, new_conns;
     old_conns.resize(brain_.get_total_connections());
     brain_.get_connection_array(old_conns.data());
@@ -138,9 +142,10 @@ NeuralAgent * NeuralAgent::mutate(const float mutation_chance) {
         new_weight = std::clamp(new_weight, -1.f, 1.f);
         new_conns.emplace_back(from_neuron, to_neuron, new_weight);
     }
-    const auto agent = new NeuralAgent();
-    agent->brain_ = brain_;
-    agent->brain_.set_weight_array(new_conns.data(), new_conns.size());
+    const auto agent = std::make_shared<NeuralAgent>(*this); // copy this agent
+    agent->energy_ = 0.5; // reset its energy
+    agent->brain_.set_weight_array(new_conns.data(), new_conns.size()); // change its weights
+    energy_ -= reproduction_cost_; // decrease your energy by the cost of reproduction
     return agent;
 }
 } // agent

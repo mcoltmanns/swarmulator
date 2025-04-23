@@ -26,24 +26,27 @@ private:
     std::array<fann_type, 5> last_output_;
 
 protected:
-    float energy_ = 1;
-    float signal_cost_ = 0.1;
-    float basic_cost_ = 0.1;
+    float energy_ = 0.5;
+    float reproduction_threshold_ = 0.8;
+    float signal_cost_ = 0.05;
+    float basic_cost_ = 0.05;
+    float reproduction_cost_ = 0.5;
+
+    std::shared_ptr<NeuralAgent> reproduce(float mutation_chance = 0.5f);
 
 public:
     NeuralAgent();
     NeuralAgent(Vector3 position, Vector3 rotation);
     ~NeuralAgent() override = default;
 
-    void update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
+    std::shared_ptr<Agent> update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
                 const std::vector<std::shared_ptr<env::Sphere>> &objects, float dt) override;
 
     void to_ssbo(SSBOAgent *out) const override;
 
     [[nodiscard]] std::array<fann_type, 2> get_signals() const { return signal_output_; }
     [[nodiscard]] fann_type get_signal(const int idx) const { return signal_output_[idx]; }
-
-    NeuralAgent *mutate(float mutation_chance = 0.5f);
+    [[nodiscard]] bool is_alive() const override { return energy_ > 0; }
 };
 
 } // agent

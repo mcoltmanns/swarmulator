@@ -37,14 +37,14 @@ protected:
 
     float sense_range_ = 0.03;
 
-    bool alive_ = true;
+    size_t id_ = 0;
 
 public:
     Agent();
     Agent(const Vector3 position, const Vector3 rotation) : position_(position), direction_(rotation) {};
     virtual ~Agent() = default;
 
-    virtual void update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
+    virtual std::shared_ptr<Agent> update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
                         const std::vector<std::shared_ptr<env::Sphere>> &objects, float dt);
 
     void set_position(const Vector3 position) { position_ = position; }
@@ -52,8 +52,10 @@ public:
 
     [[nodiscard]] Vector3 get_position() const { return position_; }
     [[nodiscard]] Vector3 get_direction() const { return direction_; }
-    [[nodiscard]] bool is_alive() const { return alive_; }
-    [[nodiscard]] bool can_reproduce() const { return false; }
+    [[nodiscard]] virtual bool is_alive() const { return true; }
+    [[nodiscard]] virtual bool can_reproduce() const { return false; }
+    [[nodiscard]] size_t get_id() const { return id_; }
+    void set_id(const size_t id) { id_ = id; }
 
     virtual void to_ssbo(SSBOAgent *out) const;
 };

@@ -13,7 +13,7 @@
 namespace swarmulator::agent {
     Agent::Agent() = default;
 
-    void Agent::update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
+    std::shared_ptr<Agent> Agent::update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
                        const std::vector<std::shared_ptr<env::Sphere>> &objects,
                        const float dt) {
         Vector3 cohesion = {0, 0, 0};
@@ -57,6 +57,7 @@ namespace swarmulator::agent {
 
         direction_ = Vector3Lerp(steer_dir, Vector3Normalize(direction_), ip);
         position_ = position_ + direction_ * move_speed_ * dt; // 0.06 here is move speed
+        return nullptr;
     }
 
     void Agent::to_ssbo(SSBOAgent *out) const {

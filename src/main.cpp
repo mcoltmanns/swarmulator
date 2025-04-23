@@ -15,6 +15,7 @@
 #include "raygui.h"
 #include "rlgl.h"
 #include "raymath.h"
+#include "Simulation.h"
 #include "util/StaticGrid.h"
 #include "util/util.h"
 #include "v3ops.h"
@@ -26,7 +27,6 @@ int main(int argc, char** argv) {
     int init_sphere_count = 100;
     int window_w = 800;
     int window_h = 600;
-    int max_agents = 25000; // we can go higher, but this provides nice performance
     constexpr Vector3 world_size = {1.f, 1.f, 1.f};
     constexpr int subdivisions = 20; // choose such that size / count > agent sense diameter (10-20 are good numbers)
     float time_scale = 1.f;
@@ -69,12 +69,7 @@ int main(int argc, char** argv) {
         CAMERA_PERSPECTIVE
     };
 
-    // init space partitioning grid
-    auto grid = swarmulator::util::StaticGrid(world_size, subdivisions);
-
-    // init spheres
-    auto objects = std::vector<std::shared_ptr<swarmulator::env::Sphere>>();
-    objects.reserve(init_sphere_count);
+    auto simulation = Simulation<swarmulator::agent::NeuralAgent>(world_size, subdivisions);
 
     // init agents (shaders and mesh)
     // TODO: make these shaders position-independent! (probably a constexpr string somewhere is best)
@@ -91,20 +86,15 @@ int main(int argc, char** argv) {
     rlSetVertexAttribute(0, 3, RL_FLOAT, false, 0, 0);
     rlDisableVertexArray();
     // initialize all the agents
-    std::list<std::shared_ptr<swarmulator::agent::NeuralAgent>> agents;
-    // also initialize the agent data buffer we will pass to the shaders
-    auto agents_data = static_cast<swarmulator::agent::SSBOAgent*>(RL_CALLOC(max_agents, sizeof(swarmulator::agent::SSBOAgent)));
     for (int i = 0; i < init_agent_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
-        agents.push_back(std::make_shared<swarmulator::agent::NeuralAgent>(xyz(p), xyz(r)));
-        agents.back()->to_ssbo(&agents_data[i]);
+        simulation.add_agent(std::make_shared<swarmulator::agent::NeuralAgent>(xyz(p), xyz(r)));
     }
-    auto agents_ssbo = rlLoadShaderBuffer(max_agents * sizeof(swarmulator::agent::SSBOAgent), agents_data, RL_DYNAMIC_COPY);
     // initialize the spheres
     for (int i = 0; i < init_sphere_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
-        objects.push_back(std::make_shared<swarmulator::env::Sphere>(xyz(p), 0.01, GREEN));
+        simulation.add_object(std::make_shared<swarmulator::env::Sphere>(xyz(p), 0.01, GREEN));
     }
 
     uint_fast64_t frames = 0;
@@ -123,45 +113,7 @@ int main(int argc, char** argv) {
         if (IsKeyDown(KEY_E)) CameraMoveToTarget(&camera, -cam_speed * cam_speed_factor);
 
         // COMPUTE
-        // so long as there are agents
-        if (!agents.empty()) {
-            // first remove the dead agents
-            auto it = agents.begin();
-            while (it != agents.end()) {
-                if (!it.operator*()->is_alive()) {
-                    it = agents.erase(it);
-                }
-                else {
-                    ++it;
-                }
-            }
-            // partition agents in their spaces
-            grid.sort_agents(agents);
-            // update all the agents
-            // we can't fully parallelize a list, but iteration is very cheap. the update is what's expensive
-            // so we use this structure to have every thread iterate, but only a single thread will access each element (single) without waiting for other threads (nowait)
-            // however the index variable i is shared so that agents are copied into the right place in the shaderbuffer
-            size_t i = 0;
-#pragma omp parallel private(it) shared(i)
-            {
-                for (it = agents.begin(); it != agents.end(); ++it) {
-#pragma omp single nowait
-                    {
-                        // if oob, bounce
-                        if ((*it)->get_position().x <= -world_size.x / 2. || (*it)->get_position().x >= world_size.x / 2.
-                            || (*it)->get_position().y <= -world_size.y / 2. || (*it)->get_position().y >= world_size.y / 2.
-                            || (*it)->get_position().z <= -world_size.z / 2. || (*it)->get_position().z >= world_size.z / 2.) {
-                                (*it)->set_direction((*it)->get_direction() - 0.5f * (*it)->get_position());
-                            }
-                        auto neighborhood = grid.get_neighborhood(**it);
-                        (*it)->update(*neighborhood, objects, dt);
-                        (*it)->to_ssbo(&agents_data[i++]);
-                    }
-                }
-            }
-            // update the draw shader with agent info
-            rlUpdateShaderBuffer(agents_ssbo, agents_data, agents.size() * sizeof(swarmulator::agent::SSBOAgent), 0);
-        }
+        simulation.update(dt);
 
         // DRAW
         BeginDrawing();
@@ -174,20 +126,18 @@ int main(int argc, char** argv) {
         SetShaderValueMatrix(agent_shader, 0, projection);
         SetShaderValueMatrix(agent_shader, 1, view);
         SetShaderValue(agent_shader, 2, &agent_scale, SHADER_UNIFORM_FLOAT);
-        const auto size = agents.size(); // tell the shader how many agents it needs to draw
-        SetShaderValue(agent_shader, 3, &size, SHADER_UNIFORM_INT);
+        const auto num_agents = simulation.get_agents_count(); // tell the shader how many agents it needs to draw
+        SetShaderValue(agent_shader, 3, &num_agents, SHADER_UNIFORM_INT);
         // send agents to draw shader
-        rlBindShaderBuffer(agents_ssbo, 0);
+        rlBindShaderBuffer(simulation.get_agents_ssbo(), 0);
+        rlCheckErrors();
         // instanced agent draw
         rlEnableVertexArray(agent_vao);
-        rlDrawVertexArrayInstanced(0, 3, static_cast<int>(agents.size()));
+        rlDrawVertexArrayInstanced(0, 3, static_cast<int>(simulation.get_agents_count()));
         rlDisableVertexArray();
         rlDisableShader();
         // spheres
-        for (const auto &obj : objects) {
-            obj->draw(); // this cannot happen in parallel (raylib freaks out)
-        }
-        rlCheckErrors();
+        simulation.draw_objects();
 
         // gui
         if (draw_bounds) {
@@ -199,7 +149,7 @@ int main(int argc, char** argv) {
         }
         // debug info
         DrawFPS(0, 0);
-        DrawText(TextFormat("%zu/%zu agents", agents.size(), max_agents), 0, 20, 18, DARKGREEN);
+        DrawText(TextFormat("%zu/%zu agents", simulation.get_agents_count(), 25000), 0, 20, 18, DARKGREEN);
         DrawText(TextFormat("%zu threads", omp_get_max_threads()), 0, 40, 18, DARKGREEN);
         DrawText(TextFormat("%zu iterations", frames++), 0, 60, 18, DARKGREEN);
 
@@ -207,7 +157,6 @@ int main(int argc, char** argv) {
     }
 
     CloseWindow();
-    RL_FREE(agents_data);
     UnloadShader(agent_shader);
     return 0;
 }
