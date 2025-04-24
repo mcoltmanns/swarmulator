@@ -9,13 +9,16 @@
 
 namespace swarmulator::agent {
 
-class ForageAgent : public NeuralAgent {
+class ForageAgent final : public NeuralAgent {
 private:
-    float eat_cooldown = 0.5;
+    float eat_energy_ = 10; // how much energy do you get from eating (per second spent in the sphere)
 
 public:
-    ForageAgent();
+    ForageAgent() = default;
+    ForageAgent(const Vector3 position, const Vector3 rotation, const float scale) : NeuralAgent(position, rotation, scale) {}
     ~ForageAgent() override = default;
+
+    std::shared_ptr<Agent> update(const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::list<std::shared_ptr<env::Sphere>> &objects, float dt) override;
 };
 
 } // agent

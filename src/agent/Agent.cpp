@@ -12,7 +12,7 @@
 
 namespace swarmulator::agent {
     std::shared_ptr<Agent> Agent::update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
-                       const std::vector<std::shared_ptr<env::Sphere>> &objects,
+                       const std::list<std::shared_ptr<env::Sphere>> &objects,
                        const float dt) {
         position_ = position_ + direction_ * move_speed_ * dt;
         return nullptr;

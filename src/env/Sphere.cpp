@@ -8,8 +8,8 @@
 
 
 namespace swarmulator::env {
-    bool Sphere::intersect(const Vector3 &point) const {
-        return Vector3Distance(position_, point) < radius_;
+    bool Sphere::intersect(const Vector3 &point, const float rad) const {
+        return std::abs(Vector3Distance(position_, point) - rad) < radius_;
     }
 } // env
 // swarmulator

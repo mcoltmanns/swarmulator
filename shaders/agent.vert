@@ -26,20 +26,28 @@ void main() {
     // get position and direction info from buffers
     vec3 position = agents[gl_InstanceID].position.xyz;
     vec3 direction = agents[gl_InstanceID].direction.xyz;
+    vec2 signals = agents[gl_InstanceID].signals;
 
     // change color depending on direction
-    fragColor.rgb = abs(normalize(direction));
+    //fragColor.rgb = abs(normalize(direction));
+    // change frag color depending on signals
+    fragColor.rg = normalize(signals);
+    fragColor.b = 0.f;
     fragColor.a = gl_InstanceID >= num_agents ? 0.0 : 1.0; // only show this agent if the data we're reading from isn't junk
     // don't return early here because branches are expensive!
 
-    float scale = 0.005 * agent_scale;
-    vec3 vertexView = vertex_position * scale;
+    float scale = agent_scale;
+    vec3 vertexView = vertex_position * scale; // vertex position in view space
 
     // right now triangle points towards the camera
     // make it point in the direction of its movement in view space
     // first, find angle of direction in view space
-    vec2 dirView = (view_matrix * vec4(direction, 0)).xy;
+    vec3 dirView = normalize((view_matrix * vec4(direction, 0)).xyz); // direction vector in view space (normalized)
     float dirAngle = atan(dirView.y, dirView.x);
+
+    // scale the triangle based on the magnitude of the view direction z component
+    /*float backAngle = abs(sin(dirView.z));
+    vertexView.z = vertexView.z * backAngle;*/
 
     // triangle tip is at 90 degrees in view space
     // to point it at dirAngle, rotate by (90 - dirangle) degs backwards

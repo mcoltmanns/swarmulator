@@ -20,19 +20,20 @@
 #include "util/util.h"
 #include "v3ops.h"
 #include "agent/Boid.h"
+#include "agent/ForageAgent.h"
 #include "agent/NeuralAgent.h"
 
 
 int main(int argc, char** argv) {
     int init_agent_count = 100;
-    int init_sphere_count = 100;
+    int init_sphere_count = 150;
     int window_w = 800;
     int window_h = 600;
     constexpr Vector3 world_size = {1.f, 1.f, 1.f};
-    constexpr int subdivisions = 20; // choose such that size / count > agent sense diameter (10-20 are good numbers)
+    constexpr int subdivisions = 10; // choose such that size / count > agent sense radius * 2 (10-20 are good numbers)
     float time_scale = 1.f;
     float cam_speed = 1.f;
-    float agent_scale = 1.f;
+    float agent_scale = 0.005f;
     bool draw_bounds = true;
     omp_set_num_threads(16);
 
@@ -80,7 +81,7 @@ int main(int argc, char** argv) {
     constexpr Vector3 mesh[] = {
         {-0.86, -0.5, 0},
         {0.86, -0.5, 0},
-        {0, 1, 0}
+        {0, 1, 0},
     };
     rlEnableVertexAttribute(0);
     rlLoadVertexBuffer(mesh, sizeof(mesh), false);
@@ -90,12 +91,12 @@ int main(int argc, char** argv) {
     for (int i = 0; i < init_agent_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
-        simulation.add_agent(std::make_shared<swarmulator::agent::Boid>(xyz(p), xyz(r)));
+        simulation.add_agent(std::make_shared<swarmulator::agent::ForageAgent>(xyz(p), xyz(r), agent_scale));
     }
     // initialize the spheres
     for (int i = 0; i < init_sphere_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
-        simulation.add_object(std::make_shared<swarmulator::env::Sphere>(xyz(p), 0.01, GREEN));
+        simulation.add_object(std::make_shared<swarmulator::env::Sphere>(xyz(p), 0.02, BLUE));
     }
 
     uint_fast64_t frames = 0;
@@ -118,7 +119,7 @@ int main(int argc, char** argv) {
 
         // DRAW
         BeginDrawing();
-        ClearBackground(BLACK);
+        ClearBackground(WHITE);
         BeginMode3D(camera);
         Matrix projection = rlGetMatrixProjection();
         Matrix view = GetCameraMatrix(camera);
@@ -153,6 +154,7 @@ int main(int argc, char** argv) {
         DrawText(TextFormat("%zu/%zu agents", simulation.get_agents_count(), simulation.get_max_agents()), 0, 20, 18, DARKGREEN);
         DrawText(TextFormat("%zu threads", omp_get_max_threads()), 0, 40, 18, DARKGREEN);
         DrawText(TextFormat("%zu iterations", frames++), 0, 60, 18, DARKGREEN);
+        DrawText(TextFormat("%.0f seconds", GetTime()), 0, 80, 18, DARKGREEN);
 
         EndDrawing();
     }

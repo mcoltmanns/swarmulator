@@ -32,8 +32,8 @@ private:
     std::vector<uint32_t> segment_length{};
 
     // get the 1d cell index of a given grid space position
-    // returns -1 if the position was out of bounds
-    [[nodiscard]] int cell_index(const Vector3 &pos_grid) const {
+    // if the position was out of bounds, wrap it
+    [[nodiscard]] int cell_index(Vector3 pos_grid) const {
         if (pos_grid.x < 0 || pos_grid.y < 0 || pos_grid.z < 0
             || pos_grid.x >= world_size_.x || pos_grid.y >= world_size_.y || pos_grid.z >= world_size_.z) {
             return -1;
@@ -75,14 +75,14 @@ public:
 
         // count the number of agents in each cell
         // slow with parallel
-        auto it = in.begin();
+        //auto it = in.begin();
 //#pragma omp parallel private(it)
         {
-            for (it = in.begin(); it != in.end(); ++it) {
+            for (auto it = in.begin(); it != in.end(); ++it) {
 //#pragma omp single nowait
                 {
-                    auto agent_pos = (*it)->get_position();
-                    auto pos_grid = agent_pos + 0.5f * world_size_;
+                    auto agent = *it;
+                    auto pos_grid = agent->get_position() + 0.5f * world_size_;
                     if (const auto cell = cell_index(pos_grid); cell != -1) { // only add agents if they're in bounds
                         ++segment_start[cell];
                         ++segment_length[cell];
@@ -99,10 +99,10 @@ public:
 
         // sort agents into their cells
         // slow with parallel
-        auto rit = in.rbegin();
+        //auto rit = in.rbegin();
 //#pragma omp parallel private(rit)
         {
-            for (rit = in.rbegin(); rit != in.rend(); ++rit) { // careful! need to iterate in reverse here
+            for (auto rit = in.rbegin(); rit != in.rend(); ++rit) { // careful! need to iterate in reverse here
 //#pragma omp single nowait
                 {
                     const auto agent = *rit;
@@ -135,6 +135,37 @@ public:
         }
 
         return neighborhood;
+    }
+
+    // wrap a global position
+    Vector3 wrap_position(Vector3 position) const {
+        if (position.x < -world_size_.x / 2) {
+            position.x = world_size_.x / 2;
+        }
+        if (position.x > world_size_.x / 2) {
+            position.x = -world_size_.x / 2;
+        }
+        if (position.y < -world_size_.y / 2) {
+            position.y = world_size_.y / 2;
+        }
+        if (position.y > world_size_.y / 2) {
+            position.y = -world_size_.y / 2;
+        }
+        if (position.z < -world_size_.z / 2) {
+            position.z = world_size_.z / 2;
+        }
+        if (position.z > world_size_.z / 2) {
+            position.z = -world_size_.z / 2;
+        }
+        return position;
+    }
+
+    void bounce_agent(const std::shared_ptr<agent::Agent> &agent) const {
+        if (agent->get_position().x < -world_size_.x / 2 || agent->get_position().x >= world_size_.x / 2
+            || agent->get_position().y < -world_size_.y / 2 || agent->get_position().y >= world_size_.y / 2
+            || agent->get_position().z < -world_size_.z / 2 || agent->get_position().z >= world_size_.z / 2) {
+            agent->set_direction(agent->get_direction() - 0.5f * agent->get_position());
+        }
     }
 };
 
