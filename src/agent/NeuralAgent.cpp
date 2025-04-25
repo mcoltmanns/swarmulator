@@ -79,24 +79,20 @@ void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood
 
     // run everything through the network
     hidden_out_ = (input_ * w_in_hidden_ + context_weight_ * hidden_out_).unaryExpr(&tanh);
-    output_ = (hidden_out_ * w_hidden_out_).unaryExpr(&tanh);
+    output_ = (hidden_out_ * w_hidden_out_).unaryExpr(&sigmoid);
 }
 
 std::shared_ptr<Agent> NeuralAgent::update(const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::list<std::shared_ptr<env::Sphere>> &objects, const float dt) {
     //const auto outputs = think(neighborhood); // make a decision based on your neighbors
     think(neighborhood);
-    const float pitch = output_(0, 0) * rot_speed_; // rotation about x axis
-    const float yaw = output_(0, 1) * rot_speed_; // rotation about z axis
-    const float roll = output_(0, 2) * rot_speed_; // rotation about y axis
+    const float pitch = output_(0, 0) * std::numbers::pi * 2.f; // rotation about world y axis (elevation angle/psi) (control direction z part)
+    const float yaw = output_(0, 1) * std::numbers::pi * 2.f; // rotation about world z axis (bearing/theta) (control direction x and y part)
     // apply the signals
-    signals_[0] = output_(0, 3);
-    signals_[1] = output_(0, 4);
-    auto decision = output_(0, 5);
+    signals_[0] = output_(0, 2);
+    signals_[1] = output_(0, 3);
+    auto decision = output_(0, 4);
     // apply
-    // i think allowing the agent to control all 3 axes here makes a gimbal lock much less likely
-    direction_ = Vector3RotateByAxisAngle(direction_, Vector3UnitX, pitch * dt);
-    direction_ = Vector3RotateByAxisAngle(direction_, Vector3UnitY, roll * dt);
-    direction_ = Vector3RotateByAxisAngle(direction_, Vector3UnitZ, yaw * dt);
+    direction_ = Vector3Normalize(direction_ + Vector3Normalize(Vector3(std::cos(yaw), std::sin(yaw), std::sin(pitch)) * rot_speed_ * dt)); // TODO does this make sense?
     position_ = position_ + direction_ * move_speed_ * dt; // then move
     energy_ = energy_ - (signal_cost_ * (std::abs(signals_[0]) + std::abs(signals_[1])) + basic_cost_) * dt; // adjust your energy
     // default neuralagent never reproduces
@@ -130,10 +126,10 @@ std::shared_ptr<NeuralAgent> NeuralAgent::reproduce(const float mutation_chance)
 void NeuralAgent::mutate(const float mutation_chance) {
     for (int i = 0; i < num_hidden_; i++) {
         for (int j = 0; j < num_inputs_; j++) {
-            w_in_hidden_(j, i) = randfloat() < mutation_chance ? randfloat() * 2.f - 1.f : w_in_hidden_(j, i);
+            w_in_hidden_(j, i) += randfloat() < mutation_chance ? randfloat() * 2.f - 1.f : 0;
         }
         for (int k = 0; k < num_outputs_; k++) {
-            w_hidden_out_(i, k) = randfloat() < mutation_chance ? randfloat() * 2.f - 1.f : w_hidden_out_(i, k);
+            w_hidden_out_(i, k) += randfloat() < mutation_chance ? randfloat() * 2.f - 1.f : 0;
         }
     }
 }

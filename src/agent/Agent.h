@@ -15,6 +15,8 @@
 
 namespace swarmulator::agent {
 
+static float global_reward_factor = 1;
+
 typedef struct {
     Vector4 position;
     Vector4 direction;

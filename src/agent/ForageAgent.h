@@ -11,7 +11,7 @@ namespace swarmulator::agent {
 
 class ForageAgent final : public NeuralAgent {
 private:
-    float eat_energy_ = 10; // how much energy do you get from eating (per second spent in the sphere)
+    float eat_energy_ = 5; // how much energy do you get from eating (per second spent in the sphere)
 
 public:
     ForageAgent() = default;

@@ -26,11 +26,11 @@
 
 int main(int argc, char** argv) {
     int init_agent_count = 100;
-    int init_sphere_count = 150;
+    int init_sphere_count = 100;
     int window_w = 800;
     int window_h = 600;
     constexpr Vector3 world_size = {1.f, 1.f, 1.f};
-    constexpr int subdivisions = 10; // choose such that size / count > agent sense radius * 2 (10-20 are good numbers)
+    constexpr int subdivisions = 5; // choose such that size / count > agent sense radius * 2 (10-20 are good numbers)
     float time_scale = 1.f;
     float cam_speed = 1.f;
     float agent_scale = 0.005f;

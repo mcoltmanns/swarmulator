@@ -4,6 +4,10 @@
 
 #include "ForageAgent.h"
 
+#include <iostream>
+
+#include "raymath.h"
+
 
 namespace swarmulator::agent {
     std::shared_ptr<Agent> ForageAgent::update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
@@ -13,8 +17,7 @@ namespace swarmulator::agent {
         // if you're touching a sphere, eat
         for (const auto& sphere : objects) {
             if (sphere->intersect(position_, scale_)) {
-                //energy_ += eat_energy_ * dt;
-                energy_ = 1;
+                energy_ += global_reward_factor * eat_energy_ * dt / Vector3Distance(position_, sphere->position()); // scale the energy you get by the inverse distance to the sphere center
                 sphere->setColor(YELLOW);
             }
         }

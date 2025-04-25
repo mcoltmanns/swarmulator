@@ -77,11 +77,13 @@ public:
                 it = agents_.erase(it);
             }
             else {
-                //grid_.bounce_agent(*it);
                 (*it)->set_position(grid_.wrap_position((*it)->get_position()));
+                //grid_.bounce_agent(*it);
                 ++it;
             }
         }
+        swarmulator::agent::global_reward_factor = std::lerp(1, 0, static_cast<float>(agents_.size()) / static_cast<float>(max_agents_));
+        std::cout << swarmulator::agent::global_reward_factor << std::endl; // tries to keep population in check
         // throw agents into the grid
         grid_.sort_agents(agents_);
         int buffer_write_place = 0;

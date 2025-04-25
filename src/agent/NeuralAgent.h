@@ -18,8 +18,8 @@ namespace swarmulator::agent {
 class NeuralAgent : public Agent {
 private:
     static constexpr unsigned int num_inputs_ = 12; // 2 signals * 6 directions
-    static constexpr unsigned int num_hidden_ = 11;
-    static constexpr unsigned int num_outputs_ = 6; // x + y + z steerage + decision + 2 signals
+    static constexpr unsigned int num_hidden_ = 10;
+    static constexpr unsigned int num_outputs_ = 5; // pitch + yaw + decision + 2 signals
 
     std::array<fann_type, 2> signals_;
 
@@ -28,25 +28,28 @@ private:
     Eigen::MatrixXf output_ = Eigen::MatrixXf::Random(1, num_outputs_);
     Eigen::MatrixXf w_in_hidden_ = Eigen::MatrixXf::Random(num_inputs_, num_hidden_); // weights from input to hidden
     Eigen::MatrixXf w_hidden_out_ = Eigen::MatrixXf::Random(num_hidden_, num_outputs_); // weights from hidden to out
-    float context_weight_ = 0; // weight of context layer (old hidden layer outputs)
+    float context_weight_ = 0.2; // weight of context layer (old hidden layer outputs)
 
 protected:
-    static constexpr float initial_energy_ = 0.75;
+    static constexpr float initial_energy_ = 2;
     float energy_ = initial_energy_;
-    float reproduction_threshold_ = 0.8;
+    float reproduction_threshold_ = 10;
     float signal_cost_ = 0.001;
     float basic_cost_ = 0.01;
-    float reproduction_cost_ = 0.1;
-    float sense_radius_ = 0.05;
-    float move_speed_ = 0.2;
-    float rot_speed_ = 3.14 * 2; // radians/sec
+    float reproduction_cost_ = 8;
+    float sense_radius_ = 0.1;
+    float move_speed_ = 0.1;
 
-    std::shared_ptr<NeuralAgent> reproduce(float mutation_chance = 0.2f);
+    std::shared_ptr<NeuralAgent> reproduce(float mutation_chance = 0.5f);
 
     void think(const std::vector<std::shared_ptr<Agent> > &neighborhood);
 
     static inline constexpr float tanh(const float x) {
         return std::tanh(x);
+    }
+
+    static inline constexpr float sigmoid(const float x) {
+        return 1.f / (1.f + std::expf(-x));
     }
 
     void mutate(float mutation_chance);
