@@ -76,7 +76,6 @@ void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood
 }
 
 std::shared_ptr<Agent> NeuralAgent::update(const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::list<std::shared_ptr<env::Sphere>> &objects, const float dt) {
-    //const auto outputs = think(neighborhood); // make a decision based on your neighbors
     think(neighborhood);
     const float pitch = output_(0, 0) * std::numbers::pi * 2.f * rot_speed_ * dt; // rotation about world y axis (elevation angle/psi) (control direction z part)
     const float yaw = output_(0, 1) * std::numbers::pi * 2.f * rot_speed_ * dt; // rotation about world z axis (bearing/theta) (control direction x and y part)

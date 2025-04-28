@@ -16,7 +16,7 @@
 namespace swarmulator::agent {
 
 class NeuralAgent : public Agent {
-private:
+protected:
     static constexpr unsigned int num_inputs_ = 12; // 2 signals * 6 directions
     static constexpr unsigned int num_hidden_ = 10;
     static constexpr unsigned int num_outputs_ = 5; // pitch + yaw + decision + 2 signals

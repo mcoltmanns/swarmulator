@@ -63,5 +63,7 @@ add_executable(swarmulator
         src/Simulation.h
         src/agent/Boid.cpp
         src/agent/Boid.h
+        src/agent/PDAgent.cpp
+        src/agent/PDAgent.h
 )
 target_link_libraries(swarmulator fann raylib OpenMP::OpenMP_CXX)

@@ -27,14 +27,19 @@ void main() {
     vec3 position = agents[gl_InstanceID].position.xyz;
     vec3 direction = agents[gl_InstanceID].direction.xyz;
     vec2 signals = agents[gl_InstanceID].signals;
+    vec2 info = agents[gl_InstanceID].info;
 
     // change color depending on direction
     //fragColor.rgb = abs(normalize(direction));
     // change frag color depending on signals
-    fragColor.rg = normalize(signals);
+    /*fragColor.rg = normalize(signals);
     fragColor.b = 0.f;
     fragColor.a = gl_InstanceID >= num_agents ? 0.0 : 1.0; // only show this agent if the data we're reading from isn't junk
     // don't return early here because branches are expensive!
+    */
+    // change frag color depending on pd decision (coop blue, defect red)
+    fragColor.r = int(info.x) == 1 ? 1 : 0;
+    fragColor.b = int(info.x) == 0 ? 1 : 0;
 
     float scale = agent_scale;
     vec3 vertexView = vertex_position * scale; // vertex position in view space

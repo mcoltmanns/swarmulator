@@ -21,11 +21,12 @@
 #include "agent/Boid.h"
 #include "agent/ForageAgent.h"
 #include "agent/NeuralAgent.h"
+#include "agent/PDAgent.h"
 
 
 int main(int argc, char** argv) {
     int init_agent_count = 100;
-    int init_sphere_count = 100;
+    int init_sphere_count = 0;//100;
     int window_w = 800;
     int window_h = 600;
     constexpr Vector3 world_size = {100, 100, 100};
@@ -89,7 +90,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < init_agent_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
-        simulation.add_agent(std::make_shared<swarmulator::agent::ContinuousForageAgent>(xyz(p), xyz(r)));
+        simulation.add_agent(std::make_shared<swarmulator::agent::PDAgent>(xyz(p), xyz(r)));
     }
     // initialize the spheres
     for (int i = 0; i < init_sphere_count; i++) {
@@ -138,6 +139,7 @@ int main(int argc, char** argv) {
         rlDisableShader();
         // spheres
         simulation.draw_objects();
+        rlCheckErrors();
 
         // gui
         if (draw_bounds) {
