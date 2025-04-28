@@ -24,11 +24,11 @@ namespace swarmulator::agent {
             }
             const auto diff = position_ - neighbor->get_position();
             const auto dist = Vector3Distance(neighbor->get_position(), position_);
-            if (dist < sense_range_) {
+            if (dist < sense_radius_) {
                 auto d = Vector3Length(diff);
                 avoidance = avoidance + diff / d;
             }
-            if (dist < sense_range_ * 2) {
+            if (dist < sense_radius_ * 2) {
                 cohesion = cohesion + neighbor->get_position();
                 coc++;
                 alignment = alignment + neighbor->get_direction();

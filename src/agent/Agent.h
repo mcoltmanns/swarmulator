@@ -16,6 +16,7 @@
 namespace swarmulator::agent {
 
 static float global_reward_factor = 1;
+static float scale = 0.2; // diameter at which the agents are drawn and measured
 
 typedef struct {
     Vector4 position;
@@ -30,17 +31,15 @@ protected:
     Vector3 direction_ = Vector3(0, 0, 0);
 
     float rot_speed_ = 1; // rotation speed in one axle (radians/second)
-    float move_speed_ = 0.06;
+    float move_speed_ = 5;
 
-    float sense_range_ = 0.03;
-
-    float scale_ = 0.005;
+    float sense_radius_ = 5.f;
 
     size_t id_ = 0;
 
 public:
     Agent() = default;
-    Agent(const Vector3 position, const Vector3 rotation, const float scale) : position_(position), direction_(rotation), scale_(scale) {};
+    Agent(const Vector3 position, const Vector3 rotation) : position_(position), direction_(rotation) {};
     virtual ~Agent() = default;
 
     virtual std::shared_ptr<Agent> update(const std::vector<std::shared_ptr<Agent>> &neighborhood,

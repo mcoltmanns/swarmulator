@@ -16,7 +16,7 @@ private:
 
 public:
     Boid() = default;
-    Boid(const Vector3& position, const Vector3& direction, const float scale) : Agent(position, direction, scale) {}
+    Boid(const Vector3& position, const Vector3& direction) : Agent(position, direction) {}
     ~Boid() override = default;
 
     std::shared_ptr<Agent> update(const std::vector<std::shared_ptr<Agent>> &neighborhood,

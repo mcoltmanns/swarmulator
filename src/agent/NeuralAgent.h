@@ -37,10 +37,9 @@ protected:
     float signal_cost_ = 0.001;
     float basic_cost_ = 0.01;
     float reproduction_cost_ = 8;
-    float sense_radius_ = 0.1;
-    float move_speed_ = 0.1;
 
-    std::shared_ptr<NeuralAgent> reproduce(float mutation_chance = 0.5f);
+    float max_lifetime_ = 1000; // how many seconds this agent may be alive for at most
+    float time_born_ = GetTime();
 
     void think(const std::vector<std::shared_ptr<Agent> > &neighborhood);
 
@@ -52,21 +51,24 @@ protected:
         return 1.f / (1.f + std::expf(-x));
     }
 
-    void mutate(float mutation_chance);
-
 public:
     NeuralAgent();
-    NeuralAgent(Vector3 position, Vector3 rotation, float scale);
+    NeuralAgent(Vector3 position, Vector3 rotation);
     ~NeuralAgent() override = default;
 
     std::shared_ptr<Agent> update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
                 const std::list<std::shared_ptr<env::Sphere>> &objects, float dt) override;
 
+    void mutate(float mutation_chance = 0.05); // mutation_chance is the percent chance each gene has to be multiplied by a random value between -1 and 1
+
     void to_ssbo(SSBOAgent *out) const override;
 
     [[nodiscard]] std::array<fann_type, 2> get_signals() const { return signals_; }
     [[nodiscard]] fann_type get_signal(const int idx) const { return signals_[idx]; }
-    [[nodiscard]] bool is_alive() const override { return energy_ > 0; }
+    [[nodiscard]] bool is_alive() const override { return energy_ > 0 && GetTime() - time_born_ < max_lifetime_; }
+
+    void set_energy(const float energy) { energy_ = energy; }
+    void set_time_born(const float time_born) { time_born_ = time_born; }
 };
 
 } // agent

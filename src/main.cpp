@@ -10,7 +10,6 @@
 #include <omp.h>
 #include <cstdint>
 #include <string>
-#include <list>
 
 #include "raygui.h"
 #include "rlgl.h"
@@ -29,11 +28,10 @@ int main(int argc, char** argv) {
     int init_sphere_count = 100;
     int window_w = 800;
     int window_h = 600;
-    constexpr Vector3 world_size = {1.f, 1.f, 1.f};
-    constexpr int subdivisions = 5; // choose such that size / count > agent sense radius * 2 (10-20 are good numbers)
+    constexpr Vector3 world_size = {100, 100, 100};
+    constexpr int subdivisions = 10; // choose such that size / count > agent sense radius * 2 (10-20 are good numbers)
     float time_scale = 1.f;
     float cam_speed = 1.f;
-    float agent_scale = 0.005f;
     bool draw_bounds = true;
     omp_set_num_threads(16);
 
@@ -68,7 +66,7 @@ int main(int argc, char** argv) {
         {0, 0, 0},
         {0, 1, 0},
         35.f,
-        CAMERA_PERSPECTIVE
+        CAMERA_PERSPECTIVE,
     };
 
     auto simulation = Simulation<swarmulator::agent::Agent>(world_size, subdivisions);
@@ -91,12 +89,12 @@ int main(int argc, char** argv) {
     for (int i = 0; i < init_agent_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
-        simulation.add_agent(std::make_shared<swarmulator::agent::ForageAgent>(xyz(p), xyz(r), agent_scale));
+        simulation.add_agent(std::make_shared<swarmulator::agent::ContinuousForageAgent>(xyz(p), xyz(r)));
     }
     // initialize the spheres
     for (int i = 0; i < init_sphere_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
-        simulation.add_object(std::make_shared<swarmulator::env::Sphere>(xyz(p), 0.02, BLUE));
+        simulation.add_object(std::make_shared<swarmulator::env::Sphere>(xyz(p), 0.5, BLUE));
     }
 
     uint_fast64_t frames = 0;
@@ -106,13 +104,13 @@ int main(int argc, char** argv) {
         PollInputEvents();
         if (IsKeyDown(KEY_SPACE)) draw_bounds = !draw_bounds;
         // camera
-        const auto cam_speed_factor = time_scale == 0 ? GetFrameTime() : (dt / time_scale);
+        const auto cam_speed_factor = time_scale == 0 ? GetFrameTime() : (GetFrameTime() / time_scale);
         if (IsKeyDown(KEY_D)) CameraYaw(&camera, cam_speed * cam_speed_factor, true);
         if (IsKeyDown(KEY_A)) CameraYaw(&camera, -cam_speed * cam_speed_factor, true);
         if (IsKeyDown(KEY_W)) CameraPitch(&camera, -cam_speed * cam_speed_factor, true, true, false);
         if (IsKeyDown(KEY_S)) CameraPitch(&camera, cam_speed * cam_speed_factor, true, true, false);
-        if (IsKeyDown(KEY_Q)) CameraMoveToTarget(&camera, cam_speed * cam_speed_factor);
-        if (IsKeyDown(KEY_E)) CameraMoveToTarget(&camera, -cam_speed * cam_speed_factor);
+        if (IsKeyDown(KEY_Q)) CameraMoveToTarget(&camera, cam_speed * cam_speed_factor * Vector3Distance(camera.position, camera.target));
+        if (IsKeyDown(KEY_E)) CameraMoveToTarget(&camera, -cam_speed * cam_speed_factor * Vector3Distance(camera.position, camera.target));
 
         // COMPUTE
         simulation.update(dt);
@@ -127,7 +125,7 @@ int main(int argc, char** argv) {
         rlEnableShader(agent_shader.id);
         SetShaderValueMatrix(agent_shader, 0, projection);
         SetShaderValueMatrix(agent_shader, 1, view);
-        SetShaderValue(agent_shader, 2, &agent_scale, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(agent_shader, 2, &swarmulator::agent::scale, SHADER_UNIFORM_FLOAT);
         const auto num_agents = simulation.get_agents_count(); // tell the shader how many agents it needs to draw
         SetShaderValue(agent_shader, 3, &num_agents, SHADER_UNIFORM_INT);
         // send agents to draw shader
@@ -155,6 +153,7 @@ int main(int argc, char** argv) {
         DrawText(TextFormat("%zu threads", omp_get_max_threads()), 0, 40, 18, DARKGREEN);
         DrawText(TextFormat("%zu iterations", frames++), 0, 60, 18, DARKGREEN);
         DrawText(TextFormat("%.0f seconds", GetTime()), 0, 80, 18, DARKGREEN);
+        DrawText(TextFormat("%zu agents have existed", simulation.get_total_agents()), 0, 100, 18, DARKGREEN);
 
         EndDrawing();
     }

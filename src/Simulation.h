@@ -20,7 +20,7 @@ private:
     float time_scale_ = 1.f;
 
     static constexpr size_t max_agents_ = 25000;
-    static constexpr size_t max_objects_ = 500;
+    static constexpr size_t max_objects_ = 100;
 
     std::list<std::shared_ptr<AgentType>> agents_;
     swarmulator::agent::SSBOAgent* agents_ssbo_array_;
@@ -32,6 +32,8 @@ private:
     swarmulator::util::StaticGrid<AgentType> grid_;
 
     bool logging_enabled_ = false;
+
+    size_t total_agents_ = 0; // number of agents that have existed over the course of the whole simulation
 
 public:
     Simulation() : grid_(world_size_, grid_divisions_) {
@@ -55,6 +57,7 @@ public:
     [[nodiscard]] const std::vector<std::shared_ptr<swarmulator::agent::Agent>> &get_agents() const { return agents_; }
     [[nodiscard]] size_t get_agents_count() const { return agents_.size(); }
     [[nodiscard]] static size_t get_max_agents() { return max_agents_; }
+    [[nodiscard]] size_t get_total_agents() const { return total_agents_; }
 
     [[nodiscard]] const std::list<std::shared_ptr<swarmulator::env::Sphere>> &get_objects() const { return objects_; }
     [[nodiscard]] size_t get_objects_count() const { return objects_.size(); }
@@ -62,6 +65,7 @@ public:
     // should be threadsafe?
     void add_agent(const std::shared_ptr<AgentType> &agent) {
         agents_.emplace_back(agent);
+        ++total_agents_;
     }
 
     // not threadsafe
@@ -82,8 +86,7 @@ public:
                 ++it;
             }
         }
-        swarmulator::agent::global_reward_factor = std::lerp(1, 0, static_cast<float>(agents_.size()) / static_cast<float>(max_agents_));
-        std::cout << swarmulator::agent::global_reward_factor << std::endl; // tries to keep population in check
+        swarmulator::agent::global_reward_factor = std::lerp(1.f, 0.f, static_cast<float>(agents_.size()) / static_cast<float>(max_agents_)); // keeps population in acceptable range
         // throw agents into the grid
         grid_.sort_agents(agents_);
         int buffer_write_place = 0;
