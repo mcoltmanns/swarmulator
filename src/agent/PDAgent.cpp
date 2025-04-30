@@ -4,6 +4,8 @@
 
 #include "PDAgent.h"
 
+#include <iostream>
+
 #include "raymath.h"
 
 namespace swarmulator::agent {
@@ -21,22 +23,19 @@ namespace swarmulator::agent {
             if (neighbor == nullptr || neighbor == this) {
                 continue;
             }
-            auto dist = Vector3DistanceSqr(position_, neighbor->position_);
-            if (dist < sense_radius_) {
-                float factor = 1.f / (1.f + std::sqrt(dist));
+            if (const auto dist = Vector3DistanceSqr(position_, neighbor->position_); dist <= sense_radius_ * sense_radius_) {
+                const float factor = 1.f / (1.f + std::sqrt(dist));
                 // if the neighbor is a cooperator, you get bonuses for cooperating and defecting
                 if (neighbor->team == 0) {
-                    coop_pay += coop_payoff * factor;
-                    defect_pay += defect_payoff * factor;
+                    coop_pay += coop_payoff * factor * dt;
+                    defect_pay += defect_payoff * factor * dt;
                 }
                 // if they are a defector, the cooperation bonus drops
                 else {
-                    coop_pay -= coop_payoff * factor;
+                    coop_pay -= coop_payoff * factor * dt;
                 }
             }
         }
-        coop_pay *= dt;
-        defect_pay *= dt;
 
         // update energy based on coop/defect choice and assoc. payoffs
         if (team == 0) {
@@ -47,10 +46,10 @@ namespace swarmulator::agent {
         }
 
         // if you have the energy, reproduce
-        if (energy_ > reproduction_threshold_) {
+        if (energy_ >= reproduction_threshold_) {
             energy_ -= reproduction_cost_;
             auto n_a = std::make_shared<PDAgent>(*this);
-            n_a->set_energy(energy_);
+            n_a->set_energy(initial_energy_);
             n_a->set_time_born(GetTime());
             n_a->mutate();
             return n_a;

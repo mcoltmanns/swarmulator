@@ -19,8 +19,9 @@ private:
     int grid_divisions_ = 20;
     float time_scale_ = 1.f;
 
-    static constexpr size_t max_agents_ = 25000;
-    static constexpr size_t max_objects_ = 100;
+    static constexpr int max_agents_ = 5000;
+    static constexpr int min_agents_ = 100;
+    static constexpr int max_objects_ = 100;
 
     std::list<std::shared_ptr<AgentType>> agents_;
     swarmulator::agent::SSBOAgent* agents_ssbo_array_;
@@ -65,6 +66,7 @@ public:
     // should be threadsafe?
     void add_agent(const std::shared_ptr<AgentType> &agent) {
         agents_.emplace_back(agent);
+#pragma omp atomic update
         ++total_agents_;
     }
 
@@ -86,7 +88,17 @@ public:
                 ++it;
             }
         }
-        swarmulator::agent::global_reward_factor = std::lerp(1.f, 0.f, static_cast<float>(agents_.size()) / static_cast<float>(max_agents_)); // keeps population in acceptable range
+        if (agents_.size() < min_agents_) {
+            for (auto i = 0; i < min_agents_ - agents_.size(); i++) {
+                auto new_agent = std::make_shared<AgentType>();
+                const auto p = Vector4{(randfloat() - 0.5f) * world_size_.x, (randfloat() - 0.5f) * world_size_.y, (randfloat() - 0.5f) * world_size_.z, 0};
+                const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
+                new_agent->set_position(xyz(p));
+                new_agent->set_direction(xyz(r));
+                add_agent(new_agent);
+            }
+        }
+        swarmulator::agent::global_reward_factor = std::lerp(1.f, 0.f, static_cast<float>(static_cast<int>(agents_.size()) - min_agents_) / static_cast<float>(max_agents_ - min_agents_)); // keeps population in acceptable range
         // throw agents into the grid
         grid_.sort_agents(agents_);
         int buffer_write_place = 0;

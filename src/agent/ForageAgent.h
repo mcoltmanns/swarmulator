@@ -11,7 +11,7 @@ namespace swarmulator::agent {
 
 class DiscreteForageAgent final : public NeuralAgent {
 private:
-    float eat_energy_ = 5; // how much energy do you get from eating (per second spent in the sphere)
+    float eat_energy_ = 10; // how much energy do you get from eating (per second spent in the sphere)
 
 public:
     DiscreteForageAgent() : NeuralAgent() {};
@@ -22,6 +22,9 @@ public:
 };
 
 class ContinuousForageAgent final : public NeuralAgent {
+private:
+    float eat_energy_ = 10; // how much energy do you get from eating per second (weighted by inverse distance to food source center)
+
 public:
     ContinuousForageAgent() : NeuralAgent() {};
     ContinuousForageAgent(const Vector3 position, const Vector3 rotation) : NeuralAgent(position, rotation) {}

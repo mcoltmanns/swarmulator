@@ -36,10 +36,13 @@ namespace swarmulator::agent {
 
     std::shared_ptr<Agent> ContinuousForageAgent::update(const std::vector<std::shared_ptr<Agent> > &neighborhood, const std::list<std::shared_ptr<env::Sphere> > &objects, const float dt) {
         NeuralAgent::update(neighborhood, objects, dt); // perform normal update
+
+        float extra = 0;
         for (const auto& sphere : objects) {
-            energy_ += dt * (global_reward_factor / objects.size()) / std::max(Vector3Distance(position_, sphere->position()), 1.f); // dividing the reward factor by the number of objects ensures an even distribution of reward among all objects in the world (if the world has multiple objects)
-            energy_ = std::min(energy_, reproduction_threshold_);
+            extra += (global_reward_factor / objects.size()) / Vector3DistanceSqr(position_, sphere->position()); // dividing the reward factor by the number of objects ensures an even distribution of reward among all objects in the world (if the world has multiple objects)
         }
+        extra *= dt * eat_energy_;
+        energy_ += extra;
 
         if (energy_ >= reproduction_threshold_) {
             energy_ -= reproduction_cost_;

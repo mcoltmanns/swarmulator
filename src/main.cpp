@@ -23,16 +23,15 @@
 #include "agent/NeuralAgent.h"
 #include "agent/PDAgent.h"
 
-
 int main(int argc, char** argv) {
     int init_agent_count = 100;
-    int init_sphere_count = 0;//100;
+    int init_sphere_count = 1;
     int window_w = 800;
     int window_h = 600;
     constexpr Vector3 world_size = {100, 100, 100};
     constexpr int subdivisions = 10; // choose such that size / count > agent sense radius * 2 (10-20 are good numbers)
-    float time_scale = 1.f;
     float cam_speed = 1.f;
+    float time_scale = 1.f;
     bool draw_bounds = true;
     omp_set_num_threads(16);
 
@@ -70,7 +69,7 @@ int main(int argc, char** argv) {
         CAMERA_PERSPECTIVE,
     };
 
-    auto simulation = Simulation<swarmulator::agent::Agent>(world_size, subdivisions);
+    auto simulation = Simulation<swarmulator::agent::ContinuousForageAgent>(world_size, subdivisions);
 
     // init agents (shaders and mesh)
     // TODO: make these shaders position-independent! (probably a constexpr string somewhere is best)
@@ -90,11 +89,12 @@ int main(int argc, char** argv) {
     for (int i = 0; i < init_agent_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
-        simulation.add_agent(std::make_shared<swarmulator::agent::PDAgent>(xyz(p), xyz(r)));
+        simulation.add_agent(std::make_shared<swarmulator::agent::ContinuousForageAgent>(xyz(p), xyz(r)));
     }
     // initialize the spheres
     for (int i = 0; i < init_sphere_count; i++) {
-        const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
+        //const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
+        const auto p = Vector4(0, 0, 0, 0);
         simulation.add_object(std::make_shared<swarmulator::env::Sphere>(xyz(p), 0.5, BLUE));
     }
 
@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
         PollInputEvents();
         if (IsKeyDown(KEY_SPACE)) draw_bounds = !draw_bounds;
         // camera
-        const auto cam_speed_factor = time_scale == 0 ? GetFrameTime() : (GetFrameTime() / time_scale);
+        const auto cam_speed_factor = GetFrameTime();
         if (IsKeyDown(KEY_D)) CameraYaw(&camera, cam_speed * cam_speed_factor, true);
         if (IsKeyDown(KEY_A)) CameraYaw(&camera, -cam_speed * cam_speed_factor, true);
         if (IsKeyDown(KEY_W)) CameraPitch(&camera, -cam_speed * cam_speed_factor, true, true, false);
@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
         }
         EndMode3D();
         if (draw_bounds) {
-            GuiSlider((Rectangle){static_cast<float>(window_w) - 250, 10, 200, 10}, "Time scale", TextFormat("%.5f", time_scale), &time_scale, 0, 10);
+            GuiSlider((Rectangle){static_cast<float>(window_w) - 250, 10, 200, 10}, "Time scale", TextFormat("%.5f", time_scale), &time_scale, 0, 100);
         }
         // debug info
         DrawFPS(0, 0);

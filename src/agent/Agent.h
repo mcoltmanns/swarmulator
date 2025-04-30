@@ -15,7 +15,7 @@
 
 namespace swarmulator::agent {
 
-static float global_reward_factor = 1;
+inline float global_reward_factor = 1;
 static float scale = 0.2; // diameter at which the agents are drawn and measured
 
 typedef struct {
@@ -31,7 +31,7 @@ protected:
     Vector3 direction_ = Vector3(0, 0, 0);
 
     float rot_speed_ = 1; // rotation speed in one axle (radians/second)
-    float move_speed_ = 5;
+    float move_speed_ = 10;
 
     float sense_radius_ = 5.f;
 

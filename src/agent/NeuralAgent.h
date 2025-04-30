@@ -34,8 +34,8 @@ protected:
     static constexpr float initial_energy_ = 2;
     float energy_ = initial_energy_;
     float reproduction_threshold_ = 10;
-    float signal_cost_ = 0.001;
-    float basic_cost_ = 0.01;
+    float signal_cost_ = 0.01; // how much energy it costs to give a signal of 1 per second
+    float basic_cost_ = 0.1; // how much energy you lose by default per second
     float reproduction_cost_ = 8;
 
     float max_lifetime_ = 1000; // how many seconds this agent may be alive for at most
@@ -59,7 +59,7 @@ public:
     std::shared_ptr<Agent> update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
                 const std::list<std::shared_ptr<env::Sphere>> &objects, float dt) override;
 
-    void mutate(float mutation_chance = 0.05); // mutation_chance is the percent chance each gene has to be multiplied by a random value between -1 and 1
+    void mutate(float mutation_chance = 0.2); // mutation_chance is the percent chance each gene has to be multiplied by a random value between 0 and 1
 
     void to_ssbo(SSBOAgent *out) const override;
 

@@ -12,13 +12,16 @@
 namespace swarmulator::agent {
 NeuralAgent::NeuralAgent() : Agent() {
     signals_.fill(0);
+    w_in_hidden_.normalize();
 }
 
 NeuralAgent::NeuralAgent(const Vector3 position, const Vector3 rotation) : Agent(position, rotation) {
     signals_.fill(0);
+    w_hidden_out_.normalize();
 }
 
 void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood) {
+    input_.setZero(); // zero your input!
     // get information from your neighbors
     for (const auto& n_a: neighborhood) {
         const auto neighbor = dynamic_cast<NeuralAgent*>(n_a.get());
@@ -28,10 +31,11 @@ void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood
         if (neighbor == this || dist_sqr > sense_radius_ * sense_radius_) {
             continue;
         }
-        const float weight = 1.f / dist_sqr; // weight everything by inverse square distance
+        const float weight = 1.f / (1.f + dist_sqr); // weight everything by inverse square distance
         const auto neighbor_signals = neighbor->get_signals();
         const auto [diff_x, diff_y, diff_z] = direction_ - Vector3Normalize(neighbor->get_position() - position_);
         // diffs tells us which cardinal segment the neighbor is in
+        // greatest magnitude is x
         if (std::abs(diff_x) > std::abs(diff_y) && std::abs(diff_x) > std::abs(diff_z)) {
             if (diff_x > 0) {
                 // the neighbor is in front of us
@@ -44,6 +48,7 @@ void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood
                 input_(0, 3) += weight * neighbor_signals[1];
             }
         }
+        // greatest magintude is y
         else if (std::abs(diff_y) > std::abs(diff_x) && std::abs(diff_y) > std::abs(diff_z)) {
             if (diff_y > 0) {
                 // the neighbor is above us
@@ -56,6 +61,7 @@ void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood
                 input_(0, 7) += weight * neighbor_signals[1];
             }
         }
+        // greatest magnitude is z
         else if (std::abs(diff_z) > std::abs(diff_x) && std::abs(diff_z) > std::abs(diff_y)) {
             if (diff_z > 0) {
                 // the neighbor is to our left
@@ -70,12 +76,14 @@ void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood
         }
     }
 
+    input_.normalize();
     // run everything through the network
-    hidden_out_ = (input_.normalized() * w_in_hidden_ + context_weight_ * hidden_out_).unaryExpr(&sigmoid);
+    hidden_out_ = (input_ * w_in_hidden_ + context_weight_ * hidden_out_).unaryExpr(&sigmoid);
     output_ = (hidden_out_ * w_hidden_out_).unaryExpr(&sigmoid);
 }
 
 std::shared_ptr<Agent> NeuralAgent::update(const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::list<std::shared_ptr<env::Sphere>> &objects, const float dt) {
+    //std::cout << energy_ << std::endl;
     think(neighborhood);
     const float pitch = output_(0, 0) * std::numbers::pi * 2.f * rot_speed_ * dt; // rotation about world y axis (elevation angle/psi) (control direction z part)
     const float yaw = output_(0, 1) * std::numbers::pi * 2.f * rot_speed_ * dt; // rotation about world z axis (bearing/theta) (control direction x and y part)
@@ -87,7 +95,7 @@ std::shared_ptr<Agent> NeuralAgent::update(const std::vector<std::shared_ptr<Age
     direction_ = Vector3RotateByAxisAngle(direction_, Vector3UnitY, pitch);
     direction_ = Vector3RotateByAxisAngle(direction_, Vector3UnitZ, yaw);
     position_ = position_ + direction_ * move_speed_ * dt; // then move
-    energy_ = energy_ - (signal_cost_ * (std::abs(signals_[0]) + std::abs(signals_[1])) + basic_cost_) * dt; // adjust your energy
+    energy_ -= (signal_cost_ * (std::abs(signals_[0]) + std::abs(signals_[1])) + basic_cost_) * dt; // adjust your energy
     // default neuralagent never reproduces
     return nullptr;
 }
@@ -108,11 +116,13 @@ void NeuralAgent::to_ssbo(SSBOAgent *out) const {
 void NeuralAgent::mutate(const float mutation_chance) {
     for (int i = 0; i < num_hidden_; i++) {
         for (int j = 0; j < num_inputs_; j++) {
-            w_in_hidden_(j, i) *= randfloat() < mutation_chance ? randfloat() * 2.f - 1.f : 0; // we multiply, not add, because this is guaranteed to keep our weights in the range [-1 : 1] and prevents neuron death
+            w_in_hidden_(j, i) += randfloat() < mutation_chance ? randfloat() * 2.f - 1.f : 0;
         }
         for (int k = 0; k < num_outputs_; k++) {
-            w_hidden_out_(i, k) *= randfloat() < mutation_chance ? randfloat() * 2.f - 1.f : 0;
+            w_hidden_out_(i, k) += randfloat() < mutation_chance ? randfloat() * 2.f - 1.f : 0;
         }
     }
+    w_in_hidden_.normalize();
+    w_hidden_out_.normalize();
 }
 } // agent
