@@ -38,11 +38,11 @@ namespace swarmulator::agent {
         NeuralAgent::update(neighborhood, objects, dt); // perform normal update
 
         float extra = 0;
+        const float reward_per_sphere = global_reward_factor * eat_energy_;// / objects.size();
         for (const auto& sphere : objects) {
-            extra += (global_reward_factor / objects.size()) / Vector3DistanceSqr(position_, sphere->position()); // dividing the reward factor by the number of objects ensures an even distribution of reward among all objects in the world (if the world has multiple objects)
+            extra += reward_per_sphere / Vector3Distance(position_, sphere->position());
         }
-        extra *= dt * eat_energy_;
-        energy_ += extra;
+        energy_ += extra * dt;
 
         if (energy_ >= reproduction_threshold_) {
             energy_ -= reproduction_cost_;

@@ -24,7 +24,7 @@
 #include "agent/PDAgent.h"
 
 int main(int argc, char** argv) {
-    int init_agent_count = 100;
+    int init_agent_count = 1000;
     int init_sphere_count = 1;
     int window_w = 800;
     int window_h = 600;
@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
 
     // init agents (shaders and mesh)
     // TODO: make these shaders position-independent! (probably a constexpr string somewhere is best)
-    Shader agent_shader = LoadShader("shaders/agent.vert", "shaders/agent.frag");
+    Shader agent_shader = LoadShader("/home/moltmanns/Documents/swarmulator/shaders/agent.vert", "/home/moltmanns/Documents/swarmulator/shaders/agent.frag");
     auto agent_vao = rlLoadVertexArray();
     rlEnableVertexArray(agent_vao);
     constexpr Vector3 mesh[] = {
@@ -89,7 +89,9 @@ int main(int argc, char** argv) {
     for (int i = 0; i < init_agent_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
-        simulation.add_agent(std::make_shared<swarmulator::agent::ContinuousForageAgent>(xyz(p), xyz(r)));
+        auto a = std::make_shared<swarmulator::agent::ContinuousForageAgent>(xyz(p), xyz(r));
+        a->mutate();
+        simulation.add_agent(a);
     }
     // initialize the spheres
     for (int i = 0; i < init_sphere_count; i++) {
@@ -131,7 +133,6 @@ int main(int argc, char** argv) {
         SetShaderValue(agent_shader, 3, &num_agents, SHADER_UNIFORM_INT);
         // send agents to draw shader
         rlBindShaderBuffer(simulation.get_agents_ssbo(), 0);
-        rlCheckErrors();
         // instanced agent draw
         rlEnableVertexArray(agent_vao);
         rlDrawVertexArrayInstanced(0, 3, static_cast<int>(simulation.get_agents_count()));

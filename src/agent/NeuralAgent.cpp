@@ -75,10 +75,14 @@ void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood
             }
         }
     }
-
-    input_.normalize();
+    // normalize before we run
+    const auto norm = input_.norm();
+    input_ = norm != 0 ? input_ * (1.f / input_.norm()) : input_;
+#pragma omp critical
+    {
+    }
     // run everything through the network
-    hidden_out_ = (input_ * w_in_hidden_ + context_weight_ * hidden_out_).unaryExpr(&sigmoid);
+    hidden_out_ = (input_ * w_in_hidden_ + hidden_out_ * context_weight_).unaryExpr(&sigmoid);
     output_ = (hidden_out_ * w_hidden_out_).unaryExpr(&sigmoid);
 }
 

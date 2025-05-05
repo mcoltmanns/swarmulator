@@ -46,24 +46,72 @@ find_package(OpenMP)
 # need fann-dev and fann 2
 find_package(fann)
 
-add_executable(swarmulator
-        src/main.cpp
-        src/agent/Agent.cpp
-        src/agent/Agent.h
-        src/util/StaticGrid.h
-        external/v3ops.h
-        src/util/util.h
-        external/raygui.h
-        src/agent/NeuralAgent.cpp
-        src/agent/NeuralAgent.h
-        src/env/Sphere.cpp
-        src/env/Sphere.h
-        src/agent/ForageAgent.cpp
-        src/agent/ForageAgent.h
-        src/Simulation.h
-        src/agent/Boid.cpp
-        src/agent/Boid.h
-        src/agent/PDAgent.cpp
-        src/agent/PDAgent.h
+set(AGENTS_SOURCES
+    src/agent/Agent.cpp
+    src/agent/Agent.h
+    src/util/StaticGrid.h
+    external/v3ops.h
+    src/util/util.h
+    external/raygui.h
+    src/agent/NeuralAgent.cpp
+    src/agent/NeuralAgent.h
+    src/agent/ForageAgent.cpp
+    src/agent/ForageAgent.h
+    src/agent/Boid.cpp
+    src/agent/Boid.h
+    src/agent/PDAgent.cpp
+    src/agent/PDAgent.h
+    src/agent/PredatorAgent.cpp
+    src/agent/PredatorAgent.h
+    src/agent/PreyAgent.cpp
+    src/agent/PreyAgent.h
 )
-target_link_libraries(swarmulator fann raylib OpenMP::OpenMP_CXX)
+
+set(ENV_SOURCES
+    src/env/Sphere.cpp
+    src/env/Sphere.h
+)
+
+set(LOGGER_SOURCES
+
+)
+
+# forage experiment
+add_executable(swarmulator_forage
+        src/continuous_forage.cpp
+        src/Simulation.h
+        ${AGENTS_SOURCES}
+        ${ENV_SOURCES}
+        ${LOGGER_SOURCES}
+)
+target_link_libraries(swarmulator_forage fann raylib OpenMP::OpenMP_CXX)
+
+# prisoner's dilemma experiment
+add_executable(swarmulator_pd
+    src/prisoners_dilemma.cpp
+    src/Simulation.h
+    ${AGENTS_SOURCES}
+        ${ENV_SOURCES}
+        ${LOGGER_SOURCES}
+)
+target_link_libraries(swarmulator_pd fann raylib OpenMP::OpenMP_CXX)
+
+# predator/prey experiment
+add_executable(swarmulator_pred_prey
+        src/pred_prey.cpp
+        src/Simulation.h
+        ${AGENTS_SOURCES}
+        ${ENV_SOURCES}
+        ${LOGGER_SOURCES}
+)
+target_link_libraries(swarmulator_pred_prey fann raylib OpenMP::OpenMP_CXX)
+
+# boids
+add_executable(swarmulator_boids
+        src/boids.cpp
+        src/Simulation.h
+        ${AGENTS_SOURCES}
+        ${ENV_SOURCES}
+        ${LOGGER_SOURCES}
+)
+target_link_libraries(swarmulator_boids fann raylib OpenMP::OpenMP_CXX)

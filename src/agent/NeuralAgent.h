@@ -28,7 +28,7 @@ protected:
     Eigen::MatrixXf output_ = Eigen::MatrixXf::Random(1, num_outputs_);
     Eigen::MatrixXf w_in_hidden_ = Eigen::MatrixXf::Random(num_inputs_, num_hidden_); // weights from input to hidden
     Eigen::MatrixXf w_hidden_out_ = Eigen::MatrixXf::Random(num_hidden_, num_outputs_); // weights from hidden to out
-    float context_weight_ = 0.2; // weight of context layer (old hidden layer outputs)
+    float context_weight_ = 0.01; // weight of context layer (old hidden layer outputs)
 
 protected:
     static constexpr float initial_energy_ = 2;
@@ -68,6 +68,7 @@ public:
     [[nodiscard]] bool is_alive() const override { return energy_ > 0 && GetTime() - time_born_ < max_lifetime_; }
 
     void set_energy(const float energy) { energy_ = energy; }
+    float get_energy() const { return energy_; }
     void set_time_born(const float time_born) { time_born_ = time_born; }
 };
 
