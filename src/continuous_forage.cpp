@@ -4,24 +4,17 @@
 
 #define RAYGUI_IMPLEMENTATION
 
-#include <cstdio>
 #include <ctime>
 #include <iostream>
 #include <omp.h>
-#include <cstdint>
 #include <string>
 
 #include "raygui.h"
+#include "raylib.h"
 #include "rlgl.h"
-#include "raymath.h"
 #include "Simulation.h"
-#include "util/StaticGrid.h"
-#include "util/util.h"
-#include "v3ops.h"
-#include "agent/Boid.h"
 #include "agent/ForageAgent.h"
-#include "agent/NeuralAgent.h"
-#include "agent/PDAgent.h"
+#include "util/util.h"
 
 int main(int argc, char** argv) {
     int init_agent_count = 1000;
@@ -47,10 +40,10 @@ int main(int argc, char** argv) {
     if (const auto o = get_opt(argv, argv + argc, "-t")) {
         omp_set_num_threads(std::stoi(o));
     }
-    if (const auto o = opt_exists(argv, argv + argc, "--vsync")) {
+    if (opt_exists(argv, argv + argc, "--vsync")) {
         SetConfigFlags(FLAG_VSYNC_HINT);
     }
-    if (const auto o = opt_exists(argv, argv + argc, "--aa")) {
+    if (opt_exists(argv, argv + argc, "--aa")) {
         SetConfigFlags(FLAG_MSAA_4X_HINT);
     }
 
@@ -73,7 +66,7 @@ int main(int argc, char** argv) {
 
     // init agents (shaders and mesh)
     // TODO: make these shaders position-independent! (probably a constexpr string somewhere is best)
-    Shader agent_shader = LoadShader("/home/moltmanns/Documents/swarmulator/shaders/agent.vert", "/home/moltmanns/Documents/swarmulator/shaders/agent.frag");
+    Shader agent_shader = LoadShader("/home/moltmanns/Documents/swarmulator/shaders/forage.vert", "/home/moltmanns/Documents/swarmulator/shaders/agent.frag");
     auto agent_vao = rlLoadVertexArray();
     rlEnableVertexArray(agent_vao);
     constexpr Vector3 mesh[] = {
@@ -95,10 +88,12 @@ int main(int argc, char** argv) {
     }
     // initialize the spheres
     for (int i = 0; i < init_sphere_count; i++) {
-        //const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
-        const auto p = Vector4(0, 0, 0, 0);
+        const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
+        //const auto p = Vector4(0, 0, 0, 0);
         simulation.add_object(std::make_shared<swarmulator::env::Sphere>(xyz(p), 0.5, BLUE));
     }
+
+    simulation.set_min_agents(500);
 
     uint_fast64_t frames = 0;
     while (!WindowShouldClose()) {

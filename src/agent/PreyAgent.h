@@ -11,8 +11,8 @@
 namespace swarmulator::agent {
     class PreyAgent final : public NeuralAgent {
     private:
-        float proximity_payoff_ = 0.2f;
-        float basic_cost_ = 0.05f;
+        float proximity_payoff_ = 1.f;
+        float basic_cost_ = 0.01f;
 
     public:
         explicit PreyAgent() : NeuralAgent() {};

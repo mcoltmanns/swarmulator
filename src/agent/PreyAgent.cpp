@@ -18,7 +18,7 @@ namespace swarmulator::agent {
                 continue;
             }
             if (const auto dist = Vector3DistanceSqr(position_, neighbor->get_position()); dist <= sense_radius_ * sense_radius_) {
-                const float factor = 1.f / (1.f + std::sqrt(dist));
+                const float factor = global_reward_factor / (1.f + std::sqrt(dist));
                 payoff += proximity_payoff_ * factor;
             }
         }

@@ -19,9 +19,9 @@ private:
     int grid_divisions_ = 20;
     float time_scale_ = 1.f;
 
-    static constexpr int max_agents_ = 5000;
-    static constexpr int min_agents_ = 100;
-    static constexpr int max_objects_ = 100;
+    int max_agents_ = 5000;
+    int min_agents_ = 100;
+    int max_objects_ = 100;
 
     std::list<std::shared_ptr<AgentType>> agents_;
     swarmulator::agent::SSBOAgent* agents_ssbo_array_;
@@ -57,8 +57,9 @@ public:
 
     [[nodiscard]] const std::vector<std::shared_ptr<swarmulator::agent::Agent>> &get_agents() const { return agents_; }
     [[nodiscard]] size_t get_agents_count() const { return agents_.size(); }
-    [[nodiscard]] static size_t get_max_agents() { return max_agents_; }
+    [[nodiscard]] size_t get_max_agents() const { return max_agents_; }
     [[nodiscard]] size_t get_total_agents() const { return total_agents_; }
+    void set_min_agents(const size_t min_agents) { min_agents_ = min_agents; }
 
     [[nodiscard]] const std::list<std::shared_ptr<swarmulator::env::Sphere>> &get_objects() const { return objects_; }
     [[nodiscard]] size_t get_objects_count() const { return objects_.size(); }

@@ -29,31 +29,21 @@ void main() {
     vec2 signals = agents[gl_InstanceID].signals;
     vec2 info = agents[gl_InstanceID].info;
 
-    // change color depending on direction
-    //fragColor.rgb = abs(normalize(direction));
     // change frag color depending on signals
     fragColor.rg = normalize(signals);
     fragColor.b = 0.f;
     // don't return early here because branches are expensive!
-    // change frag color depending on pd decision (coop blue, defect red)
-    /*fragColor.r = int(info.x) == 1 ? 1 : 0;
-    fragColor.b = int(info.x) == 0 ? 1 : 0;
-    fragColor.g = 0;*/
 
     fragColor.a = gl_InstanceID >= num_agents ? 0.0 : 1.0; // only show this agent if the data we're reading from isn't junk
 
     float scale = agent_scale;
-    vec3 vertexView = vertex_position * scale; // vertex position in view space
+    vec3 vertexView = vertex_position * scale; // vertex position in world space
 
     // right now triangle points towards the camera
     // make it point in the direction of its movement in view space
     // first, find angle of direction in view space
     vec3 dirView = normalize((view_matrix * vec4(direction, 0)).xyz); // direction vector in view space (normalized)
     float dirAngle = atan(dirView.y, dirView.x);
-
-    // scale the triangle based on the magnitude of the view direction z component
-    /*float backAngle = abs(sin(dirView.z));
-    vertexView.z = vertexView.z * backAngle;*/
 
     // triangle tip is at 90 degrees in view space
     // to point it at dirAngle, rotate by (90 - dirangle) degs backwards

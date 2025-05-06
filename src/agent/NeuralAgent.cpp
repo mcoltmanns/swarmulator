@@ -89,15 +89,15 @@ void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood
 std::shared_ptr<Agent> NeuralAgent::update(const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::list<std::shared_ptr<env::Sphere>> &objects, const float dt) {
     //std::cout << energy_ << std::endl;
     think(neighborhood);
-    const float pitch = output_(0, 0) * std::numbers::pi * 2.f * rot_speed_ * dt; // rotation about world y axis (elevation angle/psi) (control direction z part)
-    const float yaw = output_(0, 1) * std::numbers::pi * 2.f * rot_speed_ * dt; // rotation about world z axis (bearing/theta) (control direction x and y part)
+    // remember output is between 0 and 1 - so we scale to between -1 and 1, and then use that to choose an angle between -2pi and 2pi to rotate by
+    const float pitch = ((output_(0, 0) - 0.5) * 2.f) * std::numbers::pi * 2.f * rot_speed_ * dt; // rotation about world y axis (elevation angle/psi) (control direction z part)
+    const float yaw = ((output_(0, 1) - 0.5) * 2.f) * std::numbers::pi * 2.f * rot_speed_ * dt; // rotation about world z axis (bearing/theta) (control direction x and y part)
     // apply the signals
     signals_[0] = output_(0, 2);
     signals_[1] = output_(0, 3);
-    auto decision = output_(0, 4);
     // apply
-    direction_ = Vector3RotateByAxisAngle(direction_, Vector3UnitY, pitch);
-    direction_ = Vector3RotateByAxisAngle(direction_, Vector3UnitZ, yaw);
+    direction_ = Vector3RotateByAxisAngle(direction_, Vector3UnitY, pitch); // appy pitch
+    direction_ = Vector3RotateByAxisAngle(direction_, Vector3UnitZ, yaw); // then yaw
     position_ = position_ + direction_ * move_speed_ * dt; // then move
     energy_ -= (signal_cost_ * (std::abs(signals_[0]) + std::abs(signals_[1])) + basic_cost_) * dt; // adjust your energy
     // default neuralagent never reproduces

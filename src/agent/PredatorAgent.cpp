@@ -20,7 +20,7 @@ namespace swarmulator::agent {
                 continue;
             }
             if (const auto dist = Vector3DistanceSqr(position_, prey->get_position()); dist <= sense_radius_ * sense_radius_) {
-                set_energy(get_energy() + prey->get_energy()); // add the prey's energy to yours
+                set_energy((get_energy() + prey->get_energy()) * global_reward_factor); // add the prey's energy to yours
                 prey->set_energy(-999); // kill the prey
                 break;
             }
