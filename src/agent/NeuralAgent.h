@@ -23,11 +23,15 @@ protected:
 
     std::array<fann_type, 2> signals_;
 
-    Eigen::MatrixXf input_ = Eigen::MatrixXf::Random(1, num_inputs_);
-    Eigen::MatrixXf hidden_out_ = Eigen::MatrixXf::Random(1, num_hidden_); // output of hidden layer (after activation)
-    Eigen::MatrixXf output_ = Eigen::MatrixXf::Random(1, num_outputs_);
+    // zeroed network
+    Eigen::MatrixXf input_ = Eigen::MatrixXf::Zero(1, num_inputs_);
+    Eigen::MatrixXf hidden_out_ = Eigen::MatrixXf::Zero(1, num_hidden_); // output of hidden layer (after activation)
+    Eigen::MatrixXf output_ = Eigen::MatrixXf::Zero(1, num_outputs_);
+    // random weights
     Eigen::MatrixXf w_in_hidden_ = Eigen::MatrixXf::Random(num_inputs_, num_hidden_); // weights from input to hidden
     Eigen::MatrixXf w_hidden_out_ = Eigen::MatrixXf::Random(num_hidden_, num_outputs_); // weights from hidden to out
+    // random biases
+    Eigen::MatrixXf b_hidden_ = Eigen::MatrixXf::Random(1, num_hidden_);
     float context_weight_ = 0.01; // weight of context layer (old hidden layer outputs)
 
 protected:
@@ -51,6 +55,10 @@ protected:
         return 1.f / (1.f + std::expf(-x));
     }
 
+    static inline constexpr float decrement(const float x) {
+        return x - 1;
+    }
+
 public:
     NeuralAgent();
     NeuralAgent(Vector3 position, Vector3 rotation);
@@ -59,7 +67,7 @@ public:
     std::shared_ptr<Agent> update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
                 const std::list<std::shared_ptr<env::Sphere>> &objects, float dt) override;
 
-    void mutate(float mutation_chance = 0.2); // mutation_chance is the percent chance each gene has to be multiplied by a random value between 0 and 1
+    void mutate(float mutation_chance = 0.05); // mutation_chance is the percent chance each gene component (weight or bias) has to have a random value between -1 and 1 added
 
     void to_ssbo(SSBOAgent *out) const override;
 

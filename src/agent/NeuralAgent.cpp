@@ -13,10 +13,12 @@ namespace swarmulator::agent {
 NeuralAgent::NeuralAgent() : Agent() {
     signals_.fill(0);
     w_in_hidden_.normalize();
+    w_hidden_out_.normalize();
 }
 
 NeuralAgent::NeuralAgent(const Vector3 position, const Vector3 rotation) : Agent(position, rotation) {
     signals_.fill(0);
+    w_in_hidden_.normalize();
     w_hidden_out_.normalize();
 }
 
@@ -76,13 +78,13 @@ void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood
         }
     }
     // normalize before we run
-    const auto norm = input_.norm();
-    input_ = norm != 0 ? input_ * (1.f / input_.norm()) : input_;
+    //const auto norm = input_.norm();
+    //input_ = norm != 0 ? input_ * (1.f / input_.norm()) : input_;
 #pragma omp critical
     {
     }
     // run everything through the network
-    hidden_out_ = (input_ * w_in_hidden_ + hidden_out_ * context_weight_).unaryExpr(&sigmoid);
+    hidden_out_ = (input_ * w_in_hidden_ + hidden_out_ * context_weight_ + b_hidden_).unaryExpr(&sigmoid);
     output_ = (hidden_out_ * w_hidden_out_).unaryExpr(&sigmoid);
 }
 
@@ -125,8 +127,19 @@ void NeuralAgent::mutate(const float mutation_chance) {
         for (int k = 0; k < num_outputs_; k++) {
             w_hidden_out_(i, k) += randfloat() < mutation_chance ? randfloat() * 2.f - 1.f : 0;
         }
+        b_hidden_(0, i) += randfloat() < mutation_chance ? randfloat() * 2 - 1.f : 0;
     }
+    /*// move everything back to range 0, 1
     w_in_hidden_.normalize();
     w_hidden_out_.normalize();
+    b_hidden_.normalize();
+    // move everything to range 0, 2
+    w_in_hidden_ *= 2.f;
+    w_hidden_out_ *= 2.f;
+    b_hidden_ *= 2.f;
+    // move everything to range -1, 1
+    w_in_hidden_ = w_in_hidden_.unaryExpr(&decrement);
+    w_hidden_out_ = w_hidden_out_.unaryExpr(&decrement);
+    b_hidden_ = b_hidden_.unaryExpr(&decrement);*/
 }
 } // agent

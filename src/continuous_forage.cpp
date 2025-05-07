@@ -88,8 +88,8 @@ int main(int argc, char** argv) {
     }
     // initialize the spheres
     for (int i = 0; i < init_sphere_count; i++) {
-        const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
-        //const auto p = Vector4(0, 0, 0, 0);
+        //const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
+        const auto p = Vector4(0, 0, 0, 0);
         simulation.add_object(std::make_shared<swarmulator::env::Sphere>(xyz(p), 0.5, BLUE));
     }
 
