@@ -65,8 +65,14 @@ int main(int argc, char** argv) {
     auto simulation = Simulation<swarmulator::agent::ContinuousForageAgent>(world_size, subdivisions);
 
     // init agents (shaders and mesh)
-    // TODO: make these shaders position-independent! (probably a constexpr string somewhere is best)
-    Shader agent_shader = LoadShader("/home/moltmanns/Documents/swarmulator/shaders/forage.vert", "/home/moltmanns/Documents/swarmulator/shaders/agent.frag");
+    // this is majorly ugly and sort of janky, but lets us compile the shader source in with the executable, instead of loading at runtime
+    const std::string vs_src =
+#include "shaders/forage.vert"
+        ;
+    const std::string fs_src =
+#include "shaders/agent.frag"
+        ;
+    Shader agent_shader = LoadShaderFromMemory(vs_src.c_str(), fs_src.c_str());
     auto agent_vao = rlLoadVertexArray();
     rlEnableVertexArray(agent_vao);
     constexpr Vector3 mesh[] = {

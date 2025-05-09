@@ -1,3 +1,4 @@
+R"(
 #version 430
 struct Agent {
     vec4 position;
@@ -58,3 +59,4 @@ void main() {
 
     gl_Position = projection_matrix * vec4(vertexView, 1);
 }
+)"

@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(EXTERNAL_DIR "external")
 include_directories(${EXTERNAL_DIR})
 
+
 # RAYLIB
 set(RAYLIB_VERSION 5.5)
 find_package(raylib ${RAYLIB_VERSION} QUIET)
@@ -76,6 +77,13 @@ set(LOGGER_SOURCES
 
 )
 
+set(SHADER_SOURCES
+        src/shaders/agent.frag
+        src/shaders/boid.vert
+        src/shaders/forage.vert
+        src/shaders/pd.vert
+)
+
 # forage experiment
 add_executable(swarmulator_forage
         src/continuous_forage.cpp
@@ -83,16 +91,18 @@ add_executable(swarmulator_forage
         ${AGENTS_SOURCES}
         ${ENV_SOURCES}
         ${LOGGER_SOURCES}
+        ${SHADER_SOURCES}
 )
 target_link_libraries(swarmulator_forage fann raylib OpenMP::OpenMP_CXX)
 
 # prisoner's dilemma experiment
 add_executable(swarmulator_pd
-    src/prisoners_dilemma.cpp
-    src/Simulation.h
-    ${AGENTS_SOURCES}
+        src/prisoners_dilemma.cpp
+        src/Simulation.h
+        ${AGENTS_SOURCES}
         ${ENV_SOURCES}
         ${LOGGER_SOURCES}
+        ${SHADER_SOURCES}
 )
 target_link_libraries(swarmulator_pd fann raylib OpenMP::OpenMP_CXX)
 
@@ -103,6 +113,7 @@ add_executable(swarmulator_pred_prey
         ${AGENTS_SOURCES}
         ${ENV_SOURCES}
         ${LOGGER_SOURCES}
+        ${SHADER_SOURCES}
 )
 target_link_libraries(swarmulator_pred_prey fann raylib OpenMP::OpenMP_CXX)
 
@@ -113,5 +124,6 @@ add_executable(swarmulator_boids
         ${AGENTS_SOURCES}
         ${ENV_SOURCES}
         ${LOGGER_SOURCES}
+        ${SHADER_SOURCES}
 )
 target_link_libraries(swarmulator_boids fann raylib OpenMP::OpenMP_CXX)
