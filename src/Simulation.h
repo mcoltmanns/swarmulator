@@ -5,6 +5,10 @@
 #ifndef SIMULATION_H
 #define SIMULATION_H
 #include <vector>
+#include <filesystem>
+#include <fstream>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 #include "agent/Agent.h"
 #include "env/Sphere.h"
@@ -22,6 +26,11 @@ private:
     int max_agents_ = 5000;
     int min_agents_ = 100;
     int max_objects_ = 100;
+
+    float log_interval_ = 1; // how many seconds between loggings
+    float last_log_time_ = 0;
+    std::filesystem::path log_file_path_;
+    std::ofstream log_file_;
 
     std::list<std::shared_ptr<AgentType>> agents_;
     swarmulator::agent::SSBOAgent* agents_ssbo_array_;
@@ -64,6 +73,13 @@ public:
     [[nodiscard]] const std::list<std::shared_ptr<swarmulator::env::Sphere>> &get_objects() const { return objects_; }
     [[nodiscard]] size_t get_objects_count() const { return objects_.size(); }
 
+    void set_log_file(const std::filesystem::path &dir) {
+        log_file_path_ = dir;
+        std::cout << "logging to " << log_file_path_ << std::endl;
+        log_file_.open(log_file_path_, std::ofstream::out | std::ofstream::trunc);
+        log_file_ << "time|id|genome|position|rotation|signals|info|parent" << std::endl;
+    }
+
     // should be threadsafe?
     void add_agent(const std::shared_ptr<AgentType> &agent) {
         agents_.emplace_back(agent);
@@ -103,6 +119,13 @@ public:
         // throw agents into the grid
         grid_.sort_agents(agents_);
         int buffer_write_place = 0;
+
+        std::string time_str = std::to_string(GetTime());
+        bool are_we_logging = GetTime() - last_log_time_ > log_interval_;
+        if (are_we_logging) {
+            last_log_time_ = GetTime();
+        }
+
         // iteration is cheap, processing is expensive
         // so have every thread iterate over the whole list
         // but only a single thread will access a specific element (single) while the others continue on (nowait)
@@ -132,6 +155,31 @@ public:
                             ++buffer_write_place;
                         }
 
+                    }
+                    if (are_we_logging) {
+                        // always: time, id, genome, pos, rot, sig a, sig b, info x, info y, parent id
+                        std::string id_str = boost::uuids::to_string(agent->get_id());
+                        // put together the genome - array of all weights and biases
+                        std::string genome_str = agent->get_genome_string();
+                        std::string parent_str = boost::uuids::to_string(agent->get_parent());
+                        swarmulator::agent::SSBOAgent into;
+                        agent->to_ssbo(&into);
+                        std::stringstream ss;
+                        ss <<
+                            time_str << "|" <<
+                            id_str << "|" <<
+                            genome_str << "|" <<
+                            Vector3ToString(xyz(into.position)) << "|" <<
+                            Vector3ToString(xyz(into.direction)) << "|" <<
+                            Vector2ToString(into.signals) << "|" <<
+                            Vector2ToString(into.info) << "|" <<
+                            parent_str;
+#pragma omp critical
+                        {
+                            log_file_.open(log_file_path_, std::ofstream::app);
+                            log_file_ << ss.str() << std::endl;
+                            log_file_.close();
+                        }
                     }
                 }
             }

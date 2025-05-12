@@ -94,6 +94,7 @@ int main(int argc, char** argv) {
     }
 
     simulation.set_min_agents(500);
+    simulation.set_log_file("/home/moltmanns/Documents/swarmulator/forage.csv");
 
     uint_fast64_t frames = 0;
     while (!WindowShouldClose()) {

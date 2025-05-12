@@ -29,6 +29,7 @@ namespace swarmulator::agent {
             n_a->set_energy(initial_energy_); // reset the copy's energy
             n_a->set_time_born(GetTime()); // set the copy's birthday
             n_a->mutate(); // mutate the copy
+            n_a->parent_ = id_;
             return n_a;
         }
         return nullptr;
@@ -50,6 +51,7 @@ namespace swarmulator::agent {
             n_a->set_energy(initial_energy_);
             n_a->set_time_born(GetTime());
             n_a->mutate();
+            n_a->parent_ = id_;
             return n_a;
         }
         return nullptr;

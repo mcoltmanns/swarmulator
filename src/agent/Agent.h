@@ -8,6 +8,8 @@
 #include <list>
 #include <memory>
 #include <vector>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid//uuid_generators.hpp>
 
 
 #include "../env/Sphere.h"
@@ -35,7 +37,8 @@ protected:
 
     float sense_radius_ = 5.f;
 
-    size_t id_ = 0;
+    boost::uuids::uuid id_ = boost::uuids::random_generator()();
+    boost::uuids::uuid parent_ = boost::uuids::nil_generator()();
 
 public:
     Agent() = default;
@@ -51,8 +54,9 @@ public:
     [[nodiscard]] Vector3 get_position() const { return position_; }
     [[nodiscard]] Vector3 get_direction() const { return direction_; }
     [[nodiscard]] virtual bool is_alive() const { return true; }
-    [[nodiscard]] size_t get_id() const { return id_; }
-    void set_id(const size_t id) { id_ = id; }
+    [[nodiscard]] boost::uuids::uuid get_id() const { return id_; }
+    void set_parent(const boost::uuids::uuid parent) { parent_ = parent; }
+    [[nodiscard]] boost::uuids::uuid get_parent() const { return parent_; }
 
     virtual void to_ssbo(SSBOAgent *out) const;
 };

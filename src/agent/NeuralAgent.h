@@ -7,8 +7,6 @@
 #include "Agent.h"
 
 #include <array>
-#include <floatfann.h> // tell fann to use floats
-#include <fann_cpp.h>
 #include <eigen3/Eigen/Dense>
 
 #include "../util/util.h"
@@ -21,7 +19,7 @@ protected:
     static constexpr unsigned int num_hidden_ = 10;
     static constexpr unsigned int num_outputs_ = 5; // pitch + yaw + decision + 2 signals
 
-    std::array<fann_type, 2> signals_;
+    std::array<float, 2> signals_ = {0, 0};
 
     // zeroed network
     Eigen::MatrixXf input_ = Eigen::MatrixXf::Zero(1, num_inputs_);
@@ -71,13 +69,15 @@ public:
 
     void to_ssbo(SSBOAgent *out) const override;
 
-    [[nodiscard]] std::array<fann_type, 2> get_signals() const { return signals_; }
-    [[nodiscard]] fann_type get_signal(const int idx) const { return signals_[idx]; }
+    [[nodiscard]] std::array<float, 2> get_signals() const { return signals_; }
+    [[nodiscard]] float get_signal(const int idx) const { return signals_[idx]; }
     [[nodiscard]] bool is_alive() const override { return energy_ > 0 && GetTime() - time_born_ < max_lifetime_; }
 
     void set_energy(const float energy) { energy_ = energy; }
-    float get_energy() const { return energy_; }
+    [[nodiscard]] float get_energy() const { return energy_; }
     void set_time_born(const float time_born) { time_born_ = time_born; }
+
+    [[nodiscard]] std::string get_genome_string();
 };
 
 } // agent

@@ -94,6 +94,8 @@ int main(int argc, char** argv) {
         simulation.add_agent(a);
     }
 
+    simulation.set_log_file("/home/moltmanns/Documents/swarmulator/pred_prey.csv");
+
     uint_fast64_t frames = 0;
     while (!WindowShouldClose()) {
         const float dt = GetFrameTime() * time_scale;

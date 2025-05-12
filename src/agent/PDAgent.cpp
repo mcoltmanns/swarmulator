@@ -52,6 +52,7 @@ namespace swarmulator::agent {
             n_a->set_energy(initial_energy_);
             n_a->set_time_born(GetTime());
             n_a->mutate();
+            n_a->parent_ = id_;
             return n_a;
         }
         return nullptr;

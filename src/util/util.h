@@ -63,4 +63,16 @@ inline bool opt_exists(char** begin, char** end, const std::string& option) {
 }
 inline Vector3 cell_index_3d(const Vector3 &p, const Vector3 &cell_delta) { return floorv3(p / cell_delta); }*/
 
+inline std::string Vector3ToString(const Vector3 &v) {
+    std::stringstream ss;
+    ss << "(" << v.x << ", " << v.y << ", " << v.z << ")";
+    return ss.str();
+}
+
+inline std::string Vector2ToString(const Vector2 &v) {
+    std::stringstream ss;
+    ss << "(" << v.x << ", " << v.y << ")";
+    return ss.str();
+}
+
 #endif //UTIL_H

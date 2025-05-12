@@ -27,6 +27,7 @@ if (NOT raylib_FOUND)
 endif ()
 # platform-specific raylib config
 # Web
+#[[
 if (${PLATFORM} STREQUAL "Web")
     set_target_properties(swarmulator PROPERTIES SUFFIX ".html")
     set_target_properties(swarmulator PROPERTIES SUFFIX ".html")
@@ -38,20 +39,29 @@ if (APPLE)
     target_link_libraries(swarmulator "-framework Cocoa")
     target_link_libraries(swarmulator "-framework OpenGL")
 endif ()
+]]
 
 # OPENMP
 find_package(OpenMP)
 
 # FANN
 # need fann-dev and fann 2
-find_package(fann)
+# shouldn't need fann any longer
+#find_package(fann)
+
+# EIGEN
+find_package(Eigen3)
+
+# BOOST
+find_package(Boost)
+if (Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIRS})
+endif ()
 
 set(AGENTS_SOURCES
     src/agent/Agent.cpp
     src/agent/Agent.h
-    src/util/StaticGrid.h
     external/v3ops.h
-    src/util/util.h
     external/raygui.h
     src/agent/NeuralAgent.cpp
     src/agent/NeuralAgent.h
@@ -73,7 +83,11 @@ set(ENV_SOURCES
 )
 
 set(LOGGER_SOURCES
+)
 
+set(UTIL_SOURCES
+        src/util/StaticGrid.h
+        src/util/util.h
 )
 
 # forage experiment
@@ -83,8 +97,9 @@ add_executable(swarmulator_forage
         ${AGENTS_SOURCES}
         ${ENV_SOURCES}
         ${LOGGER_SOURCES}
+        ${UTIL_SOURCES}
 )
-target_link_libraries(swarmulator_forage fann raylib OpenMP::OpenMP_CXX)
+target_link_libraries(swarmulator_forage Eigen3::Eigen raylib OpenMP::OpenMP_CXX)
 
 # prisoner's dilemma experiment
 add_executable(swarmulator_pd
@@ -93,8 +108,9 @@ add_executable(swarmulator_pd
     ${AGENTS_SOURCES}
         ${ENV_SOURCES}
         ${LOGGER_SOURCES}
+        ${UTIL_SOURCES}
 )
-target_link_libraries(swarmulator_pd fann raylib OpenMP::OpenMP_CXX)
+target_link_libraries(swarmulator_pd Eigen3::Eigen raylib OpenMP::OpenMP_CXX)
 
 # predator/prey experiment
 add_executable(swarmulator_pred_prey
@@ -103,8 +119,9 @@ add_executable(swarmulator_pred_prey
         ${AGENTS_SOURCES}
         ${ENV_SOURCES}
         ${LOGGER_SOURCES}
+        ${UTIL_SOURCES}
 )
-target_link_libraries(swarmulator_pred_prey fann raylib OpenMP::OpenMP_CXX)
+target_link_libraries(swarmulator_pred_prey Eigen3::Eigen raylib OpenMP::OpenMP_CXX)
 
 # boids
 add_executable(swarmulator_boids
@@ -113,5 +130,6 @@ add_executable(swarmulator_boids
         ${AGENTS_SOURCES}
         ${ENV_SOURCES}
         ${LOGGER_SOURCES}
+        ${UTIL_SOURCES}
 )
-target_link_libraries(swarmulator_boids fann raylib OpenMP::OpenMP_CXX)
+target_link_libraries(swarmulator_boids Eigen3::Eigen raylib OpenMP::OpenMP_CXX)

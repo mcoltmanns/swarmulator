@@ -119,6 +119,26 @@ void NeuralAgent::to_ssbo(SSBOAgent *out) const {
     out->info.y = 0;
 }
 
+std::string NeuralAgent::get_genome_string() {
+    std::stringstream ss;
+    ss << "[";
+    for (int i = 0; i < num_inputs_; i++) {
+        for (int j = 0; j < num_hidden_; j++) {
+            ss << w_in_hidden_(i, j) << ", ";
+        }
+    }
+    for (int i = 0; i < num_hidden_; i++) {
+        for (int j = 0; j < num_outputs_; j++) {
+            ss << w_hidden_out_(i, j) << ", ";
+        }
+    }
+    for (int i = 0; i < num_hidden_ - 1; i++) {
+        ss << b_hidden_(0, i) << ", ";
+    }
+    ss << b_hidden_(0, num_hidden_ - 1) << "]";
+    return ss.str();
+}
+
 void NeuralAgent::mutate(const float mutation_chance) {
     for (int i = 0; i < num_hidden_; i++) {
         for (int j = 0; j < num_inputs_; j++) {
