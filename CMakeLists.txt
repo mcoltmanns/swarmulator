@@ -90,6 +90,13 @@ set(UTIL_SOURCES
         src/util/util.h
 )
 
+set(SHADER_SOURCES
+        src/shaders/agent.frag
+        src/shaders/boid.vert
+        src/shaders/forage.vert
+        src/shaders/pd.vert
+)
+
 # forage experiment
 add_executable(swarmulator_forage
         src/continuous_forage.cpp
@@ -98,16 +105,18 @@ add_executable(swarmulator_forage
         ${ENV_SOURCES}
         ${LOGGER_SOURCES}
         ${UTIL_SOURCES}
+        ${SHADER_SOURCES}
 )
 target_link_libraries(swarmulator_forage Eigen3::Eigen raylib OpenMP::OpenMP_CXX)
 
 # prisoner's dilemma experiment
 add_executable(swarmulator_pd
-    src/prisoners_dilemma.cpp
-    src/Simulation.h
-    ${AGENTS_SOURCES}
+        src/prisoners_dilemma.cpp
+        src/Simulation.h
+        ${AGENTS_SOURCES}
         ${ENV_SOURCES}
         ${LOGGER_SOURCES}
+        ${SHADER_SOURCES}
         ${UTIL_SOURCES}
 )
 target_link_libraries(swarmulator_pd Eigen3::Eigen raylib OpenMP::OpenMP_CXX)
@@ -119,6 +128,7 @@ add_executable(swarmulator_pred_prey
         ${AGENTS_SOURCES}
         ${ENV_SOURCES}
         ${LOGGER_SOURCES}
+        ${SHADER_SOURCES}
         ${UTIL_SOURCES}
 )
 target_link_libraries(swarmulator_pred_prey Eigen3::Eigen raylib OpenMP::OpenMP_CXX)
@@ -131,5 +141,6 @@ add_executable(swarmulator_boids
         ${ENV_SOURCES}
         ${LOGGER_SOURCES}
         ${UTIL_SOURCES}
+        ${SHADER_SOURCES}
 )
 target_link_libraries(swarmulator_boids Eigen3::Eigen raylib OpenMP::OpenMP_CXX)

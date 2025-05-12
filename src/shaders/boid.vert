@@ -1,3 +1,4 @@
+R"(
 #version 430
 struct Agent {
     vec4 position;
@@ -29,10 +30,8 @@ void main() {
     vec2 signals = agents[gl_InstanceID].signals;
     vec2 info = agents[gl_InstanceID].info;
 
-    // change frag color depending on pd decision (coop blue, defect red)
-    fragColor.r = int(info.x) == 1 ? 1 : 0;
-    fragColor.b = int(info.x) == 0 ? 1 : 0;
-    fragColor.g = 0;
+    // change color depending on direction
+    fragColor.rgb = abs(normalize(direction));
 
     fragColor.a = gl_InstanceID >= num_agents ? 0.0 : 1.0; // only show this agent if the data we're reading from isn't junk
 
@@ -62,3 +61,4 @@ void main() {
 
     gl_Position = projection_matrix * vec4(vertexView, 1);
 }
+)"

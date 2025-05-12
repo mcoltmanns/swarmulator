@@ -63,8 +63,13 @@ int main(int argc, char** argv) {
     auto simulation = Simulation<swarmulator::agent::PDAgent>(world_size, subdivisions);
 
     // init agents (shaders and mesh)
-    // TODO: make these shaders position-independent! (probably a constexpr string somewhere is best)
-    Shader agent_shader = LoadShader("/home/moltmanns/Documents/swarmulator/shaders/pd.vert", "/home/moltmanns/Documents/swarmulator/shaders/agent.frag");
+    const std::string vs_src =
+#include "shaders/pd.vert"
+        ;
+    const std::string fs_src =
+#include "shaders/agent.frag"
+        ;
+    Shader agent_shader = LoadShaderFromMemory(vs_src.c_str(), fs_src.c_str());
     auto agent_vao = rlLoadVertexArray();
     rlEnableVertexArray(agent_vao);
     constexpr Vector3 mesh[] = {
