@@ -21,7 +21,6 @@ static_assert(std::is_base_of_v<swarmulator::agent::Agent, AgentType>, "simulati
 private:
     Vector3 world_size_ = {1.f, 1.f, 1.f};
     int grid_divisions_ = 20;
-    float time_scale_ = 1.f;
 
     int max_agents_ = 5000;
     int min_agents_ = 100;
@@ -29,6 +28,7 @@ private:
 
     float log_interval_ = 1; // how many seconds between loggings
     float last_log_time_ = 0;
+    double time_ = 0; // time since Simulation() called
     std::filesystem::path log_file_path_;
     std::ofstream log_file_;
 
@@ -73,6 +73,8 @@ public:
     [[nodiscard]] const std::list<std::shared_ptr<swarmulator::env::Sphere>> &get_objects() const { return objects_; }
     [[nodiscard]] size_t get_objects_count() const { return objects_.size(); }
 
+    [[nodiscard]] double sim_time() const { return time_; }
+
     void set_log_file(const std::filesystem::path &dir) {
         log_file_path_ = dir;
         std::cout << "logging to " << log_file_path_ << std::endl;
@@ -93,6 +95,7 @@ public:
     }
 
     void update(float dt) {
+        time_ += dt;
         // remove dead agents and wrap bounds
         auto it = agents_.begin();
         while (it != agents_.end()) {
@@ -112,6 +115,7 @@ public:
                 const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
                 new_agent->set_position(xyz(p));
                 new_agent->set_direction(xyz(r));
+                new_agent->set_time_born(time_);
                 add_agent(new_agent);
             }
         }
@@ -120,10 +124,10 @@ public:
         grid_.sort_agents(agents_);
         int buffer_write_place = 0;
 
-        std::string time_str = std::to_string(GetTime());
-        bool are_we_logging = GetTime() - last_log_time_ > log_interval_;
+        std::string time_str = std::to_string(time_);
+        bool are_we_logging = time_ - last_log_time_ >= log_interval_;
         if (are_we_logging) {
-            last_log_time_ = GetTime();
+            last_log_time_ = time_;
         }
 
         // iteration is cheap, processing is expensive

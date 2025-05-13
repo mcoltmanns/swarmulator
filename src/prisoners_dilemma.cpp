@@ -23,7 +23,6 @@ int main(int argc, char** argv) {
     constexpr Vector3 world_size = {100, 100, 100};
     constexpr int subdivisions = 10;
     float cam_speed = 1.f;
-    float time_scale = 1.f;
     bool draw_bounds = true;
     omp_set_num_threads(16);
 
@@ -94,7 +93,7 @@ int main(int argc, char** argv) {
 
     uint_fast64_t frames = 0;
     while (!WindowShouldClose()) {
-        const float dt = GetFrameTime() * time_scale;
+        const float dt = 1;//GetFrameTime() * time_scale;
         // INPUT
         PollInputEvents();
         if (IsKeyDown(KEY_SPACE)) draw_bounds = !draw_bounds;
@@ -139,16 +138,13 @@ int main(int argc, char** argv) {
             DrawCubeWiresV((Vector3){0, 0, 0}, world_size, DARKGRAY);
         }
         EndMode3D();
-        if (draw_bounds) {
-            GuiSlider((Rectangle){static_cast<float>(window_w) - 250, 10, 200, 10}, "Time scale", TextFormat("%.5f", time_scale), &time_scale, 0, 100);
-        }
+
         // debug info
         DrawFPS(0, 0);
         DrawText(TextFormat("%zu/%zu agents", simulation.get_agents_count(), simulation.get_max_agents()), 0, 20, 18, DARKGREEN);
         DrawText(TextFormat("%zu threads", omp_get_max_threads()), 0, 40, 18, DARKGREEN);
-        DrawText(TextFormat("%zu iterations", frames++), 0, 60, 18, DARKGREEN);
-        DrawText(TextFormat("%.0f seconds", GetTime()), 0, 80, 18, DARKGREEN);
-        DrawText(TextFormat("%zu agents have existed", simulation.get_total_agents()), 0, 100, 18, DARKGREEN);
+        DrawText(TextFormat("%.0f sim time", simulation.sim_time()), 0, 60, 18, DARKGREEN);
+        DrawText(TextFormat("%zu agents have existed", simulation.get_total_agents()), 0, 80, 18, DARKGREEN);
 
         EndDrawing();
     }

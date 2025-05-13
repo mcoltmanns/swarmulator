@@ -23,7 +23,7 @@ public:
 
 class ContinuousForageAgent final : public NeuralAgent {
 private:
-    float eat_energy_ = 5; // how much energy do you get from eating per second (weighted by inverse distance to food source center)
+    float eat_energy_ = 1; // how much energy do you get from eating per second/per update (weighted by inverse distance to food source center)
 
 public:
     ContinuousForageAgent() : NeuralAgent() {};

@@ -30,7 +30,7 @@ namespace swarmulator::agent {
                     coop_pay += coop_payoff * factor * dt;
                     defect_pay += defect_payoff * factor * dt;
                 }
-                // if they are a defector, the cooperation bonus drops
+                // if they are a defector, the cooperation bonus drops, but the defector payoff does not
                 else {
                     coop_pay -= coop_payoff * factor * dt;
                 }
@@ -50,7 +50,6 @@ namespace swarmulator::agent {
             energy_ -= reproduction_cost_;
             auto n_a = std::make_shared<PDAgent>(*this);
             n_a->set_energy(initial_energy_);
-            n_a->set_time_born(GetTime());
             n_a->mutate();
             n_a->parent_ = id_;
             return n_a;

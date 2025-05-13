@@ -30,18 +30,18 @@ protected:
     Eigen::MatrixXf w_hidden_out_ = Eigen::MatrixXf::Random(num_hidden_, num_outputs_); // weights from hidden to out
     // random biases
     Eigen::MatrixXf b_hidden_ = Eigen::MatrixXf::Random(1, num_hidden_);
-    float context_weight_ = 0.01; // weight of context layer (old hidden layer outputs)
+    float context_weight_ = 1; // weight of context layer (old hidden layer outputs)
 
 protected:
     static constexpr float initial_energy_ = 2;
     float energy_ = initial_energy_;
     float reproduction_threshold_ = 10;
-    float signal_cost_ = 0.01; // how much energy it costs to give a signal of 1 per second
-    float basic_cost_ = 0.1; // how much energy you lose by default per second
+    float signal_cost_ = 0.001; // how much energy it costs to give a signal of 1 per second
+    float basic_cost_ = 0.01; // how much energy you lose by default per second
     float reproduction_cost_ = 8;
 
-    float max_lifetime_ = 1000; // how many seconds this agent may be alive for at most
-    float time_born_ = GetTime();
+    float max_lifetime_ = 1000; // how many updates this agent may be alive for at most
+    float time_born_ = 0;
 
     void think(const std::vector<std::shared_ptr<Agent> > &neighborhood);
 
