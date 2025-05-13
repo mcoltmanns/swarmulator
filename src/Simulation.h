@@ -119,7 +119,7 @@ public:
                 add_agent(new_agent);
             }
         }
-        swarmulator::agent::global_reward_factor = std::lerp(1.f, 0.f, static_cast<float>(static_cast<int>(agents_.size()) - min_agents_) / static_cast<float>(max_agents_ - min_agents_)); // keeps population in acceptable range
+        swarmulator::agent::global_reward_factor = std::lerp(100.f, 0.f, static_cast<float>(static_cast<int>(agents_.size()) - min_agents_) / static_cast<float>(max_agents_ - min_agents_)); // keeps population in acceptable range
         // throw agents into the grid
         grid_.sort_agents(agents_);
         int buffer_write_place = 0;

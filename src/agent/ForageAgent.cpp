@@ -17,7 +17,7 @@ namespace swarmulator::agent {
         // if you're touching a sphere, eat
         for (const auto& sphere : objects) {
             if (sphere->intersect(position_, scale)) {
-                energy_ += global_reward_factor * eat_energy_ * dt / Vector3Distance(position_, sphere->position()); // scale the energy you get by the inverse distance to the sphere center
+                energy_ += global_reward_factor * eat_energy_ * dt / Vector3DistanceSqr(position_, sphere->position()); // scale the energy you get by the inverse distance to the sphere center
                 sphere->setColor(YELLOW);
             }
         }
@@ -40,7 +40,7 @@ namespace swarmulator::agent {
         float extra = 0;
         const float reward_per_sphere = global_reward_factor * eat_energy_;// / objects.size();
         for (const auto& sphere : objects) {
-            extra += reward_per_sphere / Vector3Distance(position_, sphere->position());
+            extra += reward_per_sphere / (1.f + Vector3DistanceSqr(position_, sphere->position()));
         }
         energy_ += extra * dt;
 

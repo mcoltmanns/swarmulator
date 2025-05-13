@@ -28,9 +28,9 @@ protected:
     // random weights
     Eigen::MatrixXf w_in_hidden_ = Eigen::MatrixXf::Random(num_inputs_, num_hidden_); // weights from input to hidden
     Eigen::MatrixXf w_hidden_out_ = Eigen::MatrixXf::Random(num_hidden_, num_outputs_); // weights from hidden to out
-    // random biases
+    // random biases on hidden layer
     Eigen::MatrixXf b_hidden_ = Eigen::MatrixXf::Random(1, num_hidden_);
-    float context_weight_ = 1; // weight of context layer (old hidden layer outputs)
+    float context_weight_ = 0;//1; // weight of context layer (old hidden layer outputs)
 
 protected:
     static constexpr float initial_energy_ = 2;

@@ -35,7 +35,8 @@ void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood
         }
         const float weight = 1.f / (1.f + dist_sqr); // weight everything by inverse square distance
         const auto neighbor_signals = neighbor->get_signals();
-        const auto [diff_x, diff_y, diff_z] = direction_ - Vector3Normalize(neighbor->get_position() - position_);
+        // this is the absolute difference - not rotated by the direction vector!
+        const auto [diff_x, diff_y, diff_z] = /*direction_ -*/ Vector3Normalize(neighbor->get_position() - position_);
         // diffs tells us which cardinal segment the neighbor is in
         // greatest magnitude is x
         if (std::abs(diff_x) > std::abs(diff_y) && std::abs(diff_x) > std::abs(diff_z)) {
@@ -81,12 +82,11 @@ void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood
     //const auto norm = input_.norm();
     //input_ = norm != 0 ? input_ * (1.f / input_.norm()) : input_;
     // run everything through the network
-    hidden_out_ = (input_ * w_in_hidden_ + hidden_out_ * context_weight_ + b_hidden_).unaryExpr(&sigmoid);
+    hidden_out_ = (input_ * w_in_hidden_ + hidden_out_ * context_weight_).unaryExpr(&sigmoid);// + b_hidden_;
     output_ = (hidden_out_ * w_hidden_out_).unaryExpr(&sigmoid);
 }
 
 std::shared_ptr<Agent> NeuralAgent::update(const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::list<std::shared_ptr<env::Sphere>> &objects, const float dt) {
-    //std::cout << energy_ << std::endl;
     think(neighborhood);
     // remember output is between 0 and 1 - so we scale to between -1 and 1, and then use that to choose an angle between -2pi and 2pi to rotate by
     const float pitch = ((output_(0, 0) - 0.5) * 2.f) * std::numbers::pi * 2.f * rot_speed_ * dt; // rotation about world y axis (elevation angle/psi) (control direction z part)
