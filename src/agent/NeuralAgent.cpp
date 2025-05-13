@@ -36,7 +36,7 @@ void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood
         const float weight = 1.f / (1.f + dist_sqr); // weight everything by inverse square distance
         const auto neighbor_signals = neighbor->get_signals();
         // this is the absolute difference - not rotated by the direction vector!
-        const auto [diff_x, diff_y, diff_z] = /*direction_ -*/ Vector3Normalize(neighbor->get_position() - position_);
+        const auto [diff_x, diff_y, diff_z] = /*direction_ -*/ neighbor->get_position() - position_;
         // diffs tells us which cardinal segment the neighbor is in
         // greatest magnitude is x
         if (std::abs(diff_x) > std::abs(diff_y) && std::abs(diff_x) > std::abs(diff_z)) {
@@ -82,7 +82,7 @@ void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood
     //const auto norm = input_.norm();
     //input_ = norm != 0 ? input_ * (1.f / input_.norm()) : input_;
     // run everything through the network
-    hidden_out_ = (input_ * w_in_hidden_ + hidden_out_ * context_weight_).unaryExpr(&sigmoid);// + b_hidden_;
+    hidden_out_ = (input_ * w_in_hidden_ + hidden_out_ * context_weight_).unaryExpr(&sigmoid) + b_hidden_;
     output_ = (hidden_out_ * w_hidden_out_).unaryExpr(&sigmoid);
 }
 
