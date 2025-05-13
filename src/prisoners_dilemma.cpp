@@ -17,7 +17,7 @@
 #include "util/util.h"
 
 int main(int argc, char** argv) {
-    int init_agent_count = 1000;
+    int init_agent_count = 100;
     int window_w = 800;
     int window_h = 600;
     constexpr Vector3 world_size = {100, 100, 100};
@@ -89,6 +89,7 @@ int main(int argc, char** argv) {
         simulation.add_agent(a);
     }
 
+    simulation.set_min_agents(init_agent_count / 2);
     simulation.set_log_file("/home/moltmanns/Documents/swarmulator/pd.csv");
 
     uint_fast64_t frames = 0;
@@ -145,6 +146,7 @@ int main(int argc, char** argv) {
         DrawText(TextFormat("%zu threads", omp_get_max_threads()), 0, 40, 18, DARKGREEN);
         DrawText(TextFormat("%.0f sim time", simulation.sim_time()), 0, 60, 18, DARKGREEN);
         DrawText(TextFormat("%zu agents have existed", simulation.get_total_agents()), 0, 80, 18, DARKGREEN);
+        DrawText(TextFormat("%.3f GRF", swarmulator::agent::global_reward_factor), 0, 100, 18, DARKGREEN);
 
         EndDrawing();
     }

@@ -154,6 +154,7 @@ int main(int argc, char** argv) {
         DrawText(TextFormat("%zu threads", omp_get_max_threads()), 0, 40, 18, DARKGREEN);
         DrawText(TextFormat("%.0f sim time", simulation.sim_time()), 0, 60, 18, DARKGREEN);
         DrawText(TextFormat("%zu agents have existed", simulation.get_total_agents()), 0, 80, 18, DARKGREEN);
+        DrawText(TextFormat("%.3f GRF", swarmulator::agent::global_reward_factor), 0, 100, 18, DARKGREEN);
 
         EndDrawing();
     }

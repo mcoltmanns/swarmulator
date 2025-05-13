@@ -27,22 +27,22 @@ namespace swarmulator::agent {
                 const float factor = 1.f / (1.f + std::sqrt(dist));
                 // if the neighbor is a cooperator, you get bonuses for cooperating and defecting
                 if (neighbor->team == 0) {
-                    coop_pay += coop_payoff * factor * dt;
-                    defect_pay += defect_payoff * factor * dt;
+                    coop_pay += coop_payoff * factor;
+                    defect_pay += defect_payoff * factor;
                 }
                 // if they are a defector, the cooperation bonus drops, but the defector payoff does not
                 else {
-                    coop_pay -= coop_payoff * factor * dt;
+                    coop_pay -= coop_payoff * factor;
                 }
             }
         }
 
         // update energy based on coop/defect choice and assoc. payoffs
         if (team == 0) {
-            energy_ += coop_pay;
+            energy_ += coop_pay * dt;
         }
         else {
-            energy_ += defect_pay;
+            energy_ += defect_pay * dt;
         }
 
         // if you have the energy, reproduce
