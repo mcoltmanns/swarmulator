@@ -26,6 +26,7 @@ int main(int argc, char** argv) {
     float cam_speed = 1.f;
     bool draw_bounds = true;
     omp_set_num_threads(16);
+    float run_for = 1000000; // how many seconds to run the simulation for
 
     if (const auto o = get_opt(argv, argv + argc, "-n")) {
         init_agent_count = std::stoi(o);
@@ -101,8 +102,7 @@ int main(int argc, char** argv) {
     simulation.set_min_agents(init_agent_count / 2);
     simulation.set_log_file("/home/moltmanns/Documents/swarmulator/forage.csv");
 
-    uint_fast64_t frames = 0;
-    while (!WindowShouldClose()) {
+    while (!WindowShouldClose() && GetTime() < run_for) {
         const float dt = 1;//GetFrameTime() * time_scale; // set to 1 for 1 update/frame (max speed), set to GetFrameTime() for realtime
         // INPUT
         PollInputEvents();
