@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <rcamera.h>
 #include <string>
+#include <sstream>
 
 // get a random float between 0 and 1
 inline float randfloat() {

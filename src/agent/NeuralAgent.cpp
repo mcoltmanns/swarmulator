@@ -97,6 +97,7 @@ std::shared_ptr<Agent> NeuralAgent::update(const std::vector<std::shared_ptr<Age
     // apply
     direction_ = Vector3RotateByAxisAngle(direction_, Vector3UnitY, pitch); // appy pitch
     direction_ = Vector3RotateByAxisAngle(direction_, Vector3UnitZ, yaw); // then yaw
+    direction_ = Vector3Normalize(direction_);
     position_ = position_ + direction_ * move_speed_ * dt; // then move
     energy_ -= (signal_cost_ * (std::abs(signals_[0]) + std::abs(signals_[1])) + basic_cost_) * dt; // adjust your energy
     // default neuralagent never reproduces

@@ -42,7 +42,7 @@ endif ()
 ]]
 
 # OPENMP
-find_package(OpenMP)
+find_package(OpenMP REQUIRED)
 
 # FANN
 # need fann-dev and fann 2
@@ -50,10 +50,10 @@ find_package(OpenMP)
 #find_package(fann)
 
 # EIGEN
-find_package(Eigen3)
+find_package(Eigen3 REQUIRED)
 
 # BOOST
-find_package(Boost)
+find_package(Boost REQUIRED)
 if (Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif ()
@@ -133,9 +133,9 @@ add_executable(swarmulator_pred_prey
 )
 target_link_libraries(swarmulator_pred_prey Eigen3::Eigen raylib OpenMP::OpenMP_CXX)
 
-# boids
-add_executable(swarmulator_boids
-        src/boids.cpp
+# boids no grid
+add_executable(swarmulator_boids_nogrid
+        src/boids_nogrid.cpp
         src/Simulation.h
         ${AGENTS_SOURCES}
         ${ENV_SOURCES}
@@ -143,4 +143,15 @@ add_executable(swarmulator_boids
         ${UTIL_SOURCES}
         ${SHADER_SOURCES}
 )
-target_link_libraries(swarmulator_boids Eigen3::Eigen raylib OpenMP::OpenMP_CXX)
+target_link_libraries(swarmulator_boids_nogrid Eigen3::Eigen raylib OpenMP::OpenMP_CXX)
+
+add_executable(swarmulator_boids_grid
+        src/boids_grid.cpp
+        src/Simulation.h
+        ${AGENTS_SOURCES}
+        ${ENV_SOURCES}
+        ${LOGGER_SOURCES}
+        ${UTIL_SOURCES}
+        ${SHADER_SOURCES}
+)
+target_link_libraries(swarmulator_boids_grid Eigen3::Eigen raylib OpenMP::OpenMP_CXX)

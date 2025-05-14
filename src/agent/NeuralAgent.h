@@ -41,7 +41,6 @@ protected:
     float reproduction_cost_ = 8;
 
     float max_lifetime_ = 1000; // how many updates this agent may be alive for at most
-    float time_born_ = 0;
 
     void think(const std::vector<std::shared_ptr<Agent> > &neighborhood);
 
@@ -75,9 +74,8 @@ public:
 
     void set_energy(const float energy) { energy_ = energy; }
     [[nodiscard]] float get_energy() const { return energy_; }
-    void set_time_born(const float time_born) { time_born_ = time_born; }
 
-    [[nodiscard]] std::string get_genome_string();
+    [[nodiscard]] std::string get_genome_string() override;
 };
 
 } // agent

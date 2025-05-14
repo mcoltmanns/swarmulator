@@ -41,11 +41,12 @@ private:
 
     swarmulator::util::StaticGrid<AgentType> grid_;
 
-    bool logging_enabled_ = false;
 
     size_t total_agents_ = 0; // number of agents that have existed over the course of the whole simulation
 
 public:
+    bool logging_enabled_ = false;
+
     Simulation() : grid_(world_size_, grid_divisions_) {
         agents_ssbo_array_ = static_cast<swarmulator::agent::SSBOAgent *>(RL_CALLOC(agents_ssbo_size_, sizeof(swarmulator::agent::SSBOAgent)));
         agents_ssbo_ = rlLoadShaderBuffer(agents_ssbo_size_ * sizeof(swarmulator::agent::SSBOAgent), agents_ssbo_array_, RL_DYNAMIC_COPY);
@@ -69,6 +70,7 @@ public:
     [[nodiscard]] size_t get_max_agents() const { return max_agents_; }
     [[nodiscard]] size_t get_total_agents() const { return total_agents_; }
     void set_min_agents(const size_t min_agents) { min_agents_ = min_agents; }
+    void set_max_agents(const size_t max_agents) { max_agents_ = max_agents; }
 
     [[nodiscard]] const std::list<std::shared_ptr<swarmulator::env::Sphere>> &get_objects() const { return objects_; }
     [[nodiscard]] size_t get_objects_count() const { return objects_.size(); }
@@ -127,9 +129,6 @@ public:
 
         std::string time_str = std::to_string(time_);
         bool are_we_logging = time_ - last_log_time_ >= log_interval_;
-        if (are_we_logging) {
-            last_log_time_ = time_;
-        }
 
         // iteration is cheap, processing is expensive
         // so have every thread iterate over the whole list
@@ -161,7 +160,8 @@ public:
                         }
 
                     }
-                    if (are_we_logging) {
+                    if (are_we_logging && logging_enabled_) {
+                        last_log_time_ = time_;
                         // always: time, id, genome, pos, rot, sig a, sig b, info x, info y, parent id
                         std::string id_str = boost::uuids::to_string(agent->get_id());
                         // put together the genome - array of all weights and biases

@@ -40,6 +40,8 @@ protected:
     boost::uuids::uuid id_ = boost::uuids::random_generator()();
     boost::uuids::uuid parent_ = boost::uuids::nil_generator()();
 
+    float time_born_ = 0;
+
 public:
     Agent() = default;
     Agent(const Vector3 position, const Vector3 rotation) : position_(position), direction_(rotation) {};
@@ -53,10 +55,17 @@ public:
 
     [[nodiscard]] Vector3 get_position() const { return position_; }
     [[nodiscard]] Vector3 get_direction() const { return direction_; }
+
     [[nodiscard]] virtual bool is_alive() const { return true; }
+
     [[nodiscard]] boost::uuids::uuid get_id() const { return id_; }
     void set_parent(const boost::uuids::uuid parent) { parent_ = parent; }
     [[nodiscard]] boost::uuids::uuid get_parent() const { return parent_; }
+
+    void set_time_born(const float t) { time_born_ = t; }
+    [[nodiscard]] float get_time_born() const { return time_born_; }
+
+    [[nodiscard]] virtual std::string get_genome_string() { return ""; }
 
     virtual void to_ssbo(SSBOAgent *out) const;
 };
