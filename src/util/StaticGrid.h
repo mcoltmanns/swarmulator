@@ -49,9 +49,10 @@ private:
     [[nodiscard]] std::vector<int> neighborhood_indices(const Vector3 &pos_grid) const {
         std::vector<int> indices;
         indices.reserve(3 * 3 * 3);
-        for (int x = -1; x <= 1; x++) {
-            for (int y = -1; y <= 1; y++) {
-                for (int z = -1; z <= 1; z++) {
+        // KILL BUG!!!!! (see williamdeneen.com)
+        for (int x = -cell_size_.x; x <= cell_size_.x; x += cell_size_.x) {
+            for (int y = -cell_size_.y; y <= cell_size_.y; y += cell_size_.y) {
+                for (int z = -cell_size_.z; z <= cell_size_.z; z += cell_size_.z) {
                     auto offset = Vector3(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
                     if (auto index = cell_index(pos_grid + offset); index != -1) {
                         indices.push_back(index);
