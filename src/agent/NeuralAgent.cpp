@@ -25,6 +25,11 @@ NeuralAgent::NeuralAgent(const Vector3 position, const Vector3 rotation) : Agent
 void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood) {
     input_.setZero(); // zero your input!
     // get information from your neighbors
+    /*
+     * actual proper cardinal directions:
+     * - take vector from position to neighbor (call this v)
+     * - calculate the quaternion rotation from my direction to v
+     */
     for (const auto& n_a: neighborhood) {
         const auto neighbor = dynamic_cast<NeuralAgent*>(n_a.get());
         const auto dist_sqr = Vector3DistanceSqr(position_, neighbor->get_position());
@@ -94,9 +99,10 @@ std::shared_ptr<Agent> NeuralAgent::update(const std::vector<std::shared_ptr<Age
     // apply the signals
     signals_[0] = output_(0, 2);
     signals_[1] = output_(0, 3);
-    // apply
+    // apply rotations according to tait-bryan convention - always heading/yaw (z), pitch (y), roll (x)
+    // we omit roll because you don't actually need it
+    direction_ = Vector3RotateByAxisAngle(direction_, Vector3UnitZ, yaw); // apply yaw
     direction_ = Vector3RotateByAxisAngle(direction_, Vector3UnitY, pitch); // appy pitch
-    direction_ = Vector3RotateByAxisAngle(direction_, Vector3UnitZ, yaw); // then yaw
     direction_ = Vector3Normalize(direction_);
     position_ = position_ + direction_ * move_speed_ * dt; // then move
     energy_ -= (signal_cost_ * (std::abs(signals_[0]) + std::abs(signals_[1])) + basic_cost_) * dt; // adjust your energy

@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
     simulation.set_log_file("/home/moltmanns/Documents/swarmulator/forage.csv");
 
     while (!WindowShouldClose() && GetTime() < run_for) {
-        const float dt = 1;//GetFrameTime() * time_scale; // set to 1 for 1 update/frame (max speed), set to GetFrameTime() for realtime
+        const float dt = GetFrameTime();//GetFrameTime() * time_scale; // set to 1 for 1 update/frame (max speed), set to GetFrameTime() for realtime
         // INPUT
         PollInputEvents();
         if (IsKeyDown(KEY_SPACE)) draw_bounds = !draw_bounds;

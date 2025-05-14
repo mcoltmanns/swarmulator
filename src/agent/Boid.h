@@ -14,9 +14,6 @@ private:
     float avoidance_wt_ = 1;
     float alignment_wt_ = 1;
 
-    float move_speed_ = 25;
-    float rot_speed_ = 5;
-
 public:
     Boid() = default;
     Boid(const Vector3& position, const Vector3& direction) : Agent(position, direction) {}

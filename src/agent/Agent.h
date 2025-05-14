@@ -32,8 +32,8 @@ protected:
     Vector3 position_ = Vector3(0, 0, 0);
     Vector3 direction_ = Vector3(0, 0, 0);
 
-    float rot_speed_ = 1; // rotation speed in one axle (radians/second)
-    float move_speed_ = 1;
+    float rot_speed_ = std::numbers::pi * 2.f; // rotation speed in one axle (radians/second)
+    float move_speed_ = 5;
 
     float sense_radius_ = 5.f;
 
