@@ -70,7 +70,7 @@ public:
 
     [[nodiscard]] std::array<float, 2> get_signals() const { return signals_; }
     [[nodiscard]] float get_signal(const int idx) const { return signals_[idx]; }
-    [[nodiscard]] bool is_alive() const override { return energy_ > 0 && GetTime() - time_born_ < max_lifetime_; }
+    [[nodiscard]] bool is_alive() const override { return energy_ > 0 && globals::sim_time - time_born_ < max_lifetime_; }
 
     void set_energy(const float energy) { energy_ = energy; }
     [[nodiscard]] float get_energy() const { return energy_; }

@@ -99,7 +99,7 @@ int main(int argc, char** argv) {
     }
     // initialize the spheres
     for (int i = 0; i < init_sphere_count; i++) {
-        const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
+        const auto p = Vector4{(randfloat() - 0.5f) * world_size.x * 0.75f, (randfloat() - 0.5f) * world_size.y * 0.75f, (randfloat() - 0.5f) * world_size.z * 0.75f, 0};
         //const auto p = Vector4(0, 0, 0, 0);
         simulation.add_object(std::make_shared<swarmulator::env::Sphere>(xyz(p), 0.5, BLUE));
     }
@@ -161,7 +161,7 @@ int main(int argc, char** argv) {
         DrawFPS(0, 0);
         DrawText(TextFormat("%zu/%zu agents", simulation.get_agents_count(), simulation.get_max_agents()), 0, 20, 18, DARKGREEN);
         DrawText(TextFormat("%zu threads", omp_get_max_threads()), 0, 40, 18, DARKGREEN);
-        DrawText(TextFormat("%.0f sim time (%.2f%% done)", simulation.sim_time(), (simulation.sim_time() / run_for) * 100.f), 0, 60, 18, DARKGREEN);
+        DrawText(TextFormat("%.0f sim time (%.2f%% done)", swarmulator::globals::sim_time, (swarmulator::globals::sim_time / run_for) * 100.f), 0, 60, 18, DARKGREEN);
         DrawText(TextFormat("%zu agents have existed", simulation.get_total_agents()), 0, 80, 18, DARKGREEN);
         DrawText(TextFormat("%.3f GRF", swarmulator::agent::global_reward_factor), 0, 100, 18, DARKGREEN);
 

@@ -33,7 +33,6 @@ private:
 
     float log_interval_ = 1; // how many seconds of simtime between loggings
     float last_log_time_ = 0;
-    double time_ = 0; // time since Simulation() called
     std::filesystem::path dynamic_log_file_path_; // position, rotation, etc
     std::filesystem::path static_log_file_path_;
     boost::iostreams::filtering_ostream dynamic_log_file_stream_;
@@ -81,8 +80,6 @@ public:
     [[nodiscard]] const std::list<std::shared_ptr<swarmulator::env::Sphere>> &get_objects() const { return objects_; }
     [[nodiscard]] size_t get_objects_count() const { return objects_.size(); }
 
-    [[nodiscard]] double sim_time() const { return time_; }
-
     void set_log_file(const std::filesystem::path &dir) {
         dynamic_log_file_path_ = dir;
         static_log_file_path_ = dir;
@@ -126,7 +123,7 @@ public:
     }
 
     void update(float dt) {
-        time_ += dt;
+        swarmulator::globals::sim_time += dt;
         // remove dead agents and wrap bounds
         auto it = agents_.begin();
         while (it != agents_.end()) {
@@ -146,7 +143,7 @@ public:
                 const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
                 new_agent->set_position(xyz(p));
                 new_agent->set_direction(xyz(r));
-                new_agent->set_time_born(time_);
+                new_agent->set_time_born(swarmulator::globals::sim_time);
                 add_agent(new_agent);
             }
         }
@@ -156,8 +153,8 @@ public:
         grid_.sort_agents(agents_);
         int buffer_write_place = 0;
 
-        std::string time_str = std::to_string(time_);
-        bool are_we_logging = time_ - last_log_time_ >= log_interval_;
+        std::string time_str = std::to_string(swarmulator::globals::sim_time);
+        bool are_we_logging = swarmulator::globals::sim_time - last_log_time_ >= log_interval_;
 
         // iteration is cheap, processing is expensive
         // so have every thread iterate over the whole list
@@ -191,7 +188,7 @@ public:
                     }
                     if (are_we_logging && logging_enabled_) {
                         // log dynamic stuff (agent info that changes every frame)
-                        last_log_time_ = time_;
+                        last_log_time_ = swarmulator::globals::sim_time;
                         // always: time, id, pos, rot, sig a, sig b, info x, info y
                         std::string id_str = boost::uuids::to_string(agent->get_id());
                         // put together the genome - array of all weights and biases
