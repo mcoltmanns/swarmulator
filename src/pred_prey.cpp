@@ -26,6 +26,9 @@ int main(int argc, char** argv) {
     float cam_speed = 1.f;
     bool draw_bounds = true;
     omp_set_num_threads(16);
+    float run_for = 1000000; // how many seconds to run the simulation for
+    bool logging = false;
+    std::string log_dir = "";
 
     if (const auto o = get_opt(argv, argv + argc, "-n")) {
         init_agent_count = std::stoi(o);
@@ -44,6 +47,10 @@ int main(int argc, char** argv) {
     }
     if (opt_exists(argv, argv + argc, "-aa")) {
         SetConfigFlags(FLAG_MSAA_4X_HINT);
+    }
+    if (const auto o = get_opt(argv, argv + argc, "-l")) {
+        logging = true;
+        log_dir = std::string(o);
     }
 
     auto s = time(nullptr);
@@ -98,11 +105,13 @@ int main(int argc, char** argv) {
         simulation.add_agent(a);
     }
 
-    simulation.set_log_file("/home/moltmanns/Documents/swarmulator/pred_prey.csv");
+    simulation.logging_enabled_ = logging;
+    simulation.set_log_file(log_dir);
 
-    uint_fast64_t frames = 0;
-    while (!WindowShouldClose()) {
-        const float dt = 1;//GetFrameTime() * time_scale;
+    double run_time = 0;
+    while (!WindowShouldClose() && run_time < run_for) {
+        const float dt = GetFrameTime();//GetFrameTime() * time_scale; // set to 1 for 1 update/frame (max speed), set to GetFrameTime() for realtime
+        run_time += dt;
         // INPUT
         PollInputEvents();
         if (IsKeyDown(KEY_SPACE)) draw_bounds = !draw_bounds;
