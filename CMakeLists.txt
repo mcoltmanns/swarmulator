@@ -53,10 +53,13 @@ find_package(OpenMP REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 # BOOST
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS iostreams)
 if (Boost_FOUND)
+    add_definitions(${BOOST_DEFINITIONS} -DBOOST_ALL_NO_LIB)
     include_directories(${Boost_INCLUDE_DIRS})
+    link_directories(${Boost_LIBRARY_DIRS})
 endif ()
+
 
 set(AGENTS_SOURCES
     src/agent/Agent.cpp
@@ -107,7 +110,7 @@ add_executable(swarmulator_forage
         ${UTIL_SOURCES}
         ${SHADER_SOURCES}
 )
-target_link_libraries(swarmulator_forage Eigen3::Eigen raylib OpenMP::OpenMP_CXX)
+target_link_libraries(swarmulator_forage Eigen3::Eigen raylib OpenMP::OpenMP_CXX ${Boost_LIBRARIES})
 
 # prisoner's dilemma experiment
 add_executable(swarmulator_pd
@@ -119,7 +122,7 @@ add_executable(swarmulator_pd
         ${SHADER_SOURCES}
         ${UTIL_SOURCES}
 )
-target_link_libraries(swarmulator_pd Eigen3::Eigen raylib OpenMP::OpenMP_CXX)
+target_link_libraries(swarmulator_pd Eigen3::Eigen raylib OpenMP::OpenMP_CXX ${Boost_LIBRARIES})
 
 # predator/prey experiment
 add_executable(swarmulator_pred_prey
@@ -131,7 +134,7 @@ add_executable(swarmulator_pred_prey
         ${SHADER_SOURCES}
         ${UTIL_SOURCES}
 )
-target_link_libraries(swarmulator_pred_prey Eigen3::Eigen raylib OpenMP::OpenMP_CXX)
+target_link_libraries(swarmulator_pred_prey Eigen3::Eigen raylib OpenMP::OpenMP_CXX ${Boost_LIBRARIES})
 
 # boids no grid
 add_executable(swarmulator_boids_nogrid
@@ -143,7 +146,7 @@ add_executable(swarmulator_boids_nogrid
         ${UTIL_SOURCES}
         ${SHADER_SOURCES}
 )
-target_link_libraries(swarmulator_boids_nogrid Eigen3::Eigen raylib OpenMP::OpenMP_CXX)
+target_link_libraries(swarmulator_boids_nogrid Eigen3::Eigen raylib OpenMP::OpenMP_CXX ${Boost_LIBRARIES})
 
 add_executable(swarmulator_boids_grid
         src/boids_grid.cpp
@@ -154,4 +157,4 @@ add_executable(swarmulator_boids_grid
         ${UTIL_SOURCES}
         ${SHADER_SOURCES}
 )
-target_link_libraries(swarmulator_boids_grid Eigen3::Eigen raylib OpenMP::OpenMP_CXX)
+target_link_libraries(swarmulator_boids_grid Eigen3::Eigen raylib OpenMP::OpenMP_CXX ${Boost_LIBRARIES})

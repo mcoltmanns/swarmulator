@@ -9,6 +9,9 @@
 #include <fstream>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/device/file.hpp>
 
 #include "agent/Agent.h"
 #include "env/Sphere.h"
@@ -26,11 +29,14 @@ private:
     int min_agents_ = 100;
     int max_objects_ = 100;
 
-    float log_interval_ = 1; // how many seconds between loggings
+    float log_interval_ = 1; // how many seconds of simtime between loggings
     float last_log_time_ = 0;
     double time_ = 0; // time since Simulation() called
     std::filesystem::path log_file_path_;
-    std::ofstream log_file_;
+    boost::iostreams::filtering_ostream log_file_str_;
+    std::stringstream log_buffer_;
+    size_t log_buffer_max_size_ = 2048 * 2048 * 2048; // how many characters to accumulate between writing log to disk
+    // bigger is better, but bigger needs more memory
 
     std::list<std::shared_ptr<AgentType>> agents_;
     swarmulator::agent::SSBOAgent* agents_ssbo_array_;
@@ -40,7 +46,6 @@ private:
     std::list<std::shared_ptr<swarmulator::env::Sphere>> objects_;
 
     swarmulator::util::StaticGrid<AgentType> grid_;
-
 
     size_t total_agents_ = 0; // number of agents that have existed over the course of the whole simulation
 
@@ -80,8 +85,12 @@ public:
     void set_log_file(const std::filesystem::path &dir) {
         log_file_path_ = dir;
         std::cout << "logging to " << log_file_path_ << std::endl;
-        log_file_.open(log_file_path_, std::ofstream::out | std::ofstream::trunc);
-        log_file_ << "time|id|genome|position|rotation|signals|info|parent" << std::endl;
+        //const auto src = boost::iostreams::file_source(log_file_path_.c_str(), std::ios::out | std::ios::trunc);
+        auto file = std::ofstream(log_file_path_, std::ios::out | std::ios::trunc | std::ios::binary);
+        log_file_str_.reset();
+        log_file_str_.push(boost::iostreams::gzip_compressor());
+        log_file_str_.push(boost::iostreams::file_sink(log_file_path_));
+        log_file_str_ << "time | id | genome | position | rotation | signals | info | parent" << std::endl;
     }
 
     // should be threadsafe?
@@ -169,27 +178,26 @@ public:
                         std::string parent_str = boost::uuids::to_string(agent->get_parent());
                         swarmulator::agent::SSBOAgent into;
                         agent->to_ssbo(&into);
-                        std::stringstream ss;
-                        ss <<
-                            time_str << "|" <<
-                            id_str << "|" <<
-                            genome_str << "|" <<
-                            Vector3ToString(xyz(into.position)) << "|" <<
-                            Vector3ToString(xyz(into.direction)) << "|" <<
-                            Vector2ToString(into.signals) << "|" <<
-                            Vector2ToString(into.info) << "|" <<
-                            parent_str;
 #pragma omp critical
-                        {
-                            log_file_.open(log_file_path_, std::ofstream::app);
-                            log_file_ << ss.str() << std::endl;
-                            log_file_.close();
-                        }
+                        log_buffer_ <<
+                            time_str << " | " <<
+                            id_str << " | " <<
+                            genome_str << " | " <<
+                            Vector3ToString(xyz(into.position)) << " | " <<
+                            Vector3ToString(xyz(into.direction)) << " | " <<
+                            Vector2ToString(into.signals) << " | " <<
+                            Vector2ToString(into.info) << " | " <<
+                            parent_str << std::endl;
+                        // concurrent stream access big no-no!
                     }
                 }
             }
         }
         rlUpdateShaderBuffer(agents_ssbo_, agents_ssbo_array_, agents_.size() * sizeof(swarmulator::agent::SSBOAgent), 0); // only copy as much data as there are agents (actually saves a lot of time)
+        if (log_buffer_.tellp() >= log_buffer_max_size_) {
+            log_file_str_ << log_buffer_.str();
+            log_buffer_ = std::stringstream(); // get a whole new stringstream (this also resets the write position)
+        }
     }
 
     [[nodiscard]] unsigned int get_agents_ssbo() const { return agents_ssbo_; }
