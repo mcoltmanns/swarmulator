@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
 
     double run_time = 0;
     while (!WindowShouldClose() && run_time < run_for) {
-        const float dt = GetFrameTime();//GetFrameTime() * time_scale; // set to 1 for 1 update/frame (max speed), set to GetFrameTime() for realtime
+        const float dt = draw_bounds ? GetFrameTime() : 1;//GetFrameTime();//GetFrameTime() * time_scale; // set to 1 for 1 update/frame (max speed), set to GetFrameTime() for realtime
         run_time += dt;
         // INPUT
         PollInputEvents();
