@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
     constexpr Vector3 world_size = {100, 100, 100};
     constexpr int subdivisions = 10; // choose such that size / count > agent sense radius * 2 (10-20 are good numbers)
     float cam_speed = 1.f;
-    bool draw_bounds = true;
+    bool draw_bounds = false;
     omp_set_num_threads(16);
     float run_for = 1000000; // how many seconds to run the simulation for
     bool logging = false;
@@ -161,7 +161,7 @@ int main(int argc, char** argv) {
         DrawFPS(0, 0);
         DrawText(TextFormat("%zu/%zu agents", simulation.get_agents_count(), simulation.get_max_agents()), 0, 20, 18, DARKGREEN);
         DrawText(TextFormat("%zu threads", omp_get_max_threads()), 0, 40, 18, DARKGREEN);
-        DrawText(TextFormat("%.0f sim time", simulation.sim_time()), 0, 60, 18, DARKGREEN);
+        DrawText(TextFormat("%.0f sim time (%.2f%% done)", simulation.sim_time(), (simulation.sim_time() / run_for) * 100.f), 0, 60, 18, DARKGREEN);
         DrawText(TextFormat("%zu agents have existed", simulation.get_total_agents()), 0, 80, 18, DARKGREEN);
         DrawText(TextFormat("%.3f GRF", swarmulator::agent::global_reward_factor), 0, 100, 18, DARKGREEN);
 
