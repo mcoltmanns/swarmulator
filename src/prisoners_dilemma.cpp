@@ -17,7 +17,7 @@
 #include "util/util.h"
 
 int main(int argc, char** argv) {
-    int init_agent_count = 100;
+    int init_agent_count = 1000;
     int window_w = 800;
     int window_h = 600;
     constexpr Vector3 world_size = {100, 100, 100};
@@ -92,7 +92,6 @@ int main(int argc, char** argv) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
         auto a = std::make_shared<swarmulator::agent::PDAgent>(xyz(p), xyz(r));
-        a->mutate();
         simulation.add_agent(a);
     }
 
@@ -102,7 +101,7 @@ int main(int argc, char** argv) {
 
     double run_time = 0;
     while (!WindowShouldClose() && run_time < run_for) {
-        const float dt = GetFrameTime();//GetFrameTime() * time_scale; // set to 1 for 1 update/frame (max speed), set to GetFrameTime() for realtime
+        const float dt = draw_bounds ? GetFrameTime() : 1;//GetFrameTime();//GetFrameTime() * time_scale; // set to 1 for 1 update/frame (max speed), set to GetFrameTime() for realtime
         run_time += dt;
         // INPUT
         PollInputEvents();

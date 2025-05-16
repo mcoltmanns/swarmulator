@@ -30,7 +30,7 @@ protected:
     Eigen::MatrixXf w_hidden_out_ = Eigen::MatrixXf::Random(num_hidden_, num_outputs_); // weights from hidden to out
     // random biases on hidden layer
     Eigen::MatrixXf b_hidden_ = Eigen::MatrixXf::Random(1, num_hidden_);
-    float context_weight_ = 0.01; // weight of context layer (old hidden layer outputs)
+    float context_weight_ = 0.5f; // weight of context layer (old hidden layer outputs) (this should probably be between 0 and 1)
 
 protected:
     static constexpr float initial_energy_ = 2;

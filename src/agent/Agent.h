@@ -32,7 +32,7 @@ protected:
     Vector3 position_ = Vector3(0, 0, 0);
     Vector3 direction_ = Vector3(0, 0, 0);
 
-    float rot_speed_ = 5.f * std::numbers::pi * 2.f; // rotation speed in one axle (radians/second) (first term should be equal to move speed if you want agents to be able to turn on the spot)
+    float rot_speed_ = 5.f; // rotation speed in one axle (should be equal to move speed if you want agent to be able to stay in place)
     float move_speed_ = 5; // move speed (units/second)
 
     float sense_radius_ = 5.f;
