@@ -150,6 +150,7 @@ int main(int argc, char** argv) {
         DrawText(TextFormat("%.3f GRF", swarmulator::agent::global_reward_factor), 0, 100, 18, DARKGREEN);
 
         EndDrawing();
+        frames++;
     }
     double fps = static_cast<double>(frames) / (GetTime() - start_time);
 

@@ -11,6 +11,8 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filter/bzip2.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
 #include <boost/iostreams/device/file.hpp>
 
 #include "agent/Agent.h"
@@ -32,11 +34,10 @@ private:
     float log_interval_ = 1; // how many seconds of simtime between loggings
     float last_log_time_ = 0;
     double time_ = 0; // time since Simulation() called
-    std::filesystem::path log_file_path_;
-    boost::iostreams::filtering_ostream log_file_str_;
-    std::stringstream log_buffer_;
-    size_t log_buffer_max_size_ = 2048 * 2048 * 2048; // how many characters to accumulate between writing log to disk
-    // bigger is better, but bigger needs more memory
+    std::filesystem::path dynamic_log_file_path_; // position, rotation, etc
+    std::filesystem::path static_log_file_path_;
+    boost::iostreams::filtering_ostream dynamic_log_file_stream_;
+    boost::iostreams::filtering_ostream static_log_file_stream_;
 
     std::list<std::shared_ptr<AgentType>> agents_;
     swarmulator::agent::SSBOAgent* agents_ssbo_array_;
@@ -83,14 +84,24 @@ public:
     [[nodiscard]] double sim_time() const { return time_; }
 
     void set_log_file(const std::filesystem::path &dir) {
-        log_file_path_ = dir;
-        std::cout << "logging to " << log_file_path_ << std::endl;
-        //const auto src = boost::iostreams::file_source(log_file_path_.c_str(), std::ios::out | std::ios::trunc);
-        auto file = std::ofstream(log_file_path_, std::ios::out | std::ios::trunc | std::ios::binary);
-        log_file_str_.reset();
-        log_file_str_.push(boost::iostreams::gzip_compressor());
-        log_file_str_.push(boost::iostreams::file_sink(log_file_path_));
-        log_file_str_ << "time | id | genome | position | rotation | signals | info | parent" << std::endl;
+        dynamic_log_file_path_ = dir;
+        static_log_file_path_ = dir;
+        dynamic_log_file_path_ += ".dynamic";
+        static_log_file_path_ += ".static";
+        std::cout << "logging to " << dynamic_log_file_path_ << ", " << static_log_file_path_ << std::endl;
+        auto file_dyn = std::ofstream(dynamic_log_file_path_, std::ios::out | std::ios::trunc);
+        dynamic_log_file_stream_.reset();
+        //log_file_stream_.push(boost::iostreams::bzip2_compressor()); // compressed logging is SLOW....
+        // but the data we produce is HUGE (like 1% of 1e6 updates is over 10GiB
+        // bzip2 is definitely the best algorithm here, but still super slow - get about 8fps when writing compressed
+        // we could of course also log static data (genomes and parent ids) separately from the dynamic stuff - those make up for the bulk of the logfile
+        // then use ids as a primary key between the files
+        dynamic_log_file_stream_.push(boost::iostreams::file_sink(dynamic_log_file_path_));
+        dynamic_log_file_stream_ << "time | id | position | rotation | signals | info" << std::endl;
+        auto file_stat = std::ofstream(static_log_file_path_, std::ios::out | std::ios::trunc);
+        static_log_file_stream_.reset();
+        static_log_file_stream_.push(boost::iostreams::file_sink(static_log_file_path_));
+        static_log_file_stream_ << "id | genome | parent" << std::endl;
     }
 
     // should be threadsafe?
@@ -98,6 +109,15 @@ public:
         agents_.emplace_back(agent);
 #pragma omp atomic update
         ++total_agents_;
+
+        std::string id_string = boost::uuids::to_string(agent->get_id());
+        std::string genome_str = agent->get_genome_string();
+        std::string parent_str = boost::uuids::to_string(agent->get_parent());
+//#pragma omp critical
+        // seems like this line should be critical in order to not get facked when running threaded, but i guess not?
+        // really weird
+        // maybe the io is blocking or something
+        static_log_file_stream_ << id_string << " | " << genome_str << " | " << parent_str << std::endl;
     }
 
     // not threadsafe
@@ -170,8 +190,9 @@ public:
 
                     }
                     if (are_we_logging && logging_enabled_) {
+                        // log dynamic stuff (agent info that changes every frame)
                         last_log_time_ = time_;
-                        // always: time, id, genome, pos, rot, sig a, sig b, info x, info y, parent id
+                        // always: time, id, pos, rot, sig a, sig b, info x, info y
                         std::string id_str = boost::uuids::to_string(agent->get_id());
                         // put together the genome - array of all weights and biases
                         std::string genome_str = agent->get_genome_string();
@@ -179,26 +200,19 @@ public:
                         swarmulator::agent::SSBOAgent into;
                         agent->to_ssbo(&into);
 #pragma omp critical
-                        log_buffer_ <<
+                        dynamic_log_file_stream_ <<
                             time_str << " | " <<
                             id_str << " | " <<
-                            genome_str << " | " <<
                             Vector3ToString(xyz(into.position)) << " | " <<
                             Vector3ToString(xyz(into.direction)) << " | " <<
                             Vector2ToString(into.signals) << " | " <<
-                            Vector2ToString(into.info) << " | " <<
-                            parent_str << std::endl;
+                            Vector2ToString(into.info) << std::endl;
                         // concurrent stream access big no-no!
                     }
                 }
             }
         }
         rlUpdateShaderBuffer(agents_ssbo_, agents_ssbo_array_, agents_.size() * sizeof(swarmulator::agent::SSBOAgent), 0); // only copy as much data as there are agents (actually saves a lot of time)
-        if (log_buffer_.tellp() >= log_buffer_max_size_) {
-            log_file_str_ << log_buffer_.str();
-            log_buffer_ = std::stringstream(); // get a whole new stringstream (this also resets the write position)
-            std::cout << "log" << std::endl;
-        }
     }
 
     [[nodiscard]] unsigned int get_agents_ssbo() const { return agents_ssbo_; }
