@@ -80,4 +80,29 @@ inline std::string Vector2ToString(const Vector2 &v) {
     return ss.str();
 }
 
+namespace swarmulator::util {
+    [[nodiscard]] static Vector3 wrap_position(Vector3 position, const Vector3 &world_size) {
+        if (position.x < -world_size.x / 2.f) {
+            position.x = world_size.x / 2.f;
+        }
+        if (position.x > world_size.x / 2.f) {
+            position.x = -world_size.x / 2.f;
+        }
+        if (position.y < -world_size.y / 2.f) {
+            position.y = world_size.y / 2.f;
+        }
+        if (position.y > world_size.y / 2.f) {
+            position.y = -world_size.y / 2.f;
+        }
+        if (position.z < -world_size.z / 2.f) {
+            position.z = world_size.z / 2.f;
+        }
+        if (position.z > world_size.z / 2.f) {
+            position.z = -world_size.z / 2.f;
+        }
+
+        return position;
+    }
+}
+
 #endif //UTIL_H

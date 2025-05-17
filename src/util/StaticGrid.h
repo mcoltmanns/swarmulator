@@ -14,6 +14,7 @@
 #include "v3ops.h"
 #include "raylib.h"
 #include "raymath.h"
+#include "util.h"
 
 
 namespace swarmulator::util {
@@ -43,6 +44,23 @@ private:
         const int ypart = axis_cell_count_ * static_cast<int>(y);
         const int zpart = static_cast<int>(z);
         return xpart + ypart + zpart;
+    }
+
+    // get the 1d cell index of a given grid space position, and the indices of all cells surrounding that cell in a given radius
+    [[nodiscard]] std::vector<int> neighborhood_indices(const Vector3 &pos_grid, const float neighborhood_radius) const {
+        std::vector<int> indices;
+        // offsets are pos_grid - radius, pos_grid + radius
+        for (int x = -neighborhood_radius; x <= neighborhood_radius; x += cell_size_.x) {
+            for (int y = -neighborhood_radius; y <= neighborhood_radius; y += cell_size_.y) {
+                for (int z = -neighborhood_radius; z <= neighborhood_radius; z += cell_size_.z) {
+                    auto offset = Vector3(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
+                    if (auto index = cell_index(pos_grid + offset); index != -1) {
+                        indices.push_back(index);
+                    }
+                }
+            }
+        }
+        return indices;
     }
 
     // get the 1d cell index of a given grid space position, and the indices of all cells immediately surrounding that cell
@@ -125,7 +143,7 @@ public:
 
         // iterate over every cell in the neighborhood
         // this is not worth parallelizing - at worst 3^3=27 iterations
-        for (const auto n_i = neighborhood_indices(agent_pos_grid); const auto neighborhood_cell : n_i) {
+        for (const auto n_i = neighborhood_indices(agent_pos_grid, agent.get_sense_radius()); const auto neighborhood_cell : n_i) {
             // iterate over every agent in the current neighborhood cell
             for (int i = 0; i < segment_length[neighborhood_cell]; i++) {
                 // add the agent to the neighborhood vector if it isn't the agent we're getting the neighborhood of
@@ -139,26 +157,8 @@ public:
     }
 
     // wrap a global position
-    Vector3 wrap_position(Vector3 position) const {
-        if (position.x < -world_size_.x / 2) {
-            position.x = world_size_.x / 2;
-        }
-        if (position.x > world_size_.x / 2) {
-            position.x = -world_size_.x / 2;
-        }
-        if (position.y < -world_size_.y / 2) {
-            position.y = world_size_.y / 2;
-        }
-        if (position.y > world_size_.y / 2) {
-            position.y = -world_size_.y / 2;
-        }
-        if (position.z < -world_size_.z / 2) {
-            position.z = world_size_.z / 2;
-        }
-        if (position.z > world_size_.z / 2) {
-            position.z = -world_size_.z / 2;
-        }
-        return position;
+    [[nodiscard]] Vector3 wrap_position(const Vector3 position) const {
+        return swarmulator::util::wrap_position(position, world_size_);
     }
 
     void bounce_agent(const std::shared_ptr<agent::Agent> &agent) const {

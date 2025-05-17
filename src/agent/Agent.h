@@ -35,7 +35,7 @@ protected:
     float rot_speed_ = 5.f; // rotation speed in one axle (should be equal to move speed if you want agent to be able to stay in place)
     float move_speed_ = 5; // move speed (units/second)
 
-    float sense_radius_ = 5.f;
+    float sense_radius_ = 50.f;
 
     boost::uuids::uuid id_ = boost::uuids::random_generator()();
     boost::uuids::uuid parent_ = boost::uuids::nil_generator()();
@@ -55,6 +55,9 @@ public:
 
     [[nodiscard]] Vector3 get_position() const { return position_; }
     [[nodiscard]] Vector3 get_direction() const { return direction_; }
+
+    void set_sense_radius(const float value) { sense_radius_ = value; }
+    [[nodiscard]] float get_sense_radius() const { return sense_radius_; }
 
     [[nodiscard]] virtual bool is_alive() const { return true; }
 

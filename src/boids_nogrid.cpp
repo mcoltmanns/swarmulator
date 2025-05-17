@@ -16,7 +16,7 @@
 #include "util/util.h"
 
 int main(int argc, char** argv) {
-    int agent_count = 100;
+    int agent_count = 1000;
     int window_w = 800;
     int window_h = 600;
     constexpr Vector3 world_size = {100, 100, 100};
@@ -86,6 +86,7 @@ int main(int argc, char** argv) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
         boids.emplace_back(std::make_shared<swarmulator::agent::Boid>(xyz(p), xyz(r)));
+        boids.back()->set_sense_radius(5.f); // boids are much happier with a smaller sense radius
     }
 
     auto objects = std::list<std::shared_ptr<swarmulator::env::Sphere>>();
@@ -109,11 +110,7 @@ int main(int argc, char** argv) {
 #pragma omp parallel for
         for (auto i = 0; i < boids.size(); i++) {
             boids[i]->update(boids, objects, dt);
-            if (std::abs(boids[i]->get_position().x) >= world_size.x / 2
-                || std::abs(boids[i]->get_position().y) >= world_size.y / 2
-                || std::abs(boids[i]->get_position().z) >= world_size.z / 2) {
-                boids[i]->set_direction(Vector3(0, 0, 0) - boids[i]->get_position() * 0.5);
-            }
+            boids[i]->set_position(swarmulator::util::wrap_position(boids[i]->get_position(), world_size));
             boids[i]->to_ssbo(&agents_ssbo_array[i]);
         }
         rlUpdateShaderBuffer(agents_ssbo, agents_ssbo_array, agent_count * sizeof(swarmulator::agent::SSBOAgent), 0);

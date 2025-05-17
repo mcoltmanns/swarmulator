@@ -17,11 +17,11 @@
 #include "util/util.h"
 
 int main(int argc, char** argv) {
-    int init_agent_count = 100;
+    int init_agent_count = 10000;
     int window_w = 800;
     int window_h = 600;
     constexpr Vector3 world_size = {100, 100, 100};
-    constexpr int subdivisions = 10; // choose such that size / count > agent sense radius * 2 (10-20 are good numbers)
+    constexpr int subdivisions = 10;
     float cam_speed = 1.f;
     omp_set_num_threads(16);
     float run_for = 60; // how many seconds to run the simulation for
@@ -87,6 +87,7 @@ int main(int argc, char** argv) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
         auto a = std::make_shared<swarmulator::agent::Boid>(xyz(p), xyz(r));
+        a->set_sense_radius(5.f); // boids are much happier with a smaller radius
         simulation.add_agent(a);
     }
 
@@ -145,7 +146,7 @@ int main(int argc, char** argv) {
         DrawFPS(0, 0);
         DrawText(TextFormat("%zu/%zu agents", simulation.get_agents_count(), simulation.get_max_agents()), 0, 20, 18, DARKGREEN);
         DrawText(TextFormat("%zu threads", omp_get_max_threads()), 0, 40, 18, DARKGREEN);
-        DrawText(TextFormat("%.0f sim time", simulation.sim_time()), 0, 60, 18, DARKGREEN);
+        DrawText(TextFormat("%.0f sim time", swarmulator::globals::sim_time), 0, 60, 18, DARKGREEN);
         DrawText(TextFormat("%zu agents have existed", simulation.get_total_agents()), 0, 80, 18, DARKGREEN);
         DrawText(TextFormat("%.3f GRF", swarmulator::agent::global_reward_factor), 0, 100, 18, DARKGREEN);
 

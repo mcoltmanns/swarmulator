@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
     int window_w = 800;
     int window_h = 600;
     constexpr Vector3 world_size = {100, 100, 100};
-    constexpr int subdivisions = 10; // choose such that size / count > agent sense radius * 2 (10-20 are good numbers)
+    constexpr int subdivisions = 1; // choose such that size / count > agent sense radius * 2 (10-20 are good numbers)
     float cam_speed = 1.f;
     bool draw_bounds = false;
     omp_set_num_threads(16);

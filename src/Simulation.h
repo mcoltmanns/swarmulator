@@ -148,7 +148,7 @@ public:
             }
         }
         swarmulator::agent::global_reward_factor = std::lerp(1.f, 0.f, static_cast<float>(static_cast<int>(agents_.size()) - min_agents_) / static_cast<float>(max_agents_ - min_agents_)); // keeps population in acceptable range
-        //swarmulator::agent::global_reward_factor = static_cast<float>(max_agents_ - 1) / static_cast<float>(std::max(static_cast<int>(agents_.size()) - min_agents_, 1)) - 1.f; // tune the GRF inverse exponentially - between 0 and max_agents_
+        //swarmulator::agent::global_reward_factor = static_cast<float>(max_agents_ - 1) / static_cast<float>(std::max(static_cast<int>(agents_.size()), 1)) - 1.f; // tune the GRF inverse exponentially - between 0 and max_agents_
         // throw agents into the grid
         grid_.sort_agents(agents_);
         int buffer_write_place = 0;
@@ -182,6 +182,7 @@ public:
                             new_agent->set_position(xyz(p));
                             new_agent->set_direction(xyz(r));
                             new_agent->to_ssbo(&agents_ssbo_array_[buffer_write_place]);
+                            new_agent->set_time_born(swarmulator::globals::sim_time);
                             ++buffer_write_place;
                         }
 

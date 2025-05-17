@@ -3,6 +3,9 @@
 //
 
 #include "Boid.h"
+
+#include <iostream>
+
 #include "v3ops.h"
 
 #include "raymath.h"
@@ -24,11 +27,11 @@ namespace swarmulator::agent {
             }
             const auto diff = position_ - neighbor->get_position();
             const auto dist = Vector3Distance(neighbor->get_position(), position_);
-            if (dist < sense_radius_) {
+            if (dist < sense_radius_ / 2.f) {
                 auto d = Vector3Length(diff);
-                avoidance = avoidance + diff / d;
+                avoidance = avoidance + diff / (1 + d); // watch the divide by 0!
             }
-            if (dist < sense_radius_ * 2) {
+            if (dist < sense_radius_) {
                 cohesion = cohesion + neighbor->get_position();
                 coc++;
                 alignment = alignment + neighbor->get_direction();
@@ -51,6 +54,9 @@ namespace swarmulator::agent {
 
         direction_ = Vector3Lerp(steer_dir, Vector3Normalize(direction_), ip);
         position_ = position_ + direction_ * move_speed_ * dt; // 0.06 here is move speed
+        if (std::isnan(position_.x) || std::isnan(position_.y) || std::isnan(position_.z)) {
+            std::cout << "uh oh!" << std::endl;
+        }
         return nullptr;
     }
 } // agent

@@ -82,7 +82,7 @@ void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood
     // normalize before we run
     //const auto norm = input_.norm();
     //input_ = norm != 0 ? input_ * (1.f / input_.norm()) : input_;
-    input_.normalize();
+    //input_.normalize();
     // run everything through the network
     hidden_out_ = (input_ * w_in_hidden_ + hidden_out_ * context_weight_).unaryExpr(&sigmoid) + b_hidden_;
     output_ = (hidden_out_ * w_hidden_out_).unaryExpr(&sigmoid);
@@ -93,14 +93,15 @@ std::shared_ptr<Agent> NeuralAgent::update(const std::vector<std::shared_ptr<Age
     // remember output is between 0 and 1 - so we scale to between -1 and 1, and then use that to choose an angle between -2pi and 2pi to rotate by
     //const float pitch = ((output_(0, 0) - 0.5f) * 2.f) /** std::numbers::pi * 2.f*/ * rot_speed_ * dt; // rotation about world y axis (elevation angle/psi) (control direction z part)
     //const float yaw = ((output_(0, 1) - 0.5f) * 2.f) /** std::numbers::pi * 2.f*/ * rot_speed_ * dt; // rotation about world z axis (bearing/theta) (control direction x and y part)
-    const float pitch = output_(0, 0) * 2.f - 2.f * rot_speed_ * dt;
-    const float yaw = output_(0, 1) * 2.f - 2.f * rot_speed_ * dt;
+    const float pitch = output_(0, 0) * 2.f * std::numbers::pi; // as in witkowski/ikegami - agents select an angle between 0 and 2pi
+    const float yaw = output_(0, 1) * 2.f * std::numbers::pi; // no tiller steering! direct heading control!
     // apply the signals
     signals_[0] = output_(0, 2);
     signals_[1] = output_(0, 3);
     // apply rotations according to tait-bryan convention - always heading/yaw (z), pitch (y), roll (x)
     // we omit roll because you don't actually need it
-    direction_ = Vector3RotateByAxisAngle(direction_, Vector3UnitZ, yaw); // apply yaw
+    // because we do direct control and not tiller steering, start with an x unit vector and rotate that
+    direction_ = Vector3RotateByAxisAngle(Vector3UnitX, Vector3UnitZ, yaw); // apply yaw
     direction_ = Vector3RotateByAxisAngle(direction_, Vector3UnitY, pitch); // appy pitch
     direction_ = Vector3Normalize(direction_);
     /*if (old != direction_) {
