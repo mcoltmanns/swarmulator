@@ -33,9 +33,9 @@ protected:
     Vector3 direction_ = Vector3(0, 0, 0);
 
     float rot_speed_ = 5.f; // rotation speed in one axle (should be equal to move speed if you want agent to be able to stay in place)
-    float move_speed_ = 5; // move speed (units/second)
+    float move_speed_ = 2.5f; // move speed (units/second)
 
-    float sense_radius_ = 50.f;
+    float sense_radius_ = 25.f;
 
     boost::uuids::uuid id_ = boost::uuids::random_generator()();
     boost::uuids::uuid parent_ = boost::uuids::nil_generator()();

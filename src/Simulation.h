@@ -27,7 +27,7 @@ private:
     Vector3 world_size_ = {1.f, 1.f, 1.f};
     int grid_divisions_ = 20;
 
-    int max_agents_ = 5000;
+    int max_agents_ = 2000;
     int min_agents_ = 100;
     int max_objects_ = 100;
 
@@ -74,8 +74,8 @@ public:
     [[nodiscard]] size_t get_agents_count() const { return agents_.size(); }
     [[nodiscard]] size_t get_max_agents() const { return max_agents_; }
     [[nodiscard]] size_t get_total_agents() const { return total_agents_; }
-    void set_min_agents(const size_t min_agents) { min_agents_ = min_agents; }
-    void set_max_agents(const size_t max_agents) { max_agents_ = max_agents; }
+    void set_min_agents(const int min_agents) { min_agents_ = min_agents; }
+    void set_max_agents(const int max_agents) { max_agents_ = max_agents; }
 
     [[nodiscard]] const std::list<std::shared_ptr<swarmulator::env::Sphere>> &get_objects() const { return objects_; }
     [[nodiscard]] size_t get_objects_count() const { return objects_.size(); }
@@ -85,7 +85,7 @@ public:
         static_log_file_path_ = dir;
         dynamic_log_file_path_ += ".dynamic";
         static_log_file_path_ += ".static";
-        std::cout << "logging to " << dynamic_log_file_path_ << ", " << static_log_file_path_ << std::endl;
+        if (logging_enabled_) std::cout << "logging to " << dynamic_log_file_path_ << ", " << static_log_file_path_ << std::endl;
         auto file_dyn = std::ofstream(dynamic_log_file_path_, std::ios::out | std::ios::trunc);
         dynamic_log_file_stream_.reset();
         //log_file_stream_.push(boost::iostreams::bzip2_compressor()); // compressed logging is SLOW....

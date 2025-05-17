@@ -40,7 +40,7 @@ protected:
     float basic_cost_ = 0.01; // how much energy you lose by default per second
     float reproduction_cost_ = 8;
 
-    float max_lifetime_ = 10000; // how many updates this agent may be alive for at most
+    float max_lifetime_ = 5000; // how many updates this agent may be alive for at most
 
     void think(const std::vector<std::shared_ptr<Agent> > &neighborhood);
 

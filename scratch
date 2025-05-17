@@ -1,2 +1,2 @@
-time|id|genome|position|rotation|signals|info|parent
-1.000000|853c11d0-d886-494c-86d9-c789ef4b6d62|(44.8883, 23.3022, 31.5197)|(0.335475, -0.191227, -0.392517)|(0.575735, 0.502434)|(0, 0)
+increase mutation change as open-endedness score goes down?
+- would need somehow a running oee score

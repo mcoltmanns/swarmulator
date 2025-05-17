@@ -11,9 +11,10 @@ namespace swarmulator::agent {
 
 class PDAgent final : public NeuralAgent {
 private:
-    int team = std::round(randfloat()); // 0 for cooperate, 1 for defect
-    float coop_payoff = 0.4f;
-    float defect_payoff = 0.8f;
+    int team = static_cast<int>(std::round(randfloat())); // 0 for cooperate, 1 for defect
+    float coop_payoff = 10.f;
+    float defect_payoff = 12.f; // d > c > 0
+    float sense_radius_ = 2.5f; // has to be small for things to work good
 
 public:
     explicit PDAgent() : NeuralAgent() {};

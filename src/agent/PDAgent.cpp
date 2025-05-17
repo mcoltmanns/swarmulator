@@ -13,7 +13,7 @@ namespace swarmulator::agent {
         NeuralAgent::update(neighborhood, object, dt); // perform your normal update
 
         // set your team according to what the network decided
-        team = std::round(output_(0, 4));
+        team = static_cast<int>(std::round(output_(0, 4)));
 
         // update your energy according to your neighbors
         float coop_pay = 0;
@@ -24,7 +24,7 @@ namespace swarmulator::agent {
                 continue;
             }
             if (const auto dist = Vector3DistanceSqr(position_, neighbor->position_); dist <= sense_radius_ * sense_radius_) {
-                const float factor = 1.f / (1.f + std::sqrt(dist));
+                const float factor = global_reward_factor / (1.f + std::sqrt(dist));
                 // if the neighbor is a cooperator, you get bonuses for cooperating and defecting
                 if (neighbor->team == 0) {
                     coop_pay += coop_payoff * factor;
