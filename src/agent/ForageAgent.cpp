@@ -10,17 +10,9 @@
 
 
 namespace swarmulator::agent {
-    std::shared_ptr<Agent> DiscreteForageAgent::update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
-        const std::list<std::shared_ptr<env::Sphere>> &objects, const float dt) {
-        NeuralAgent::update(neighborhood, objects, dt); // perform your normal update (think and move)
-
-        // if you're touching a sphere, eat
-        for (const auto& sphere : objects) {
-            if (sphere->intersect(position_, scale)) {
-                energy_ += global_reward_factor * eat_energy_ * dt / Vector3DistanceSqr(position_, sphere->position()); // scale the energy you get by the inverse distance to the sphere center
-                sphere->setColor(YELLOW);
-            }
-        }
+    std::shared_ptr<SimObject> DiscreteForageAgent::update(const std::vector<std::shared_ptr<SimObject> > &neighborhood,
+                                                           const float dt) {
+        NeuralAgent::update(neighborhood, dt); // perform your normal update (think and move)
 
         // if you have the energy, reproduce
         if (energy_ > reproduction_threshold_) {
@@ -34,15 +26,16 @@ namespace swarmulator::agent {
         return nullptr;
     }
 
-    std::shared_ptr<Agent> ContinuousForageAgent::update(const std::vector<std::shared_ptr<Agent> > &neighborhood, const std::list<std::shared_ptr<env::Sphere> > &objects, const float dt) {
-        NeuralAgent::update(neighborhood, objects, dt); // perform normal update
+    std::shared_ptr<SimObject> ContinuousForageAgent::update(
+        const std::vector<std::shared_ptr<SimObject> > &neighborhood, const float dt) {
+        NeuralAgent::update(neighborhood, dt); // perform normal update
 
         float extra = 0;
-        const float reward_per_sphere = global_reward_factor * eat_energy_ / static_cast<float>(objects.size());
+        /*const float reward_per_sphere = global_reward_factor * eat_energy_ / static_cast<float>(objects.size());
         for (const auto& sphere : objects) {
             extra += reward_per_sphere / (1.f + Vector3Distance(position_, sphere->position()));
         }
-        energy_ += extra * dt;
+        energy_ += extra * dt;*/
 
         if (energy_ >= reproduction_threshold_) {
             energy_ -= reproduction_cost_;

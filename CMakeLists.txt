@@ -62,8 +62,8 @@ endif ()
 
 
 set(AGENTS_SOURCES
-    src/agent/Agent.cpp
-    src/agent/Agent.h
+        src/agent/SimObject.cpp
+        src/agent/SimObject.h
     external/v3ops.h
     external/raygui.h
     src/agent/NeuralAgent.cpp
@@ -78,11 +78,6 @@ set(AGENTS_SOURCES
     src/agent/PredatorAgent.h
     src/agent/PreyAgent.cpp
     src/agent/PreyAgent.h
-)
-
-set(ENV_SOURCES
-    src/env/Sphere.cpp
-    src/env/Sphere.h
 )
 
 set(LOGGER_SOURCES
@@ -105,7 +100,6 @@ add_executable(swarmulator_forage
         src/continuous_forage.cpp
         src/Simulation.h
         ${AGENTS_SOURCES}
-        ${ENV_SOURCES}
         ${LOGGER_SOURCES}
         ${UTIL_SOURCES}
         ${SHADER_SOURCES}
@@ -117,7 +111,6 @@ add_executable(swarmulator_pd
         src/prisoners_dilemma.cpp
         src/Simulation.h
         ${AGENTS_SOURCES}
-        ${ENV_SOURCES}
         ${LOGGER_SOURCES}
         ${SHADER_SOURCES}
         ${UTIL_SOURCES}
@@ -129,7 +122,6 @@ add_executable(swarmulator_pred_prey
         src/pred_prey.cpp
         src/Simulation.h
         ${AGENTS_SOURCES}
-        ${ENV_SOURCES}
         ${LOGGER_SOURCES}
         ${SHADER_SOURCES}
         ${UTIL_SOURCES}
@@ -141,7 +133,6 @@ add_executable(swarmulator_boids_nogrid
         src/boids_nogrid.cpp
         src/Simulation.h
         ${AGENTS_SOURCES}
-        ${ENV_SOURCES}
         ${LOGGER_SOURCES}
         ${UTIL_SOURCES}
         ${SHADER_SOURCES}
@@ -152,7 +143,6 @@ add_executable(swarmulator_boids_grid
         src/boids_grid.cpp
         src/Simulation.h
         ${AGENTS_SOURCES}
-        ${ENV_SOURCES}
         ${LOGGER_SOURCES}
         ${UTIL_SOURCES}
         ${SHADER_SOURCES}

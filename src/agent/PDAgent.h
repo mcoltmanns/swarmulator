@@ -21,8 +21,8 @@ public:
     PDAgent(const Vector3 position, const Vector3 rotation) : NeuralAgent(position, rotation) {};
     ~PDAgent() override = default;
 
-    std::shared_ptr<Agent> update(const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::list<std::shared_ptr<env::Sphere>> &object, float dt) override;
-    void to_ssbo(SSBOAgent *out) const override; // coop/defect decision is info.x
+    std::shared_ptr<SimObject> update(const std::vector<std::shared_ptr<SimObject> > &neighborhood, float dt) override;
+    void to_ssbo(SSBOSimObject *out) const override; // coop/defect decision is info.x
 
     [[nodiscard]] int get_team() const { return team; }
 };

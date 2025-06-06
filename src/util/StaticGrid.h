@@ -10,7 +10,7 @@
 #include <memory>
 #include <vector>
 
-#include "../agent/Agent.h"
+#include "../agent/SimObject.h"
 #include "v3ops.h"
 #include "raylib.h"
 #include "raymath.h"
@@ -21,7 +21,7 @@ namespace swarmulator::util {
 
 template<class T>
 class StaticGrid {
-static_assert(std::is_base_of_v<agent::Agent, T>, "agents must derive from swarmulator::agent::Agent");
+static_assert(std::is_base_of_v<agent::SimObject, T>, "agents must derive from swarmulator::agent::Agent");
 private:
     Vector3 world_size_{};
     Vector3 cell_size_{};
@@ -136,8 +136,8 @@ public:
     }
     // get all neighbors of a given agent (agents in that agent's cell and neighboring cells)
     // return does not include agent passed
-    [[nodiscard]] std::unique_ptr<std::vector<std::shared_ptr<agent::Agent>>> get_neighborhood(const agent::Agent &agent) const {
-        auto neighborhood = std::make_unique<std::vector<std::shared_ptr<agent::Agent>>>();
+    [[nodiscard]] std::unique_ptr<std::vector<std::shared_ptr<agent::SimObject>>> get_neighborhood(const agent::SimObject &agent) const {
+        auto neighborhood = std::make_unique<std::vector<std::shared_ptr<agent::SimObject>>>();
         const auto agent_pos = agent.get_position();
         const auto agent_pos_grid = agent_pos + 0.5f * world_size_;
 
@@ -161,7 +161,7 @@ public:
         return swarmulator::util::wrap_position(position, world_size_);
     }
 
-    void bounce_agent(const std::shared_ptr<agent::Agent> &agent) const {
+    void bounce_agent(const std::shared_ptr<agent::SimObject> &agent) const {
         if (agent->get_position().x < -world_size_.x / 2 || agent->get_position().x >= world_size_.x / 2
             || agent->get_position().y < -world_size_.y / 2 || agent->get_position().y >= world_size_.y / 2
             || agent->get_position().z < -world_size_.z / 2 || agent->get_position().z >= world_size_.z / 2) {

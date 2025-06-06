@@ -9,8 +9,9 @@
 #include "raymath.h"
 
 namespace swarmulator::agent {
-    std::shared_ptr<Agent> PDAgent::update(const std::vector<std::shared_ptr<Agent> > &neighborhood, const std::list<std::shared_ptr<env::Sphere> > &object, const float dt) {
-        NeuralAgent::update(neighborhood, object, dt); // perform your normal update
+    std::shared_ptr<SimObject> PDAgent::update(const std::vector<std::shared_ptr<SimObject> > &neighborhood,
+                                               const float dt) {
+        NeuralAgent::update(neighborhood, dt); // perform your normal update
 
         // set your team according to what the network decided
         team = static_cast<int>(std::round(output_(0, 4)));
@@ -57,8 +58,8 @@ namespace swarmulator::agent {
         return nullptr;
     }
 
-    void PDAgent::to_ssbo(SSBOAgent *out) const {
+    void PDAgent::to_ssbo(SSBOSimObject *out) const {
         NeuralAgent::to_ssbo(out);
-        out->info = Vector2{static_cast<float>(team), 0};
+        out->info_a = Vector4{static_cast<float>(team), 0, 0, 0};
     }
 } // swarmulator

@@ -4,7 +4,7 @@
 
 #ifndef NEURALAGENT_H
 #define NEURALAGENT_H
-#include "Agent.h"
+#include "SimObject.h"
 
 #include <array>
 #include <eigen3/Eigen/Dense>
@@ -13,7 +13,7 @@
 
 namespace swarmulator::agent {
 
-class NeuralAgent : public Agent {
+class NeuralAgent : public SimObject {
 protected:
     static constexpr unsigned int num_inputs_ = 12; // 2 signals * 6 directions
     static constexpr unsigned int num_hidden_ = 10;
@@ -42,7 +42,7 @@ protected:
 
     float max_lifetime_ = 5000; // how many updates this agent may be alive for at most
 
-    void think(const std::vector<std::shared_ptr<Agent> > &neighborhood);
+    void think(const std::vector<std::shared_ptr<SimObject> > &neighborhood);
 
     static inline constexpr float tanh(const float x) {
         return std::tanh(x);
@@ -61,12 +61,12 @@ public:
     NeuralAgent(Vector3 position, Vector3 rotation);
     ~NeuralAgent() override = default;
 
-    std::shared_ptr<Agent> update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
-                const std::list<std::shared_ptr<env::Sphere>> &objects, float dt) override;
+    std::shared_ptr<SimObject> update(const std::vector<std::shared_ptr<SimObject> > &neighborhood,
+                                      float dt) override;
 
     void mutate(float mutation_chance = 0.05); // mutation_chance is the percent chance each gene component (weight or bias) has to have a random value between -1 and 1 added
 
-    void to_ssbo(SSBOAgent *out) const override;
+    void to_ssbo(SSBOSimObject *out) const override;
 
     [[nodiscard]] std::array<float, 2> get_signals() const { return signals_; }
     [[nodiscard]] float get_signal(const int idx) const { return signals_[idx]; }

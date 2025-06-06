@@ -17,7 +17,7 @@
 #include "util/util.h"
 
 int main(int argc, char** argv) {
-    int init_agent_count = 10000;
+    int init_agent_count = 1000;
     int window_w = 800;
     int window_h = 600;
     constexpr Vector3 world_size = {100, 100, 100};

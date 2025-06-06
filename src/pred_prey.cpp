@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
         CAMERA_PERSPECTIVE,
     };
 
-    auto simulation = Simulation<swarmulator::agent::Agent>(world_size, subdivisions);
+    auto simulation = Simulation<swarmulator::agent::SimObject>(world_size, subdivisions);
     simulation.set_min_agents(0);
 
     // init agents (shaders and mesh)

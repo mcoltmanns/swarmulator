@@ -8,10 +8,10 @@
 #include "raymath.h"
 
 namespace swarmulator::agent {
-    std::shared_ptr<Agent> PredatorAgent::update(
-        const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::list<std::shared_ptr<env::Sphere>> &objects,
+    std::shared_ptr<SimObject> PredatorAgent::update(
+        const std::vector<std::shared_ptr<SimObject> > &neighborhood,
         const float dt) {
-        NeuralAgent::update(neighborhood, objects, dt); // perform normal update
+        NeuralAgent::update(neighborhood, dt); // perform normal update
 
         // eat the first prey agent in your sense radius you find
         for (const auto& n_a : neighborhood) {
@@ -38,8 +38,8 @@ namespace swarmulator::agent {
         return nullptr;
     }
 
-    void PredatorAgent::to_ssbo(SSBOAgent *out) const {
+    void PredatorAgent::to_ssbo(SSBOSimObject *out) const {
         NeuralAgent::to_ssbo(out);
-        out->info.x = 1;
+        out->info_b.x = 1;
     }
 }

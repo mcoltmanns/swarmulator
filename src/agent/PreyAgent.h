@@ -19,8 +19,9 @@ namespace swarmulator::agent {
         PreyAgent(const Vector3 position, const Vector3 rotation) : NeuralAgent(position, rotation) {};
         ~PreyAgent() override = default;
 
-        std::shared_ptr<Agent> update(const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::list<std::shared_ptr<env::Sphere>> &objects, float dt) override;
-        void to_ssbo(SSBOAgent *out) const override; // predator/prey is info.x (0 for prey, 1 for pred)
+        std::shared_ptr<SimObject>
+        update(const std::vector<std::shared_ptr<SimObject> > &neighborhood, float dt) override;
+        void to_ssbo(SSBOSimObject *out) const override; // predator/prey is info.x (0 for prey, 1 for pred)
 
         [[nodiscard]] static bool is_edible() { return true; }
     };

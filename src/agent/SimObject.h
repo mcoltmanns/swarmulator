@@ -23,11 +23,11 @@ static float scale = 0.2; // diameter at which the agents are drawn and measured
 typedef struct {
     Vector4 position;
     Vector4 direction;
-    Vector2 signals; // for communicative agent signals
-    Vector2 info; // for additional info (agent type, etc)
-} SSBOAgent;
+    Vector4 info_a;
+    Vector4 info_b;
+} SSBOSimObject;
 
-class Agent {
+class SimObject {
 protected:
     Vector3 position_ = Vector3(0, 0, 0);
     Vector3 direction_ = Vector3(0, 0, 0);
@@ -43,12 +43,12 @@ protected:
     float time_born_ = 0;
 
 public:
-    Agent() = default;
-    Agent(const Vector3 position, const Vector3 rotation) : position_(position), direction_(rotation) {};
-    virtual ~Agent() = default;
+    SimObject() = default;
+    SimObject(const Vector3 position, const Vector3 rotation) : position_(position), direction_(rotation) {};
+    virtual ~SimObject() = default;
 
-    virtual std::shared_ptr<Agent> update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
-                                          const std::list<std::shared_ptr<env::Sphere>> &objects, float dt);
+    virtual std::shared_ptr<SimObject> update(const std::vector<std::shared_ptr<SimObject> > &neighborhood,
+                                              float dt);
 
     void set_position(const Vector3 position) { position_ = position; }
     void set_direction(const Vector3 rotation) { direction_ = rotation; }
@@ -70,7 +70,7 @@ public:
 
     [[nodiscard]] virtual std::string get_genome_string() { return ""; }
 
-    virtual void to_ssbo(SSBOAgent *out) const;
+    virtual void to_ssbo(SSBOSimObject *out) const;
 };
 
 } // swarmulator

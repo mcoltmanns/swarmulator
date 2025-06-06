@@ -78,9 +78,9 @@ int main(int argc, char** argv) {
     rlSetVertexAttribute(0, 3, RL_FLOAT, false, 0, 0);
     rlDisableVertexArray();
 
-    auto boids = std::vector<std::shared_ptr<swarmulator::agent::Agent>>();
-    auto agents_ssbo_array = static_cast<swarmulator::agent::SSBOAgent*>(RL_CALLOC(agent_count, sizeof(swarmulator::agent::SSBOAgent)));
-    unsigned int agents_ssbo = rlLoadShaderBuffer(agent_count * sizeof(swarmulator::agent::SSBOAgent), agents_ssbo_array, RL_DYNAMIC_COPY);
+    auto boids = std::vector<std::shared_ptr<swarmulator::agent::SimObject>>();
+    auto agents_ssbo_array = static_cast<swarmulator::agent::SSBOSimObject*>(RL_CALLOC(agent_count, sizeof(swarmulator::agent::SSBOSimObject)));
+    unsigned int agents_ssbo = rlLoadShaderBuffer(agent_count * sizeof(swarmulator::agent::SSBOSimObject), agents_ssbo_array, RL_DYNAMIC_COPY);
     boids.reserve(agent_count);
     for (int i = 0; i < agent_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
@@ -109,11 +109,11 @@ int main(int argc, char** argv) {
 
 #pragma omp parallel for
         for (auto i = 0; i < boids.size(); i++) {
-            boids[i]->update(boids, objects, dt);
+            boids[i]->update(boids, dt);
             boids[i]->set_position(swarmulator::util::wrap_position(boids[i]->get_position(), world_size));
             boids[i]->to_ssbo(&agents_ssbo_array[i]);
         }
-        rlUpdateShaderBuffer(agents_ssbo, agents_ssbo_array, agent_count * sizeof(swarmulator::agent::SSBOAgent), 0);
+        rlUpdateShaderBuffer(agents_ssbo, agents_ssbo_array, agent_count * sizeof(swarmulator::agent::SSBOSimObject), 0);
 
         // DRAW
         BeginDrawing();

@@ -7,9 +7,9 @@
 #include "raymath.h"
 
 namespace swarmulator::agent {
-    std::shared_ptr<Agent> PreyAgent::update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
-        const std::list<std::shared_ptr<env::Sphere>> &objects, float dt) {
-        NeuralAgent::update(neighborhood, objects, dt); // perform normal update
+    std::shared_ptr<SimObject> PreyAgent::update(const std::vector<std::shared_ptr<SimObject> > &neighborhood,
+                                                 float dt) {
+        NeuralAgent::update(neighborhood, dt); // perform normal update
 
         float payoff = 0;
         for (const auto &n_a : neighborhood) {
@@ -36,8 +36,8 @@ namespace swarmulator::agent {
         return nullptr;
     }
 
-    void PreyAgent::to_ssbo(SSBOAgent *out) const {
+    void PreyAgent::to_ssbo(SSBOSimObject *out) const {
         NeuralAgent::to_ssbo(out);
-        out->info.x = 0;
+        out->info_b.x = 0;
     }
 }

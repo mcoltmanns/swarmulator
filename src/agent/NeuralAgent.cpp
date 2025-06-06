@@ -10,15 +10,15 @@
 #include "../util/util.h"
 
 namespace swarmulator::agent {
-NeuralAgent::NeuralAgent() : Agent() {
+NeuralAgent::NeuralAgent() : SimObject() {
     signals_.fill(0);
 }
 
-NeuralAgent::NeuralAgent(const Vector3 position, const Vector3 rotation) : Agent(position, rotation) {
+NeuralAgent::NeuralAgent(const Vector3 position, const Vector3 rotation) : SimObject(position, rotation) {
     signals_.fill(0);
 }
 
-void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood) {
+void NeuralAgent::think(const std::vector<std::shared_ptr<SimObject> > &neighborhood) {
     input_.setZero(); // zero your input!
     // get information from your neighbors
     /*
@@ -88,7 +88,8 @@ void NeuralAgent::think(const std::vector<std::shared_ptr<Agent> > &neighborhood
     output_ = (hidden_out_ * w_hidden_out_).unaryExpr(&sigmoid);
 }
 
-std::shared_ptr<Agent> NeuralAgent::update(const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::list<std::shared_ptr<env::Sphere>> &objects, const float dt) {
+std::shared_ptr<SimObject> NeuralAgent::update(const std::vector<std::shared_ptr<SimObject> > &neighborhood,
+                                               const float dt) {
     think(neighborhood);
     // remember output is between 0 and 1 - so we scale to between -1 and 1, and then use that to choose an angle between -2pi and 2pi to rotate by
     //const float pitch = ((output_(0, 0) - 0.5f) * 2.f) /** std::numbers::pi * 2.f*/ * rot_speed_ * dt; // rotation about world y axis (elevation angle/psi) (control direction z part)
@@ -114,17 +115,15 @@ std::shared_ptr<Agent> NeuralAgent::update(const std::vector<std::shared_ptr<Age
     return nullptr;
 }
 
-void NeuralAgent::to_ssbo(SSBOAgent *out) const {
+void NeuralAgent::to_ssbo(SSBOSimObject *out) const {
     out->position.x = position_.x;
     out->position.y = position_.y;
     out->position.z = position_.z;
     out->direction.x = direction_.x;
     out->direction.y = direction_.y;
     out->direction.z = direction_.z;
-    out->signals.x = signals_[0];
-    out->signals.y = signals_[1];
-    out->info.x = 0;
-    out->info.y = 0;
+    out->info_a.x = signals_[0];
+    out->info_a.y = signals_[1];
 }
 
 std::string NeuralAgent::get_genome_string() {

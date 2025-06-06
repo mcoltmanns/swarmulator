@@ -18,7 +18,7 @@ public:
     DiscreteForageAgent(const Vector3 position, const Vector3 rotation) : NeuralAgent(position, rotation) {}
     ~DiscreteForageAgent() override = default;
 
-    std::shared_ptr<Agent> update(const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::list<std::shared_ptr<env::Sphere>> &objects, float dt) override;
+    std::shared_ptr<SimObject> update(const std::vector<std::shared_ptr<SimObject> > &neighborhood, float dt) override;
 };
 
 class ContinuousForageAgent final : public NeuralAgent {
@@ -30,7 +30,7 @@ public:
     ContinuousForageAgent(const Vector3 position, const Vector3 rotation) : NeuralAgent(position, rotation) {}
     ~ContinuousForageAgent() override = default;
 
-    std::shared_ptr<Agent> update(const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::list<std::shared_ptr<env::Sphere>> &objects, float dt) override;
+    std::shared_ptr<SimObject> update(const std::vector<std::shared_ptr<SimObject> > &neighborhood, float dt) override;
 };
 
 } // agent

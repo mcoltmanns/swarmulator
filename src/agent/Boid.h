@@ -4,11 +4,11 @@
 
 #ifndef BOID_H
 #define BOID_H
-#include "Agent.h"
+#include "SimObject.h"
 
 namespace swarmulator::agent {
 
-class Boid final : public Agent {
+class Boid final : public SimObject {
 private:
     float cohesion_wt_ = 1;
     float avoidance_wt_ = 1;
@@ -16,11 +16,11 @@ private:
 
 public:
     Boid() = default;
-    Boid(const Vector3& position, const Vector3& direction) : Agent(position, direction) {}
+    Boid(const Vector3& position, const Vector3& direction) : SimObject(position, direction) {}
     ~Boid() override = default;
 
-    std::shared_ptr<Agent> update(const std::vector<std::shared_ptr<Agent>> &neighborhood,
-                                  const std::list<std::shared_ptr<env::Sphere>> &objects, float dt) override;
+    std::shared_ptr<SimObject> update(const std::vector<std::shared_ptr<SimObject> > &neighborhood,
+                                      float dt) override;
 };
 
 } // agent

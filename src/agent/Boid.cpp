@@ -12,7 +12,8 @@
 
 
 namespace swarmulator::agent {
-    std::shared_ptr<Agent> Boid::update(const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::list<std::shared_ptr<env::Sphere>> &objects, const float dt) {
+    std::shared_ptr<SimObject> Boid::update(const std::vector<std::shared_ptr<SimObject> > &neighborhood,
+                                            const float dt) {
         Vector3 cohesion = {0, 0, 0};
         u_int32_t coc = 0;
         Vector3 avoidance = {0, 0, 0};

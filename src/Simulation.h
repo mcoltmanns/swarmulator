@@ -15,14 +15,14 @@
 #include <boost/iostreams/filter/zlib.hpp>
 #include <boost/iostreams/device/file.hpp>
 
-#include "agent/Agent.h"
+#include "agent/SimObject.h"
 #include "env/Sphere.h"
 #include "util/StaticGrid.h"
 #include "util/util.h"
 
 template <class AgentType>
 class Simulation {
-static_assert(std::is_base_of_v<swarmulator::agent::Agent, AgentType>, "simulations must be run with a class derived from swarmulator::agent::Agent");
+static_assert(std::is_base_of_v<swarmulator::agent::SimObject, AgentType>, "simulations must be run with a class derived from swarmulator::agent::Agent");
 private:
     Vector3 world_size_ = {1.f, 1.f, 1.f};
     int grid_divisions_ = 20;
@@ -39,7 +39,7 @@ private:
     boost::iostreams::filtering_ostream static_log_file_stream_;
 
     std::list<std::shared_ptr<AgentType>> agents_;
-    swarmulator::agent::SSBOAgent* agents_ssbo_array_;
+    swarmulator::agent::SSBOSimObject* agents_ssbo_array_;
     static constexpr size_t agents_ssbo_size_ = 1024 * 1024;
     unsigned int agents_ssbo_;
 
@@ -53,14 +53,14 @@ public:
     bool logging_enabled_ = false;
 
     Simulation() : grid_(world_size_, grid_divisions_) {
-        agents_ssbo_array_ = static_cast<swarmulator::agent::SSBOAgent *>(RL_CALLOC(agents_ssbo_size_, sizeof(swarmulator::agent::SSBOAgent)));
-        agents_ssbo_ = rlLoadShaderBuffer(agents_ssbo_size_ * sizeof(swarmulator::agent::SSBOAgent), agents_ssbo_array_, RL_DYNAMIC_COPY);
+        agents_ssbo_array_ = static_cast<swarmulator::agent::SSBOSimObject *>(RL_CALLOC(agents_ssbo_size_, sizeof(swarmulator::agent::SSBOSimObject)));
+        agents_ssbo_ = rlLoadShaderBuffer(agents_ssbo_size_ * sizeof(swarmulator::agent::SSBOSimObject), agents_ssbo_array_, RL_DYNAMIC_COPY);
     }
 
     Simulation(Vector3 world_size, int grid_divisions) :
     world_size_(world_size), grid_divisions_(grid_divisions), grid_(world_size, grid_divisions) {
-        agents_ssbo_array_ = static_cast<swarmulator::agent::SSBOAgent *>(RL_CALLOC(agents_ssbo_size_, sizeof(swarmulator::agent::SSBOAgent)));
-        agents_ssbo_ = rlLoadShaderBuffer(agents_ssbo_size_ * sizeof(swarmulator::agent::SSBOAgent), agents_ssbo_array_, RL_DYNAMIC_COPY);
+        agents_ssbo_array_ = static_cast<swarmulator::agent::SSBOSimObject *>(RL_CALLOC(agents_ssbo_size_, sizeof(swarmulator::agent::SSBOSimObject)));
+        agents_ssbo_ = rlLoadShaderBuffer(agents_ssbo_size_ * sizeof(swarmulator::agent::SSBOSimObject), agents_ssbo_array_, RL_DYNAMIC_COPY);
     }
 
     ~Simulation() {
@@ -70,7 +70,7 @@ public:
     [[nodiscard]] bool can_add_agent() const { return agents_.size() < max_agents_; }
     [[nodiscard]] bool can_add_object() const { return objects_.size() < max_objects_; }
 
-    [[nodiscard]] const std::vector<std::shared_ptr<swarmulator::agent::Agent>> &get_agents() const { return agents_; }
+    [[nodiscard]] const std::vector<std::shared_ptr<swarmulator::agent::SimObject>> &get_agents() const { return agents_; }
     [[nodiscard]] size_t get_agents_count() const { return agents_.size(); }
     [[nodiscard]] size_t get_max_agents() const { return max_agents_; }
     [[nodiscard]] size_t get_total_agents() const { return total_agents_; }
@@ -169,7 +169,7 @@ public:
                 {
                     const auto agent = *it;
                     auto neighborhood = grid_.get_neighborhood(agent.operator*());
-                    auto new_agent = std::dynamic_pointer_cast<AgentType>(agent->update(neighborhood.operator*(), objects_, dt));
+                    auto new_agent = std::dynamic_pointer_cast<AgentType>(agent->update(neighborhood.operator*(), dt));
                     // critical section wastes little time - several orders of magnitude less than updates
 #pragma omp critical
                     {
@@ -195,7 +195,7 @@ public:
                         // put together the genome - array of all weights and biases
                         std::string genome_str = agent->get_genome_string();
                         std::string parent_str = boost::uuids::to_string(agent->get_parent());
-                        swarmulator::agent::SSBOAgent into;
+                        swarmulator::agent::SSBOSimObject into;
                         agent->to_ssbo(&into);
 #pragma omp critical
                         dynamic_log_file_stream_ <<
@@ -203,14 +203,14 @@ public:
                             id_str << " | " <<
                             Vector3ToString(xyz(into.position)) << " | " <<
                             Vector3ToString(xyz(into.direction)) << " | " <<
-                            Vector2ToString(into.signals) << " | " <<
-                            Vector2ToString(into.info) << std::endl;
+                            Vector4ToString(into.info_a) << " | " <<
+                            Vector4ToString(into.info_b) << std::endl;
                         // concurrent stream access big no-no!
                     }
                 }
             }
         }
-        rlUpdateShaderBuffer(agents_ssbo_, agents_ssbo_array_, agents_.size() * sizeof(swarmulator::agent::SSBOAgent), 0); // only copy as much data as there are agents (actually saves a lot of time)
+        rlUpdateShaderBuffer(agents_ssbo_, agents_ssbo_array_, agents_.size() * sizeof(swarmulator::agent::SSBOSimObject), 0); // only copy as much data as there are agents (actually saves a lot of time)
     }
 
     [[nodiscard]] unsigned int get_agents_ssbo() const { return agents_ssbo_; }
