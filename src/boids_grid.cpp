@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
     constexpr Vector3 world_size = {100, 100, 100};
     constexpr int subdivisions = 10;
     float cam_speed = 1.f;
-    omp_set_num_threads(16);
+    omp_set_num_threads(omp_get_max_threads());
     float run_for = 60; // how many seconds to run the simulation for
 
     if (const auto o = get_opt(argv, argv + argc, "-n")) {
@@ -37,6 +37,9 @@ int main(int argc, char** argv) {
     }
     if (const auto o = get_opt(argv, argv + argc, "-t")) {
         omp_set_num_threads(std::stoi(o));
+    }
+    if (const auto o = get_opt(argv, argv + argc, "-p")) {
+        omp_set_num_threads(std::max(1, std::min(std::stoi(o), omp_get_max_threads()))); // number of threads used should not be greater than the maximum threads available on device
     }
     if (opt_exists(argv, argv + argc, "--vsync")) {
         SetConfigFlags(FLAG_VSYNC_HINT);

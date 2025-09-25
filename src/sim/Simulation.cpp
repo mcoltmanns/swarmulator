@@ -34,7 +34,7 @@ void Simulation::update(const float dt) {
     // this has no noticeable performance impact vs parallel vector access
     // but this is still the most expensive step (about 2x slower than grid sorting)
     // we could try to move to the gpu, but then we'd need to either write the agent processing code in glsl
-    // what about openmp "target teams distribute parallel for"?
+    // check openmp target directive - may be possible to offload this directly to gpu
     int buffer_write_place = 0;
 #pragma omp parallel private(it)
     {
