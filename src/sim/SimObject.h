@@ -22,7 +22,7 @@ typedef struct {
 class SimObject {
 protected:
     Vector3 position_ = Vector3(0, 0, 0);
-    Quaternion rotation_ = Quaternion(0, 0, 0, 0); // quaternion!
+    Vector3 rotation_ = Vector3(0, 0, 0);
     Vector3 velocity_ = Vector3(0, 0, 0);
     Vector3 scale_ = Vector3(1, 1, 1);
 
@@ -32,16 +32,16 @@ protected:
 
 public:
     SimObject() = default;
-    SimObject(const Vector3& position, const Quaternion& rotation) : position_(position), rotation_(rotation) {}
-    SimObject(const Vector3& position, const Quaternion& rotation, const Vector3& scale) : position_(position), rotation_(rotation), scale_(scale) {}
+    SimObject(const Vector3& position, const Vector3& rotation) : position_(position), rotation_(rotation) {}
+    SimObject(const Vector3& position, const Vector3& rotation, const Vector3& scale) : position_(position), rotation_(rotation), scale_(scale) {}
 
     virtual ~SimObject() = default;
 
     void set_position(const Vector3 position) { position_ = position; }
     [[nodiscard]] Vector3 get_position() const { return position_; }
 
-    void set_rotation(const Quaternion rotation) { rotation_ = rotation; }
-    [[nodiscard]] Quaternion get_rotation() const { return rotation_; }
+    void set_rotation(const Vector3 rotation) { rotation_ = rotation; }
+    [[nodiscard]] Vector3 get_rotation() const { return rotation_; }
 
     void set_velocity(const Vector3 velocity) { velocity_ = velocity; }
     [[nodiscard]] Vector3 get_velocity() const { return velocity_; }

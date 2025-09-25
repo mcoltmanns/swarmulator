@@ -2,7 +2,7 @@ R"(
 #version 430
 struct Agent {
     vec4 position;
-    vec4 direction; // this is a quaternion!
+    vec4 direction;
     vec4 scale;
     vec4 info;
 };

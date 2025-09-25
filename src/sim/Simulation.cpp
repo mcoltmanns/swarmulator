@@ -53,9 +53,9 @@ void Simulation::update(const float dt) {
                     if (new_object != nullptr && can_add_object()) {
                         add_object(std::move(new_object)); // hand over ownership of the new object to the simulation!
                         const auto p = Vector4{(randfloat() - 0.5f) * world_size_.x, (randfloat() - 0.5f) * world_size_.y, (randfloat() - 0.5f) * world_size_.z, 0};
-                        const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f};
+                        const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
                         new_object->set_position(xyz(p));
-                        new_object->set_rotation(r);
+                        new_object->set_rotation(xyz(r));
                         new_object->write_to_ssbo(objects_ssbo_array_[buffer_write_place]);
                         ++buffer_write_place;
                     }

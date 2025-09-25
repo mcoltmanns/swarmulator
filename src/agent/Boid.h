@@ -16,7 +16,7 @@ private:
 
 public:
     Boid() = default;
-    Boid(const Vector3 position, const Vector4 rotation) : SimObject(position, rotation) {}
+    Boid(const Vector3 position, const Vector3 rotation) : SimObject(position, rotation) {}
 
     std::unique_ptr<SimObject> update(const std::vector<SimObject *> &neighborhood, float dt) override;
 };

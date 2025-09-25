@@ -17,11 +17,11 @@
 #include "sim/util.h"
 
 int main(int argc, char** argv) {
-    int init_agent_count = 1000;
+    int init_agent_count = 2000;
     int window_w = 800;
     int window_h = 600;
     constexpr Vector3 world_size = {100, 100, 100};
-    constexpr int subdivisions = 10;
+    constexpr int subdivisions = 20;
     float cam_speed = 1.f;
     omp_set_num_threads(omp_get_max_threads());
     float run_for = 60; // how many seconds to run the simulation for
@@ -88,8 +88,8 @@ int main(int argc, char** argv) {
     // initialize all the agents
     for (int i = 0; i < init_agent_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
-        const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f};
-        auto a = std::make_unique<swarmulator::agent::Boid>(xyz(p), r);
+        const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
+        auto a = std::make_unique<swarmulator::agent::Boid>(xyz(p), xyz(r));
         a->set_interaction_radius(5.f); // boids are much happier with a smaller radius
         simulation.add_object(std::move(a)); // hand over to the sim!
     }
