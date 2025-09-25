@@ -12,9 +12,9 @@
 #include "raygui.h"
 #include "raylib.h"
 #include "rlgl.h"
-#include "Simulation.h"
 #include "agent/Boid.h"
-#include "util/util.h"
+#include "sim/Simulation.h"
+#include "sim/util.h"
 
 int main(int argc, char** argv) {
     int init_agent_count = 1000;
@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
         CAMERA_PERSPECTIVE,
     };
 
-    auto simulation = Simulation<swarmulator::agent::Boid>(world_size, subdivisions);
+    auto simulation = swarmulator::Simulation(world_size, subdivisions);
 
     // init agents (shaders and mesh)
     // this is majorly ugly and sort of janky, but lets us compile the shader source in with the executable, instead of loading at runtime
@@ -85,15 +85,15 @@ int main(int argc, char** argv) {
     // initialize all the agents
     for (int i = 0; i < init_agent_count; i++) {
         const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
-        const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
-        auto a = std::make_shared<swarmulator::agent::Boid>(xyz(p), xyz(r));
-        a->set_sense_radius(5.f); // boids are much happier with a smaller radius
-        simulation.add_agent(a);
+        const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f};
+        auto a = std::make_unique<swarmulator::agent::Boid>(xyz(p), r);
+        a->set_interaction_radius(5.f); // boids are much happier with a smaller radius
+        simulation.add_object(std::move(a)); // hand over to the sim!
     }
 
-    simulation.set_min_agents(init_agent_count);
+    /*simulation.set_min_agents(init_agent_count);
     simulation.set_max_agents(init_agent_count);
-    simulation.logging_enabled_ = false;
+    simulation.logging_enabled_ = false;*/
 
     auto start_time = GetTime();
     size_t frames = 0;
@@ -124,14 +124,13 @@ int main(int argc, char** argv) {
         rlEnableShader(agent_shader.id);
         SetShaderValueMatrix(agent_shader, 0, projection);
         SetShaderValueMatrix(agent_shader, 1, view);
-        SetShaderValue(agent_shader, 2, &swarmulator::agent::scale, SHADER_UNIFORM_FLOAT);
-        const auto num_agents = simulation.get_agents_count(); // tell the shader how many agents it needs to draw
-        SetShaderValue(agent_shader, 3, &num_agents, SHADER_UNIFORM_INT);
+        const auto num_agents = simulation.get_objects_count(); // tell the shader how many agents it needs to draw
+        SetShaderValue(agent_shader, 2, &num_agents, SHADER_UNIFORM_INT);
         // send agents to draw shader
-        rlBindShaderBuffer(simulation.get_agents_ssbo(), 0);
+        rlBindShaderBuffer(simulation.get_objects_ssbo_id(), 0);
         // instanced agent draw
         rlEnableVertexArray(agent_vao);
-        rlDrawVertexArrayInstanced(0, 3, static_cast<int>(simulation.get_agents_count()));
+        rlDrawVertexArrayInstanced(0, 3, static_cast<int>(simulation.get_objects_count()));
         rlDisableVertexArray();
         rlDisableShader();
         // spheres
@@ -144,11 +143,9 @@ int main(int argc, char** argv) {
 
         // debug info
         DrawFPS(0, 0);
-        DrawText(TextFormat("%zu/%zu agents", simulation.get_agents_count(), simulation.get_max_agents()), 0, 20, 18, DARKGREEN);
+        DrawText(TextFormat("%zu/%zu agents", simulation.get_objects_count(), simulation.get_max_objects()), 0, 20, 18, DARKGREEN);
         DrawText(TextFormat("%zu threads", omp_get_max_threads()), 0, 40, 18, DARKGREEN);
-        DrawText(TextFormat("%.0f sim time", swarmulator::globals::sim_time), 0, 60, 18, DARKGREEN);
-        DrawText(TextFormat("%zu agents have existed", simulation.get_total_agents()), 0, 80, 18, DARKGREEN);
-        DrawText(TextFormat("%.3f GRF", swarmulator::agent::global_reward_factor), 0, 100, 18, DARKGREEN);
+        DrawText(TextFormat("%.0f sim time", simulation.get_total_time()), 0, 60, 18, DARKGREEN);
 
         EndDrawing();
         frames++;

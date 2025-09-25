@@ -12,10 +12,6 @@
 #include <string>
 #include <sstream>
 
-namespace swarmulator::globals {
-    inline float sim_time = 0;
-}
-
 // get a random float between 0 and 1
 inline float randfloat() {
     return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
@@ -86,24 +82,30 @@ inline std::string Vector2ToString(const Vector2 &v) {
     return ss.str();
 }
 
+// couple vector3 operators that raymath doesn't provide
+inline Vector3 operator*(const float s, const Vector3 &r) { return Vector3(r.x * s, r.y * s, r.z * s); }
+inline Vector3 floorv3(const Vector3 &v) { return Vector3(floor(v.x), floorf(v.y), floorf(v.z)); }
+inline Vector3 xyz(const Vector4 &in) { return Vector3(in.x, in.y, in.z); }
+
+// wrap out of bounds positions to the opposite sides of the world
 namespace swarmulator::util {
     [[nodiscard]] static Vector3 wrap_position(Vector3 position, const Vector3 &world_size) {
         if (position.x < -world_size.x / 2.f) {
             position.x = world_size.x / 2.f;
         }
-        if (position.x > world_size.x / 2.f) {
+        else if (position.x > world_size.x / 2.f) {
             position.x = -world_size.x / 2.f;
         }
         if (position.y < -world_size.y / 2.f) {
             position.y = world_size.y / 2.f;
         }
-        if (position.y > world_size.y / 2.f) {
+        else if (position.y > world_size.y / 2.f) {
             position.y = -world_size.y / 2.f;
         }
         if (position.z < -world_size.z / 2.f) {
             position.z = world_size.z / 2.f;
         }
-        if (position.z > world_size.z / 2.f) {
+        else if (position.z > world_size.z / 2.f) {
             position.z = -world_size.z / 2.f;
         }
 

@@ -2,19 +2,18 @@ R"(
 #version 430
 struct Agent {
     vec4 position;
-    vec4 direction;
-    vec2 signals;
-    vec2 info;
+    vec4 direction; // this is a quaternion!
+    vec4 scale;
+    vec4 info;
 };
 
-// vertex position of the agent
+// vertex positions of the agent mesh
 layout (location=0) in vec3 vertex_position;
 
 // constant inputs
 layout (location=0) uniform mat4 projection_matrix;
 layout (location=1) uniform mat4 view_matrix;
-layout (location=2) uniform float agent_scale;
-layout (location=3) uniform int num_agents;
+layout (location=2) uniform int num_agents;
 
 // data buffers we're reading from
 // buffer of agents
@@ -27,15 +26,15 @@ void main() {
     // get position and direction info from buffers
     vec3 position = agents[gl_InstanceID].position.xyz;
     vec3 direction = agents[gl_InstanceID].direction.xyz;
-    vec2 signals = agents[gl_InstanceID].signals;
-    vec2 info = agents[gl_InstanceID].info;
+    vec4 info = agents[gl_InstanceID].info;
 
     // change color depending on direction
     fragColor.rgb = abs(normalize(direction));
 
     fragColor.a = gl_InstanceID >= num_agents ? 0.0 : 1.0; // only show this agent if the data we're reading from isn't junk
 
-    float scale = agent_scale;
+    //vec3 vertexView = vec3(vertex_position.x * scale.x, vertex_position.y * scale.y, vertex_position.z * scale.z); // vertex position in view space
+    float scale = 1.f;
     vec3 vertexView = vertex_position * scale; // vertex position in view space
 
     // right now triangle points towards the camera
