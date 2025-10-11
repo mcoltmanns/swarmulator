@@ -74,6 +74,8 @@ set(SIM_SOURCES
         src/sim/Simulation.h
         src/sim/Simulation.cpp
         src/sim/util.h
+        src/sim/ObjectInstancer.cpp
+        src/sim/ObjectInstancer.h
 )
 
 set(SHADER_SOURCES

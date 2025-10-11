@@ -1,2 +1,30 @@
-increase mutation change as open-endedness score goes down?
-- would need somehow a running oee score
+dynamic shader/mesh info loading?
+- different objects have different meshes/shaders
+- all shaders, meshes must be loaded/unloaded by hand
+- instanced drawing only applies to all objects of a given class (but that's not the expensive part, shouldn't really matter)
+
+so we would need to:
+startup {
+    initialize gl context
+    register all objects with the simulation (vector of pointers to object lists) (a list's position in that vector is the sim id for that object type)
+    for each object type, define and load shaders and vertex buffers (vaos)
+    also allocate an ssbo for that object
+}
+run {
+    for each registered object type {
+        enable the right shader
+        set the values in the shader
+        bind the ssbo
+        enable the vao
+        do instanced draw call
+        disable the vao
+        disable the shader
+    }
+}
+exit {
+    for each registered object type {
+        free the ssbo
+        unload the shader
+        unload the vao
+    }
+}

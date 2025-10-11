@@ -30,6 +30,20 @@ protected:
 
     float interaction_radius_ = 10;
 
+    // shader source code and meshes are protected members of the class that uses them
+    // string_view is like string, but constant - exactly what we want here
+    static constexpr std::string_view vs_src_ =
+#include "../shaders/boid.vert"
+        ;
+    static constexpr std::string_view fs_src_ =
+#include "../shaders/agent.frag"
+        ;
+    static constexpr Vector3 mesh_[] = {
+        {-0.86, -0.5, 0},
+        {0.86, -0.5, 0},
+        {0, 1, 0},
+    };
+
 public:
     SimObject() = default;
     SimObject(const Vector3& position, const Vector3& rotation) : position_(position), rotation_(rotation) {}

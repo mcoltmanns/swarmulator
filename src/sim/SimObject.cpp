@@ -18,4 +18,3 @@ void SimObject::write_to_ssbo(SSBOSimObject &ssbo) const {
     ssbo.scale.y = scale_.y;
     ssbo.scale.z = scale_.z;
 }
-
