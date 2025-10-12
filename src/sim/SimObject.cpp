@@ -4,7 +4,9 @@
 
 #include "SimObject.h"
 
-void SimObject::write_to_ssbo(SSBOSimObject &ssbo) const {
+#include "ObjectInstancer.h"
+
+void SimObject::write_to_ssbo(SSBOObject &ssbo) const {
     ssbo.position.x = position_.x;
     ssbo.position.y = position_.y;
     ssbo.position.z = position_.z;

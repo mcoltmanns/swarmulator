@@ -7,9 +7,7 @@
 #include <list>
 #include <memory>
 
-#include "raylib.h"
 #include "rlgl.h"
-#include "SimObject.h"
 #include "StaticGrid.h"
 
 namespace swarmulator {
@@ -21,7 +19,7 @@ private:
 
     size_t max_objects_ = 2000;
     std::list<std::unique_ptr<SimObject>> objects_; // the simulation owns the objects, so these are unique ptrs
-    SSBOSimObject* objects_ssbo_array_;
+    SSBOObject* objects_ssbo_array_;
     static constexpr size_t objects_ssbo_size_ = 1024 * 1024;
     unsigned int objects_ssbo_id_;
 
@@ -29,13 +27,13 @@ private:
 
 public:
     Simulation() : grid_(world_size_, grid_divisions_) {
-        objects_ssbo_array_ = static_cast<SSBOSimObject *>(RL_CALLOC(objects_ssbo_size_, sizeof(SSBOSimObject)));
-        objects_ssbo_id_ = rlLoadShaderBuffer(objects_ssbo_size_ * sizeof(SSBOSimObject), objects_ssbo_array_, RL_DYNAMIC_COPY);
+        objects_ssbo_array_ = static_cast<SSBOObject *>(RL_CALLOC(objects_ssbo_size_, sizeof(SSBOObject)));
+        objects_ssbo_id_ = rlLoadShaderBuffer(objects_ssbo_size_ * sizeof(SSBOObject), objects_ssbo_array_, RL_DYNAMIC_COPY);
     }
 
     Simulation(Vector3 world_size, int grid_divisions): world_size_(world_size), grid_divisions_(grid_divisions), grid_(world_size, grid_divisions) {
-        objects_ssbo_array_ = static_cast<SSBOSimObject *>(RL_CALLOC(objects_ssbo_size_, sizeof(SSBOSimObject)));
-        objects_ssbo_id_ = rlLoadShaderBuffer(objects_ssbo_size_ * sizeof(SSBOSimObject), objects_ssbo_array_, RL_DYNAMIC_COPY);
+        objects_ssbo_array_ = static_cast<SSBOObject *>(RL_CALLOC(objects_ssbo_size_, sizeof(SSBOObject)));
+        objects_ssbo_id_ = rlLoadShaderBuffer(objects_ssbo_size_ * sizeof(SSBOObject), objects_ssbo_array_, RL_DYNAMIC_COPY);
     }
 
     ~Simulation() {

@@ -7,17 +7,7 @@
 #include <memory>
 #include <vector>
 
-#include "raylib.h"
-
-// all the info the shader needs to draw this object
-// can omit velocity
-// info Vec4 is for passing other information into the shader
-typedef struct {
-    Vector4 position;
-    Vector4 rotation;
-    Vector4 scale;
-    Vector4 info;
-} SSBOSimObject;
+#include "dtypes.h"
 
 class SimObject {
 protected:
@@ -71,10 +61,10 @@ public:
     void deactivate() { active_ = false; }
 
     // called at every update
-    // if you want to have this object insert a new one into the simulation, return a sharedpointer to that new object
+    // if you want to have this object insert a new one into the simulation, return a moved unique ptr to that new object
     virtual std::unique_ptr<SimObject> update(const std::vector<SimObject *> &neighborhood, float dt) { return nullptr; }
 
-    void write_to_ssbo(SSBOSimObject& ssbo) const;
+    void write_to_ssbo(SSBOObject& ssbo) const;
 };
 
 

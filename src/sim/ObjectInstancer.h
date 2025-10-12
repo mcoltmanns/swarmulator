@@ -16,39 +16,38 @@
 
 #include "SimObject.h"
 
-enum ObjectInstancerStatus {
-    OK,
-    BAD_ALLOC,
-    BAD_FREE,
+struct non_copyable {
+    non_copyable() = default;
+    // this is a struct which is non-copyable (only std::moveable)
+    // delete copy constructor
+    non_copyable(const non_copyable&) = delete;
+    non_copyable& operator=(const non_copyable&) = delete;
+
+    // enable move
+    non_copyable(non_copyable&&) = default;
+    non_copyable& operator=(non_copyable&&) = default;
 };
 
-typedef struct {
-    Vector4 position;
-    Vector4 rotation;
-    Vector4 scale;
-    Vector4 info;
-} SSBOObject;
-
-typedef struct {
+struct object_type_group : non_copyable {
     Shader shader; // the shader that all these objects are drawn with
     unsigned int vao; // the vertices that all these objects are drawn with
     unsigned int ssbo; // the ssbos that all these objects read their info into
     SSBOObject* ssbo_buffer; // the buffer into which object info is written before the copy to the gpu
     std::list<std::unique_ptr<SimObject>> object_list; // the list of all objects in this group currently in the simulation (instancer owns objects, so unique_ptr here is good)
-} _object_type_group;
+};
 
 class ObjectInstancer {
 private:
     static constexpr size_t max_group_size_ = 2000; // maximum number of objects in a group
 
     // map type hash codes to pointers to lists of unique ptrs to simobjects
-    std::map<std::size_t, _object_type_group> object_groups_ {};
+    std::map<std::size_t, object_type_group> object_groups_ {};
 
     ObjectInstancerStatus status_ = ObjectInstancerStatus::OK;
 
     // returns the iterator after erase
-    std::map<size_t, _object_type_group>::iterator free_object_type_intern(
-        const std::map<size_t, _object_type_group>::iterator &pair);
+    std::map<size_t, object_type_group>::iterator free_object_type_intern(
+        const std::map<size_t, object_type_group>::iterator &pair);
 
 public:
     ObjectInstancer();
@@ -56,7 +55,7 @@ public:
 
     // certain methods, when they fail, will set the objectinstancer's status flag to a value other than OK
     // status reports that value
-    ObjectInstancerStatus status() const { return status_; }
+    [[nodiscard]] ObjectInstancerStatus status() const { return status_; }
     // reset instancer status flag (probably you should call this after you check status)
     void reset_status() { status_ = ObjectInstancerStatus::OK; }
 

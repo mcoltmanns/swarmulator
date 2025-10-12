@@ -28,3 +28,5 @@ exit {
         unload the vao
     }
 }
+
+building with gcc is least fussy

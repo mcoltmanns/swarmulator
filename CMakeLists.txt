@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.9)
 project(swarmulator_cpp)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # EXTERNAL HEADERS
 set(EXTERNAL_DIR "external")
@@ -76,6 +77,7 @@ set(SIM_SOURCES
         src/sim/util.h
         src/sim/ObjectInstancer.cpp
         src/sim/ObjectInstancer.h
+        src/sim/dtypes.h
 )
 
 set(SHADER_SOURCES

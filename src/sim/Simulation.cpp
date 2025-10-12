@@ -63,6 +63,6 @@ void Simulation::update(const float dt) {
             }
         }
     }
-    rlUpdateShaderBuffer(objects_ssbo_id_, objects_ssbo_array_, objects_.size() * sizeof(SSBOSimObject), 0); // only copy as much data as there are agents (actually saves loads of time)
+    rlUpdateShaderBuffer(objects_ssbo_id_, objects_ssbo_array_, objects_.size() * sizeof(SSBOObject), 0); // only copy as much data as there are agents (actually saves loads of time)
 }
 } // swarmulator

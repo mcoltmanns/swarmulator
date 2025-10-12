@@ -18,9 +18,9 @@ ObjectInstancer::~ObjectInstancer() {
     }
 }
 
-std::map<size_t, _object_type_group>::iterator ObjectInstancer::free_object_type_intern(
-    const std::map<size_t, _object_type_group>::iterator &pair) {
-    const auto group = pair->second;
+std::map<size_t, object_type_group>::iterator ObjectInstancer::free_object_type_intern(
+    const std::map<size_t, object_type_group>::iterator &pair) {
+    const auto group = std::move(pair->second); // we are freeing an object type group, so ok to take control of it
 
     // unload the shaders
     UnloadShader(group.shader);
@@ -69,7 +69,7 @@ size_t ObjectInstancer::calloc_object_type(std::string& vtx_src_p, std::string& 
 
     // then throw everything into the map under a new object type group
     object_groups_.emplace(key,
-        _object_type_group {
+        object_type_group {{},
             shader,
             vao,
             ssbo,
