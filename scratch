@@ -29,4 +29,5 @@ exit {
     }
 }
 
-building with gcc is least fussy
+TODO:
+flick the simulation over to using object types

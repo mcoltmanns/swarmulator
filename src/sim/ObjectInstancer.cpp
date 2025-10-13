@@ -20,21 +20,23 @@ ObjectInstancer::~ObjectInstancer() {
 
 std::map<size_t, object_type_group>::iterator ObjectInstancer::free_object_type_intern(
     const std::map<size_t, object_type_group>::iterator &pair) {
-    const auto group = std::move(pair->second); // we are freeing an object type group, so ok to take control of it
+    const auto group = pair->second;
 
-    // unload the shaders
+    // unload the group's shader
     UnloadShader(group.shader);
 
     // vao need not be unloaded
-    // free ssbo
+    // free group ssbo
     rlUnloadShaderBuffer(group.ssbo);
-    // free ssbo buffer
+    // free group ssbo buffer
     RL_FREE(group.ssbo_buffer);
 
-    // don't need to unload the object list elements because they're unique pointers
-    // just erase the type group (and by assoc, the object list)
+    // simobjects in the list are always alloc'd with new, so delete all of those
+    for (auto &obj : group.object_list) {
+        delete obj;
+    }
     status_ = OK;
-    return object_groups_.erase(pair);
+    return object_groups_.erase(pair); // finally erase yourself
 }
 
 
@@ -69,7 +71,7 @@ size_t ObjectInstancer::calloc_object_type(std::string& vtx_src_p, std::string& 
 
     // then throw everything into the map under a new object type group
     object_groups_.emplace(key,
-        object_type_group {{},
+        object_type_group {
             shader,
             vao,
             ssbo,

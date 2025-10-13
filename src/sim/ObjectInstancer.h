@@ -16,19 +16,20 @@
 
 #include "SimObject.h"
 
-struct object_type_group : non_copyable {
+struct object_type_group {
     Shader shader; // the shader that all these objects are drawn with
     unsigned int vao; // the vertices that all these objects are drawn with
     unsigned int ssbo; // the ssbos that all these objects read their info into
     SSBOObject* ssbo_buffer; // the buffer into which object info is written before the copy to the gpu
-    std::list<std::unique_ptr<SimObject>> object_list; // the list of all objects in this group currently in the simulation (instancer owns objects, so unique_ptr here is good)
+    std::list<SimObject*> object_list; // the list of all objects in this group currently in the simulation
+    // these are not unique pointers, but project access to these through design of objectInstancer
 };
 
 class ObjectInstancer {
 private:
     static constexpr size_t max_group_size_ = 2000; // maximum number of objects in a group
 
-    // map type hash codes to pointers to lists of unique ptrs to simobjects
+    // map type hash codes to pointers to lists of simobjects and their associated info
     std::map<std::size_t, object_type_group> object_groups_ {};
 
     ObjectInstancerStatus status_ = ObjectInstancerStatus::OK;
@@ -56,6 +57,8 @@ public:
 
     // frees all the resources associated with a given object type hash code
     void free_object_type(size_t key);
+
+    object_type_group& get_object_type(const size_t key) { return object_groups_[key]; }
 };
 
 
