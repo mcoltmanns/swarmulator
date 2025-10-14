@@ -10,8 +10,8 @@
 #include "../sim/util.h"
 
 
-namespace swarmulator::agent {
-    std::unique_ptr<SimObject> Boid::update(const std::vector<SimObject *> &neighborhood, const float dt) {
+namespace swarmulator {
+     SimObject* Boid::update(const std::vector<SimObject *> &neighborhood, const float dt) {
         Vector3 cohesion = {0, 0, 0};
         u_int32_t coc = 0;
         Vector3 avoidance = {0, 0, 0};
@@ -58,5 +58,5 @@ namespace swarmulator::agent {
         }
         return nullptr;
     }
-} // agent
+}
 // swarmulator

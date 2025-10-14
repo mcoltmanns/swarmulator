@@ -1,4 +1,3 @@
-R"(
 #version 430
 struct Agent {
     vec4 position;
@@ -13,8 +12,7 @@ layout (location=0) in vec3 vertex_position;
 // constant inputs
 layout (location=0) uniform mat4 projection_matrix;
 layout (location=1) uniform mat4 view_matrix;
-layout (location=2) uniform float agent_scale;
-layout (location=3) uniform int num_agents;
+layout (location=2) uniform uint num_agents;
 
 // data buffers we're reading from
 // buffer of agents
@@ -63,4 +61,3 @@ void main() {
 
     gl_Position = projection_matrix * vec4(vertexView, 1);
 }
-)"

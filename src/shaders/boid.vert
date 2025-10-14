@@ -1,4 +1,3 @@
-R"(
 #version 430
 struct Agent {
     vec4 position;
@@ -35,7 +34,7 @@ void main() {
 
     //vec3 vertexView = vec3(vertex_position.x * scale.x, vertex_position.y * scale.y, vertex_position.z * scale.z); // vertex position in view space
     float scale = 1.f;
-    vec3 vertexView = vertex_position * scale; // vertex position in view space
+    vec3 vertexView = vertex_position * scale; // scale vertex position
 
     // right now triangle points towards the camera
     // make it point in the direction of its movement in view space
@@ -60,4 +59,3 @@ void main() {
 
     gl_Position = projection_matrix * vec4(vertexView, 1);
 }
-)"

@@ -6,92 +6,43 @@
 
 #include "rlgl.h"
 
+namespace swarmulator {
 #define check_t_subtype_simobject static_assert(std::is_base_of_v<SimObject, T>, "Objects registered to or used with the instancer must be or derive from SimObject")
 
-ObjectInstancer::ObjectInstancer() = default;
+    ObjectInstancer::ObjectInstancer() = default;
 
-ObjectInstancer::~ObjectInstancer() {
-    // free all the raylib stuff
-    auto it = object_groups_.begin();
-    while (it != object_groups_.end()) {
-        it = free_object_type_intern(it);
-    }
-}
-
-std::map<size_t, object_type_group>::iterator ObjectInstancer::free_object_type_intern(
-    const std::map<size_t, object_type_group>::iterator &pair) {
-    const auto group = pair->second;
-
-    // unload the group's shader
-    UnloadShader(group.shader);
-
-    // vao need not be unloaded
-    // free group ssbo
-    rlUnloadShaderBuffer(group.ssbo);
-    // free group ssbo buffer
-    RL_FREE(group.ssbo_buffer);
-
-    // simobjects in the list are always alloc'd with new, so delete all of those
-    for (auto &obj : group.object_list) {
-        delete obj;
-    }
-    status_ = OK;
-    return object_groups_.erase(pair); // finally erase yourself
-}
-
-
-template<class T>
-size_t ObjectInstancer::calloc_object_type(std::string& vtx_src_p, std::string& frg_src_p, std::vector<Vector3>& mesh) {
-    check_t_subtype_simobject;
-
-    const auto key = typeid(T).hash_code();
-    if (object_groups_.contains(key)) {
-        status_ = BAD_ALLOC; // if we failed, set the flag
-        return key;
+    ObjectInstancer::~ObjectInstancer() {
+        // TODO write this method!
     }
 
-    // load the shaders
-    const auto shader = LoadShader(vtx_src_p.c_str(), frg_src_p.c_str());
-
-    // allocate the vao
-    const auto vao = rlLoadVertexArray();
-    // and load it
-    rlEnableVertexArray(vao);
-    rlEnableVertexAttribute(0); // TODO is 0 always ok here?
-    rlLoadVertexBuffer(mesh.data(), sizeof(mesh), false);
-    rlSetVertexAttribute(0, 3, RL_FLOAT, false, 0, 0);
-    rlDisableVertexArray();
-
-    // allocate the ssbo buffer
-    const auto ssbo_buffer = static_cast<SSBOObject*>(RL_CALLOC(max_group_size_, sizeof(SSBOObject)));
-    // and the ssbo
-    const auto ssbo = rlLoadShaderBuffer(max_group_size_ * sizeof(SSBOObject), ssbo_buffer, RL_DYNAMIC_COPY);
-
-    rlCheckErrors();
-
-    // then throw everything into the map under a new object type group
-    object_groups_.emplace(key,
-        object_type_group {
-            shader,
-            vao,
-            ssbo,
-            ssbo_buffer,
-            {} // empty object pointer list since this is a new group
+    void ObjectInstancer::free_object_group(const size_t key) {
+        // check if the thing was allocated
+        const auto info = object_groups_.find(key);
+        if (info == object_groups_.end()) {
+            throw std::runtime_error("Cannot free non-existent object type.");
         }
-    );
 
-    // and then finally give the user the key to the thing they alloc'd
-    status_ = OK;
-    return key;
-}
+        // free objects
+        for (const object_group &grp = object_groups_.at(key); const auto& obj : grp.objects) {
+            delete obj;
+        }
+        object_groups_.erase(key);
 
-void ObjectInstancer::free_object_type(const size_t key) {
-    // check if the thing was allocated
-    const auto pair = object_groups_.find(key);
-    if (pair == object_groups_.end()) {
-        status_ = BAD_ALLOC;
-        return;
+        // free object info
+        rlUnloadShaderProgram(info->second.shader.id);
+        rlUnloadVertexArray(info->second.vao);
+        rlUnloadShaderBuffer(info->second.ssbo);
+        RL_FREE(info->second.ssbo_buffer);
+        object_groups_.erase(info);
     }
-    free_object_type_intern(pair);
-}
 
+    size_t ObjectInstancer::size() const {
+        // calculate the total number of objects in the instancer
+        // o(number of object groups)
+        size_t total = 0;
+        for (const auto& g : object_groups_) {
+            total += g.second.objects.size();
+        }
+        return total;
+    }
+} // namespace swarmulator

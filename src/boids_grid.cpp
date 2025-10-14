@@ -17,7 +17,7 @@
 #include "sim/util.h"
 
 int main(int argc, char** argv) {
-    int init_agent_count = 2000;
+    int init_agent_count = 5000;
     int window_w = 800;
     int window_h = 600;
     constexpr Vector3 world_size = {100, 100, 100};
@@ -26,25 +26,25 @@ int main(int argc, char** argv) {
     omp_set_num_threads(omp_get_max_threads());
     float run_for = 60; // how many seconds to run the simulation for
 
-    if (const auto o = get_opt(argv, argv + argc, "-n")) {
+    if (const auto o = swarmulator::get_opt(argv, argv + argc, "-n")) {
         init_agent_count = std::stoi(o);
     }
-    if (const auto o = get_opt(argv, argv + argc, "-w")) {
+    if (const auto o = swarmulator::get_opt(argv, argv + argc, "-w")) {
         window_w = std::stoi(o);
     }
-    if (const auto o = get_opt(argv, argv + argc, "-h")) {
+    if (const auto o = swarmulator::get_opt(argv, argv + argc, "-h")) {
         window_h = std::stoi(o);
     }
-    if (const auto o = get_opt(argv, argv + argc, "-t")) {
+    if (const auto o = swarmulator::get_opt(argv, argv + argc, "-t")) {
         omp_set_num_threads(std::stoi(o));
     }
-    if (const auto o = get_opt(argv, argv + argc, "-p")) {
+    if (const auto o = swarmulator::get_opt(argv, argv + argc, "-p")) {
         omp_set_num_threads(std::max(1, std::min(std::stoi(o), omp_get_max_threads()))); // number of threads used should not be greater than the maximum threads available on device
     }
-    if (opt_exists(argv, argv + argc, "--vsync")) {
+    if (swarmulator::opt_exists(argv, argv + argc, "--vsync")) {
         SetConfigFlags(FLAG_VSYNC_HINT);
     }
-    if (opt_exists(argv, argv + argc, "--aa")) {
+    if (swarmulator::opt_exists(argv, argv + argc, "--aa")) {
         SetConfigFlags(FLAG_MSAA_4X_HINT);
     }
 
@@ -67,31 +67,17 @@ int main(int argc, char** argv) {
 
     // init agents (shaders and mesh)
     // this is majorly ugly and sort of janky, but lets us compile the shader source in with the executable, instead of loading at runtime
-    const std::string vs_src =
-#include "shaders/boid.vert"
-        ;
-    const std::string fs_src =
-#include "shaders/agent.frag"
-        ;
-    Shader agent_shader = LoadShaderFromMemory(vs_src.c_str(), fs_src.c_str());
-    auto agent_vao = rlLoadVertexArray();
-    rlEnableVertexArray(agent_vao);
-    constexpr Vector3 mesh[] = {
-        {-0.86, -0.5, 0},
-        {0.86, -0.5, 0},
-        {0, 1, 0},
-    };
-    rlEnableVertexAttribute(0);
-    rlLoadVertexBuffer(mesh, sizeof(mesh), false);
-    rlSetVertexAttribute(0, 3, RL_FLOAT, false, 0, 0);
-    rlDisableVertexArray();
+    const std::string vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/boid.vert";
+    const std::string fs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/agent.frag";
+    const auto mesh = GenMeshCube(1, 1, 1);
+    simulation.alloc_object_type<swarmulator::Boid>(vs_src_path, fs_src_path, mesh);
     // initialize all the agents
     for (int i = 0; i < init_agent_count; i++) {
-        const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
-        const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
-        auto a = std::make_unique<swarmulator::agent::Boid>(xyz(p), xyz(r));
-        a->set_interaction_radius(5.f); // boids are much happier with a smaller radius
-        simulation.add_object(std::move(a)); // hand over to the sim!
+        const auto p = Vector4{(swarmulator::randfloat() - 0.5f) * world_size.x, (swarmulator::randfloat() - 0.5f) * world_size.y, (swarmulator::randfloat() - 0.5f) * world_size.z, 0};
+        const auto r = Vector4{swarmulator::randfloat() - 0.5f, swarmulator::randfloat() - 0.5f,
+                               swarmulator::randfloat() - 0.5f, 0};
+        auto obj = new swarmulator::Boid(swarmulator::xyz(p), swarmulator::xyz(r));
+        simulation.add_object(obj);
     }
 
     /*simulation.set_min_agents(init_agent_count);
@@ -124,7 +110,7 @@ int main(int argc, char** argv) {
         Matrix projection = rlGetMatrixProjection();
         Matrix view = GetCameraMatrix(camera);
         // agents
-        rlEnableShader(agent_shader.id);
+        /*rlEnableShader(agent_shader.id);
         SetShaderValueMatrix(agent_shader, 0, projection);
         SetShaderValueMatrix(agent_shader, 1, view);
         const auto num_agents = simulation.get_objects_count(); // tell the shader how many agents it needs to draw
@@ -136,9 +122,8 @@ int main(int argc, char** argv) {
         rlDrawVertexArrayInstanced(0, 3, static_cast<int>(simulation.get_objects_count()));
         rlDisableVertexArray();
         rlDisableShader();
-        // spheres
-        //simulation.draw_objects();
-        rlCheckErrors();
+        rlCheckErrors();*/
+        simulation.draw_objects(projection, view);
 
         // gui
         DrawCubeWiresV((Vector3){0, 0, 0}, world_size, DARKGRAY);
@@ -146,7 +131,7 @@ int main(int argc, char** argv) {
 
         // debug info
         DrawFPS(0, 0);
-        DrawText(TextFormat("%zu/%zu agents", simulation.get_objects_count(), simulation.get_max_objects()), 0, 20, 18, DARKGREEN);
+        DrawText(TextFormat("%zu/%zu agents", simulation.get_objects_count(), 0), 0, 20, 18, DARKGREEN);
         DrawText(TextFormat("%zu threads", omp_get_max_threads()), 0, 40, 18, DARKGREEN);
         DrawText(TextFormat("%.0f sim time", simulation.get_total_time()), 0, 60, 18, DARKGREEN);
 
@@ -156,7 +141,6 @@ int main(int argc, char** argv) {
     double fps = static_cast<double>(frames) / (GetTime() - start_time);
 
     CloseWindow();
-    UnloadShader(agent_shader);
     std::cout << "Average FPS: " << fps << std::endl;
     return 0;
 }

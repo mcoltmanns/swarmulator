@@ -11,6 +11,17 @@ startup {
     also allocate an ssbo for that object
 }
 run {
+    for update step, we want to be able to iterate over every object in order, out of order, doesn't matter as long as we can just run over everything
+    but for render step, we want to be able to access objects of identical types in order while preferably only iterating over the list once, in order to prevent extraneous shader/mesh load/unload
+    (if you can't get any of this to work, just color-code and pass values into the shader to differentiate)
+
+    our options:
+        - build a master list after every update (costs o(n))
+            - too expensive!
+        - master list of simobjects, with the type group map containing pointers to start and end regions (or start and length) of object types (objects are sorted by type in the list)
+            - this is also probably too expensive, as adding/removing simobjects will be a frequent operation
+        - custom iteration over the map of object type groups
+
     for each registered object type {
         enable the right shader
         set the values in the shader
