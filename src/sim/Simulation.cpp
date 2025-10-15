@@ -31,11 +31,11 @@ namespace swarmulator {
         // so have every thread iterate over the whole list
         // but only a single thread will access a specific element (single) while the others continue on (nowait)
         // this has no noticeable performance impact vs parallel vector access
-        std::list<std::shared_ptr<SimObject>>::iterator it;
         // parallelism does not seem to be the problem here
         // TODO worth parallelizing the outer loop? not unless number of object groups is large.
             for (auto grp = object_instancer_.groups_begin(); grp != object_instancer_.groups_end(); ++grp) {
                 // update objects
+                std::list<std::shared_ptr<SimObject>>::iterator it;
 #pragma omp parallel private(it)
                 {
                     for (it = grp->second.objects.begin(); it != grp->second.objects.end(); ++it) {
@@ -43,7 +43,7 @@ namespace swarmulator {
                     {
                         const auto object = *it;
                         auto neighborhood = grid_.get_neighborhood(object.operator*());
-                        const auto new_object = object->update(*neighborhood, dt);
+                        const auto new_object = object->update(neighborhood.operator*(), dt);
                         // this critical section is actually pretty fast
 #pragma omp critical
                         {
@@ -61,15 +61,9 @@ namespace swarmulator {
                         }
                     }
                 }
+                    // we can update ssbo data here since not parallelized outer loop
+                rlUpdateShaderBuffer(grp->second.ssbo, grp->second.ssbo_buffer, grp->second.objects.size() * sizeof(SSBOObject), 0);
             }
-        }
-
-        // go thru all the object groups and copy their ssbo data
-        // probably good to do this in parallel too? what would the bottleneck be here?
-        // is updateShaderBuffer threadsafe?
-        for (auto grp = object_instancer_.groups_begin(); grp != object_instancer_.groups_end(); ++grp) {
-            rlUpdateShaderBuffer(grp->second.ssbo, grp->second.ssbo_buffer, grp->second.objects.size() * sizeof(SSBOObject), 0);
-            //SSBOObject buffer_out[grp->second.objects.size()];
         }
     }
 

@@ -6,10 +6,9 @@
 
 namespace swarmulator {
     [[nodiscard]] int StaticGrid::cell_index(const Vector3 pos_grid) const {
-        if (pos_grid.x < 0 || pos_grid.y < 0 || pos_grid.z < 0
-            || pos_grid.x >= world_size_.x || pos_grid.y >= world_size_.y || pos_grid.z >= world_size_.z) {
+        if (pos_grid.x < 0 || pos_grid.y < 0 || pos_grid.z < 0 || pos_grid.x >= world_size_.x || pos_grid.y >= world_size_.y || pos_grid.z >= world_size_.z) {
             return -1;
-            }
+        }
         const auto [x, y, z] = floorv3(pos_grid / cell_size_);
         const int xpart = axis_cell_count_ * axis_cell_count_ * static_cast<int>(x);
         const int ypart = axis_cell_count_ * static_cast<int>(y);
