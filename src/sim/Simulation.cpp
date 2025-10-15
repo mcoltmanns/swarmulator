@@ -32,7 +32,7 @@ namespace swarmulator {
         // but only a single thread will access a specific element (single) while the others continue on (nowait)
         // this has no noticeable performance impact vs parallel vector access
         std::map<size_t, object_group>::iterator grp;
-        std::list<SimObject*>::iterator it;
+        std::list<std::shared_ptr<SimObject>>::iterator it;
     #pragma omp parallel private(grp, it)
         {
             for (grp = object_instancer_.groups_begin(); grp != object_instancer_.groups_end(); ++grp) {

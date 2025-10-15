@@ -11,7 +11,7 @@
 
 
 namespace swarmulator {
-     SimObject* Boid::update(const std::vector<SimObject *> &neighborhood, const float dt) {
+     std::shared_ptr<SimObject> Boid::update(const std::vector<std::shared_ptr<SimObject>> &neighborhood, const float dt) {
         Vector3 cohesion = {0, 0, 0};
         u_int32_t coc = 0;
         Vector3 avoidance = {0, 0, 0};
@@ -21,7 +21,7 @@ namespace swarmulator {
         for (const auto neighbor : neighborhood) {
             // do stuff
             // default behavior is boids
-            if (neighbor == this) { // skip if this is you (shouldn't be necessary)
+            if (neighbor.get() == this) { // skip if this is you (shouldn't be necessary)
                 continue;
             }
             const auto diff = position_ - neighbor->get_position();

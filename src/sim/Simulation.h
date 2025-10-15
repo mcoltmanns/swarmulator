@@ -42,7 +42,7 @@ public:
     // all to do here is expose the methods from the instancer that we want
     // the only thing we actually need is adding objects for the initial setup
     template<class T>
-    void add_object(T* object) { object_instancer_.add_object<T>(object); } // object should be allocated with new, will be freed when simulation ends or object is removed, whatever
+    void add_object(std::shared_ptr<T> object) { object_instancer_.add_object<T>(object); } // object should be allocated with new, will be freed when simulation ends or object is removed, whatever
 
     template<class T>
     size_t alloc_object_type(const std::string& vtx_src_p, const std::string& frg_src_p, const Mesh& mesh) { return object_instancer_.alloc_object_group<T>(vtx_src_p, frg_src_p, mesh); };

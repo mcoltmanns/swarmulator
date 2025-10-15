@@ -27,7 +27,7 @@ namespace swarmulator {
         unsigned int ssbo{}; // the ssbos that all these objects read their info into
         SSBOObject* ssbo_buffer{}; // the buffer into which object info is written before the copy to the gpu
         unsigned int ssbo_buffer_write_place = 0;
-        std::list<SimObject*> objects{};
+        std::list<std::shared_ptr<SimObject>> objects{};
     };
 
     class ObjectInstancer {
@@ -111,7 +111,7 @@ namespace swarmulator {
         }
 
         template<class T>
-        void add_object(T *object) {
+        void add_object(std::shared_ptr<T> object) {
             check_t_subtype_simobject;
 
             if (size() + 1 > max_objects_) {

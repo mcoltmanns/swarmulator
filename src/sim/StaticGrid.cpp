@@ -58,7 +58,7 @@ namespace swarmulator {
     }
 
     void StaticGrid::sort_objects(ObjectInstancer &in) {
-        sorted = std::vector<SimObject*>(in.size());
+        sorted = std::vector<std::shared_ptr<SimObject>>(in.size());
         segment_start = std::vector<uint32_t>(total_cell_count_, 0);
         segment_length = std::vector<uint32_t>(total_cell_count_, 0);
 
@@ -108,9 +108,9 @@ namespace swarmulator {
         }
     }
 
-    std::unique_ptr<std::vector<SimObject*>> StaticGrid::get_neighborhood(const SimObject &object,
+    std::unique_ptr<std::vector<std::shared_ptr<SimObject>>> StaticGrid::get_neighborhood(const SimObject &object,
         const float radius) const {
-        auto neighborhood = std::make_unique<std::vector<SimObject*>>();
+        auto neighborhood = std::make_unique<std::vector<std::shared_ptr<SimObject>>>();
         const auto object_pos = object.get_position();
         const auto object_pos_grid = object_pos + 0.5f * world_size_;
 
@@ -120,7 +120,7 @@ namespace swarmulator {
             // iterate over every agent in the current neighborhood cell
             for (int i = 0; i < segment_length[neighborhood_cell]; i++) {
                 // add the agent to the neighborhood vector if it isn't the agent we're getting the neighborhood of
-                if (auto neighbor = sorted[segment_start[neighborhood_cell] + i]; neighbor != std::addressof(object)) {
+                if (auto neighbor = sorted[segment_start[neighborhood_cell] + i]; neighbor.get() != std::addressof(object)) {
                     neighborhood->push_back(neighbor);
                 }
             }

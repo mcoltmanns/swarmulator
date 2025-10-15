@@ -18,7 +18,7 @@ public:
     Boid() = default;
     Boid(const Vector3 position, const Vector3 rotation) : SimObject(position, rotation) {}
 
-    SimObject* update(const std::vector<SimObject *> &neighborhood, float dt) override;
+    std::shared_ptr<SimObject> update(const std::vector<std::shared_ptr<SimObject>> &neighborhood, float dt) override;
 };
 
 }

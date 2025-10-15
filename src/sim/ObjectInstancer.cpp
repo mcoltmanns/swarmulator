@@ -22,11 +22,8 @@ namespace swarmulator {
             throw std::runtime_error("Cannot free non-existent object type.");
         }
 
-        // free objects
-        for (const object_group &grp = object_groups_.at(key); const auto& obj : grp.objects) {
-            delete obj;
-        }
-        object_groups_.erase(key);
+        // shared pointers, so just erase the object group
+        info->second.objects.clear();
 
         // free object info
         rlUnloadShaderProgram(info->second.shader.id);

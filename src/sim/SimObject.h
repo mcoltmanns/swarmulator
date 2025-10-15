@@ -20,7 +20,7 @@ namespace swarmulator {
 
         bool active_ = true;
 
-        float interaction_radius_ = 2;
+        float interaction_radius_ = 25;
 
     public:
         SimObject() = default;
@@ -51,7 +51,7 @@ namespace swarmulator {
 
         // called at every update
         // if you want to have this object insert a new one into the simulation, return a moved unique ptr to that new object
-        virtual SimObject* update(const std::vector<SimObject *> &neighborhood, float dt) { return nullptr; }
+        virtual std::shared_ptr<SimObject> update(const std::vector<std::shared_ptr<SimObject>> &neighborhood, float dt) { return nullptr; }
 
         void write_to_ssbo(SSBOObject& ssbo) const;
     };

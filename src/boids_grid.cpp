@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
         const auto p = Vector4{(swarmulator::randfloat() - 0.5f) * world_size.x, (swarmulator::randfloat() - 0.5f) * world_size.y, (swarmulator::randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{swarmulator::randfloat() - 0.5f, swarmulator::randfloat() - 0.5f,
                                swarmulator::randfloat() - 0.5f, 0};
-        auto obj = new swarmulator::Boid(swarmulator::xyz(p), swarmulator::xyz(r));
+        auto obj = std::make_shared<swarmulator::Boid>(swarmulator::xyz(p), swarmulator::xyz(r));
         simulation.add_object(obj);
     }
 
