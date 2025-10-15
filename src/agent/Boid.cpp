@@ -33,7 +33,7 @@ namespace swarmulator {
             if (dist < interaction_radius_) {
                 cohesion = cohesion + neighbor->get_position();
                 coc++;
-                alignment = alignment + rotation_;
+                alignment = alignment + neighbor->get_rotation();
                 alc++;
             }
         }
@@ -49,10 +49,10 @@ namespace swarmulator {
 
         const auto steer_dir = cohesion_wt_ * cohesion + avoidance_wt_ * avoidance + alignment_wt_ * (alignment - rotation_);
 
-        const float ip = std::exp(-1. * dt);
+        const float ip = std::exp(-5. * dt);
 
         rotation_ = Vector3Lerp(steer_dir, Vector3Normalize(rotation_), ip);
-        position_ = position_ + rotation_ * 10 * dt;
+        position_ = position_ + rotation_ * 2.5 * dt;
         if (std::isnan(position_.x) || std::isnan(position_.y) || std::isnan(position_.z)) {
             std::cout << "uh oh!" << std::endl;
         }
