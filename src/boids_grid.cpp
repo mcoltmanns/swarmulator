@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
     int window_w = 800;
     int window_h = 600;
     constexpr Vector3 world_size = {100, 100, 100};
-    constexpr int subdivisions = 20;
+    constexpr int subdivisions = 10;
     float cam_speed = 1.f;
     omp_set_num_threads(omp_get_max_threads());
     float run_for = 60; // how many seconds to run the simulation for
@@ -109,20 +109,8 @@ int main(int argc, char** argv) {
         BeginMode3D(camera);
         Matrix projection = rlGetMatrixProjection();
         Matrix view = GetCameraMatrix(camera);
-        // agents
-        /*rlEnableShader(agent_shader.id);
-        SetShaderValueMatrix(agent_shader, 0, projection);
-        SetShaderValueMatrix(agent_shader, 1, view);
-        const auto num_agents = simulation.get_objects_count(); // tell the shader how many agents it needs to draw
-        SetShaderValue(agent_shader, 2, &num_agents, SHADER_UNIFORM_INT);
-        // send agents to draw shader
-        rlBindShaderBuffer(simulation.get_objects_ssbo_id(), 0);
-        // instanced agent draw
-        rlEnableVertexArray(agent_vao);
-        rlDrawVertexArrayInstanced(0, 3, static_cast<int>(simulation.get_objects_count()));
-        rlDisableVertexArray();
-        rlDisableShader();
-        rlCheckErrors();*/
+
+        // objects
         simulation.draw_objects(projection, view);
 
         // gui

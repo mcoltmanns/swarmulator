@@ -23,7 +23,7 @@ namespace swarmulator {
             }
         }
 
-        // sort everything
+        // sort everything (don't seem to be issues here)
         grid_.sort_objects(object_instancer_);
 
         // update everyone
@@ -31,20 +31,21 @@ namespace swarmulator {
         // so have every thread iterate over the whole list
         // but only a single thread will access a specific element (single) while the others continue on (nowait)
         // this has no noticeable performance impact vs parallel vector access
-        std::map<size_t, object_group>::iterator grp;
         std::list<std::shared_ptr<SimObject>>::iterator it;
-    #pragma omp parallel private(grp, it)
-        {
-            for (grp = object_instancer_.groups_begin(); grp != object_instancer_.groups_end(); ++grp) {
+        // parallelism does not seem to be the problem here
+        // TODO worth parallelizing the outer loop? not unless number of object groups is large.
+            for (auto grp = object_instancer_.groups_begin(); grp != object_instancer_.groups_end(); ++grp) {
                 // update objects
-                for (it = grp->second.objects.begin(); it != grp->second.objects.end(); ++it) {
+#pragma omp parallel private(it)
+                {
+                    for (it = grp->second.objects.begin(); it != grp->second.objects.end(); ++it) {
 #pragma omp single nowait
                     {
-                        const auto object = *it; // raw pointer to the object!
-                        auto neighborhood = grid_.get_neighborhood(*object, object->get_interaction_radius());// passes the object by reference
+                        const auto object = *it;
+                        auto neighborhood = grid_.get_neighborhood(object.operator*());
                         const auto new_object = object->update(*neighborhood, dt);
                         // this critical section is actually pretty fast
-        #pragma omp critical
+#pragma omp critical
                         {
                             object->write_to_ssbo(grp->second.ssbo_buffer[grp->second.ssbo_buffer_write_place]);
                             ++grp->second.ssbo_buffer_write_place;
@@ -66,7 +67,7 @@ namespace swarmulator {
         // go thru all the object groups and copy their ssbo data
         // probably good to do this in parallel too? what would the bottleneck be here?
         // is updateShaderBuffer threadsafe?
-        for (grp = object_instancer_.groups_begin(); grp != object_instancer_.groups_end(); ++grp) {
+        for (auto grp = object_instancer_.groups_begin(); grp != object_instancer_.groups_end(); ++grp) {
             rlUpdateShaderBuffer(grp->second.ssbo, grp->second.ssbo_buffer, grp->second.objects.size() * sizeof(SSBOObject), 0);
             //SSBOObject buffer_out[grp->second.objects.size()];
         }

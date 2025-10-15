@@ -49,11 +49,19 @@ public:
 
     // get all neighbors of a given object (objects within cells that overlap the passed radius)
     // return does not include object passed
-    [[nodiscard]] std::unique_ptr<std::vector<std::shared_ptr<SimObject>>> get_neighborhood(const SimObject &object, const float radius) const;
+    [[nodiscard]] std::unique_ptr<std::vector<std::shared_ptr<SimObject>>> get_neighborhood(const SimObject &object) const;
 
     // wrap a global position
     [[nodiscard]] Vector3 wrap_position(const Vector3 position) const {
         return swarmulator::wrap_position(position, world_size_);
+    }
+
+    void bounce_agent(const std::shared_ptr<SimObject> &agent) const {
+        if (agent->get_position().x < -world_size_.x / 2 || agent->get_position().x >= world_size_.x / 2
+            || agent->get_position().y < -world_size_.y / 2 || agent->get_position().y >= world_size_.y / 2
+            || agent->get_position().z < -world_size_.z / 2 || agent->get_position().z >= world_size_.z / 2) {
+            agent->set_rotation(agent->get_rotation() - 0.5f * agent->get_position());
+            }
     }
 };
 
