@@ -96,7 +96,7 @@ namespace swarmulator {
         // add an object to its group
         // the object passed is copied, and management is taken over by the instancer
         template<class T>
-        void add_object(const T obj) {
+        void add_object(const T& obj) {
             check_t_subtype_simobject; // make sure t is a subtype of a simulation object
             const auto gid = get_gid<T>();
 

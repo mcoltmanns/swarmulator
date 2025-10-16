@@ -16,7 +16,7 @@
 #include "sim/util.h"
 
 int main(int argc, char** argv) {
-    int init_agent_count = 20000;
+    int init_agent_count = 5000;
     int window_w = 800;
     int window_h = 600;
     constexpr Vector3 world_size = {100, 100, 100};
@@ -64,23 +64,37 @@ int main(int argc, char** argv) {
 
     auto simulation = swarmulator::Simulation(world_size, subdivisions);
 
-    // init agents (shaders and mesh)
-    // this is majorly ugly and sort of janky, but lets us compile the shader source in with the executable, instead of loading at runtime
-    const std::string vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/simobject.vert";
+    // add the boids
+    std::string vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/boid.vert";
     const std::string fs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/simobject.frag";
-    const Shader shader = LoadShader(vs_src_path.c_str(), fs_src_path.c_str());
-    const auto mesh = std::vector<Vector3>{
+    const Shader boid_shader = LoadShader(vs_src_path.c_str(), fs_src_path.c_str());
+    const auto tri = std::vector<Vector3>{
             { -0.86, -0.5, 0.0 },
             { 0.86, -0.5, 0.0 },
             { 0.0f,  1.0f, 0.0f }
     };
-    simulation.object_instancer_.new_group<swarmulator::Boid>(mesh, shader);
+    simulation.object_instancer_.new_group<swarmulator::Boid>(tri, boid_shader);
+
+    // add some other demo objects
+    vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/red.vert";
+    const Shader stat_shader = LoadShader(vs_src_path.c_str(), fs_src_path.c_str());
+    simulation.object_instancer_.new_group<swarmulator::SimObject>(tri, stat_shader);
+
     // initialize all the agents
     for (int i = 0; i < init_agent_count; i++) {
         const auto p = Vector4{(swarmulator::randfloat() - 0.5f) * world_size.x, (swarmulator::randfloat() - 0.5f) * world_size.y, (swarmulator::randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{swarmulator::randfloat() - 0.5f, swarmulator::randfloat() - 0.5f,
                                swarmulator::randfloat() - 0.5f, 0};
         auto obj = swarmulator::Boid(swarmulator::xyz(p), swarmulator::xyz(r));
+        simulation.object_instancer_.add_object(obj);
+    }
+
+    // initialize some stationary objects
+    for (int i = 0; i < 50; i++) {
+        const auto p = Vector4{(swarmulator::randfloat() - 0.5f) * world_size.x, (swarmulator::randfloat() - 0.5f) * world_size.y, (swarmulator::randfloat() - 0.5f) * world_size.z, 0};
+        const auto r = Vector4{swarmulator::randfloat() - 0.5f, swarmulator::randfloat() - 0.5f,
+                               swarmulator::randfloat() - 0.5f, 0};
+        auto obj = swarmulator::SimObject(swarmulator::xyz(p), swarmulator::xyz(r));
         simulation.object_instancer_.add_object(obj);
     }
 

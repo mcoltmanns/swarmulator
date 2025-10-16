@@ -82,7 +82,7 @@ set(SIM_SOURCES
 
 set(SHADER_SOURCES
         src/shaders/simobject.frag
-        src/shaders/simobject.vert
+        src/shaders/boid.vert
 )
 
 add_executable(swarmulator_boids_grid

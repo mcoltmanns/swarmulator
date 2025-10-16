@@ -19,7 +19,7 @@ namespace swarmulator {
 
         bool active_ = true;
 
-        float interaction_radius_ = 5;
+        float interaction_radius_ = 10;
 
     public:
         SimObject() = default;

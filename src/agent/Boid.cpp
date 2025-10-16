@@ -18,10 +18,10 @@ namespace swarmulator {
         u_int32_t alc = 0;
         Vector3 alignment = {0, 0, 0};
 
-        for (const auto neighbor : neighborhood) {
+        for (auto neighbor : neighborhood) {
             // do stuff
             // default behavior is boids
-            if (neighbor == this) { // skip if this is you (shouldn't be necessary)
+            if (neighbor == this || dynamic_cast<Boid*>(neighbor) == nullptr) { // skip if this is you (shouldn't be necessary), or if this is not a boid
                 continue;
             }
             const auto diff = position_ - neighbor->get_position();
@@ -49,12 +49,12 @@ namespace swarmulator {
 
         const auto steer_dir = cohesion_wt_ * cohesion + avoidance_wt_ * avoidance + alignment_wt_ * (alignment - rotation_);
 
-        const float ip = std::exp(-5. * dt);
+        const float ip = std::exp(-7. * dt);
 
         rotation_ = Vector3Lerp(steer_dir, Vector3Normalize(rotation_), ip);
-        position_ = position_ + rotation_ * 2.5 * dt;
+        position_ = position_ + rotation_ * 15 * dt;
         if (std::isnan(position_.x) || std::isnan(position_.y) || std::isnan(position_.z)) {
-            std::cout << "uh oh!" << std::endl;
+            throw std::runtime_error("Boid update position gave NaN");
         }
     }
 }
