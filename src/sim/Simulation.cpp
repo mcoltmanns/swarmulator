@@ -30,8 +30,7 @@ namespace swarmulator {
         // so have every thread iterate over the whole list
         // but only a single thread will access a specific element (single) while the others continue on (nowait)
         // this has no noticeable performance impact vs parallel vector access
-        // parallelism does not seem to be the problem here
-        // TODO worth parallelizing the outer loop? not unless number of object groups is large.
+        // worth parallelizing the outer loop? not unless number of object groups is large.
         for (auto grp = object_instancer_.begin(); grp != object_instancer_.end(); ++grp) {
             // update objects
             std::list<SimObject*>::iterator it;

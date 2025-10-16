@@ -47,7 +47,7 @@ namespace swarmulator {
 
     public:
         ObjectInstancer() = default;
-        ~ObjectInstancer() = default; // TODO write this destructor!
+        ~ObjectInstancer();
 
         // allocate a new object group from a type
         template<class T>
@@ -62,14 +62,14 @@ namespace swarmulator {
             // set up mesh
             object_group group;
             group.vao_id = rlLoadVertexArray();
-            rlEnableVertexArray(group.vao_id);
+            rlEnableVertexArray(group.vao_id); // unloaded in destructor
             rlEnableVertexAttribute(0);
             rlLoadVertexBuffer(mesh.data(), sizeof(Vector3) * mesh.size(), false);
             rlSetVertexAttribute(0, 3, RL_FLOAT, false, 0, 0);
             rlDisableVertexArray();
 
             // set up shader
-            group.shader = shader;
+            group.shader = shader; // unloaded by user
             group.shader_proj_mat_loc = GetShaderLocation(group.shader, "proj_mat");
             if (group.shader_proj_mat_loc < 0) {
                 throw std::runtime_error("Could not find shader projection matrix location");
@@ -88,7 +88,7 @@ namespace swarmulator {
             group.ssbo_buffer.resize(group.ssbo_capacity);
 
             // set up ssbo
-            group.ssbo_id = rlLoadShaderBuffer(group.ssbo_capacity * sizeof(SSBOObject), group.ssbo_buffer.data(), RL_DYNAMIC_COPY);
+            group.ssbo_id = rlLoadShaderBuffer(group.ssbo_capacity * sizeof(SSBOObject), group.ssbo_buffer.data(), RL_DYNAMIC_COPY); // unloaded in destructor
 
             object_groups_[gid] = group;
         }
@@ -105,7 +105,7 @@ namespace swarmulator {
             }
 
             object_group &group = object_groups_[gid];
-            auto managed = new T(obj);
+            auto managed = new T(obj); // deleted in destructor
             group.objects.push_back(managed);
         }
 

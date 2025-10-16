@@ -79,7 +79,7 @@ namespace swarmulator {
 
         // compute prefix sum
         // not really worth the effort to parallelize
-        for (int i = 1; i <= total_cell_count_; i++) {
+        for (int i = 1; i < total_cell_count_; i++) {
             segment_start[i] += segment_start[i - 1];
         }
 

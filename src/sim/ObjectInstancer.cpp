@@ -5,6 +5,17 @@
 #include "ObjectInstancer.h"
 
 namespace swarmulator {
+     ObjectInstancer::~ObjectInstancer() {
+         for (const auto& [id, group] : object_groups_) {
+             UnloadShader(group.shader);
+             rlUnloadVertexArray(group.vao_id);
+             rlUnloadShaderBuffer(group.ssbo_id);
+             for (const auto object : group.objects) {
+                 delete object;
+             }
+         }
+     }
+
     void ObjectInstancer::update_gpu() {
         // all this does is update the ssbos!!
         for (auto& [id, group] : object_groups_) {
