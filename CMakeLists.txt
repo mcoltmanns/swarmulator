@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.9)
 project(swarmulator_cpp)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # EXTERNAL HEADERS
 set(EXTERNAL_DIR "external")
@@ -50,7 +51,7 @@ find_package(OpenMP REQUIRED)
 #find_package(fann)
 
 # EIGEN
-find_package(Eigen3 REQUIRED)
+#find_package(Eigen3 REQUIRED)
 
 # BOOST
 find_package(Boost REQUIRED COMPONENTS iostreams)
@@ -62,99 +63,33 @@ endif ()
 
 
 set(AGENTS_SOURCES
-    src/agent/Agent.cpp
-    src/agent/Agent.h
-    external/v3ops.h
-    external/raygui.h
-    src/agent/NeuralAgent.cpp
-    src/agent/NeuralAgent.h
-    src/agent/ForageAgent.cpp
-    src/agent/ForageAgent.h
     src/agent/Boid.cpp
     src/agent/Boid.h
-    src/agent/PDAgent.cpp
-    src/agent/PDAgent.h
-    src/agent/PredatorAgent.cpp
-    src/agent/PredatorAgent.h
-    src/agent/PreyAgent.cpp
-    src/agent/PreyAgent.h
 )
 
-set(ENV_SOURCES
-    src/env/Sphere.cpp
-    src/env/Sphere.h
-)
-
-set(LOGGER_SOURCES
-)
-
-set(UTIL_SOURCES
-        src/util/StaticGrid.h
-        src/util/util.h
+set(SIM_SOURCES
+        src/sim/SimObject.h
+        src/sim/SimObject.cpp
+        src/sim/StaticGrid.h
+        src/sim/StaticGrid.cpp
+        src/sim/Simulation.h
+        src/sim/Simulation.cpp
+        src/sim/util.h
+        src/sim/ObjectInstancer.cpp
+        src/sim/ObjectInstancer.h
+        src/sim/dtypes.h
 )
 
 set(SHADER_SOURCES
-        src/shaders/agent.frag
+        src/shaders/simobject.frag
         src/shaders/boid.vert
-        src/shaders/forage.vert
-        src/shaders/pd.vert
 )
-
-# forage experiment
-add_executable(swarmulator_forage
-        src/continuous_forage.cpp
-        src/Simulation.h
-        ${AGENTS_SOURCES}
-        ${ENV_SOURCES}
-        ${LOGGER_SOURCES}
-        ${UTIL_SOURCES}
-        ${SHADER_SOURCES}
-)
-target_link_libraries(swarmulator_forage Eigen3::Eigen raylib OpenMP::OpenMP_CXX ${Boost_LIBRARIES})
-
-# prisoner's dilemma experiment
-add_executable(swarmulator_pd
-        src/prisoners_dilemma.cpp
-        src/Simulation.h
-        ${AGENTS_SOURCES}
-        ${ENV_SOURCES}
-        ${LOGGER_SOURCES}
-        ${SHADER_SOURCES}
-        ${UTIL_SOURCES}
-)
-target_link_libraries(swarmulator_pd Eigen3::Eigen raylib OpenMP::OpenMP_CXX ${Boost_LIBRARIES})
-
-# predator/prey experiment
-add_executable(swarmulator_pred_prey
-        src/pred_prey.cpp
-        src/Simulation.h
-        ${AGENTS_SOURCES}
-        ${ENV_SOURCES}
-        ${LOGGER_SOURCES}
-        ${SHADER_SOURCES}
-        ${UTIL_SOURCES}
-)
-target_link_libraries(swarmulator_pred_prey Eigen3::Eigen raylib OpenMP::OpenMP_CXX ${Boost_LIBRARIES})
-
-# boids no grid
-add_executable(swarmulator_boids_nogrid
-        src/boids_nogrid.cpp
-        src/Simulation.h
-        ${AGENTS_SOURCES}
-        ${ENV_SOURCES}
-        ${LOGGER_SOURCES}
-        ${UTIL_SOURCES}
-        ${SHADER_SOURCES}
-)
-target_link_libraries(swarmulator_boids_nogrid Eigen3::Eigen raylib OpenMP::OpenMP_CXX ${Boost_LIBRARIES})
 
 add_executable(swarmulator_boids_grid
         src/boids_grid.cpp
-        src/Simulation.h
+        external/raygui.h
         ${AGENTS_SOURCES}
-        ${ENV_SOURCES}
-        ${LOGGER_SOURCES}
-        ${UTIL_SOURCES}
         ${SHADER_SOURCES}
+        ${SIM_SOURCES}
 )
-target_link_libraries(swarmulator_boids_grid Eigen3::Eigen raylib OpenMP::OpenMP_CXX ${Boost_LIBRARIES})
+target_link_libraries(swarmulator_boids_grid raylib OpenMP::OpenMP_CXX ${Boost_LIBRARIES})

@@ -6,35 +6,34 @@
 
 #include <iostream>
 
-#include "v3ops.h"
-
 #include "raymath.h"
+#include "../sim/util.h"
 
 
-namespace swarmulator::agent {
-    std::shared_ptr<Agent> Boid::update(const std::vector<std::shared_ptr<Agent>> &neighborhood, const std::list<std::shared_ptr<env::Sphere>> &objects, const float dt) {
+namespace swarmulator {
+     void Boid::update(const std::vector<SimObject*> &neighborhood, const float dt) {
         Vector3 cohesion = {0, 0, 0};
         u_int32_t coc = 0;
         Vector3 avoidance = {0, 0, 0};
         u_int32_t alc = 0;
         Vector3 alignment = {0, 0, 0};
 
-        for (const auto &neighbor : neighborhood) {
+        for (auto neighbor : neighborhood) {
             // do stuff
             // default behavior is boids
-            if (neighbor.get() == this) {
+            if (neighbor == this || dynamic_cast<Boid*>(neighbor) == nullptr) { // skip if this is you (shouldn't be necessary), or if this is not a boid
                 continue;
             }
             const auto diff = position_ - neighbor->get_position();
             const auto dist = Vector3Distance(neighbor->get_position(), position_);
-            if (dist < sense_radius_ / 2.f) {
+            if (dist < interaction_radius_ / 2.f) {
                 auto d = Vector3Length(diff);
                 avoidance = avoidance + diff / (1 + d); // watch the divide by 0!
             }
-            if (dist < sense_radius_) {
+            if (dist < interaction_radius_) {
                 cohesion = cohesion + neighbor->get_position();
                 coc++;
-                alignment = alignment + neighbor->get_direction();
+                alignment = alignment + neighbor->get_rotation();
                 alc++;
             }
         }
@@ -48,16 +47,15 @@ namespace swarmulator::agent {
             alignment = alignment / static_cast<float>(alc);
         }
 
-        const auto steer_dir = cohesion_wt_ * cohesion + avoidance_wt_ * avoidance + alignment_wt_ * (alignment - direction_);
+        const auto steer_dir = cohesion_wt_ * cohesion + avoidance_wt_ * avoidance + alignment_wt_ * (alignment - rotation_);
 
-        const float ip = std::exp(-rot_speed_ * dt);
+        const float ip = std::exp(-7. * dt);
 
-        direction_ = Vector3Lerp(steer_dir, Vector3Normalize(direction_), ip);
-        position_ = position_ + direction_ * move_speed_ * dt; // 0.06 here is move speed
+        rotation_ = Vector3Lerp(steer_dir, Vector3Normalize(rotation_), ip);
+        position_ = position_ + rotation_ * 15 * dt;
         if (std::isnan(position_.x) || std::isnan(position_.y) || std::isnan(position_.z)) {
-            std::cout << "uh oh!" << std::endl;
+            throw std::runtime_error("Boid update position gave NaN");
         }
-        return nullptr;
     }
-} // agent
+}
 // swarmulator

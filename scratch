@@ -1,2 +1,2 @@
-increase mutation change as open-endedness score goes down?
-- would need somehow a running oee score
+the instancer works! we can now support many different object types in the same simulation, all rendered on the gpu
+things seem to top out at about 20k objects in the boid simulation depending on how dense stuff gets

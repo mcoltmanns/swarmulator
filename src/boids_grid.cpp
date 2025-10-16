@@ -11,37 +11,39 @@
 
 #include "raygui.h"
 #include "raylib.h"
-#include "rlgl.h"
-#include "Simulation.h"
 #include "agent/Boid.h"
-#include "util/util.h"
+#include "sim/Simulation.h"
+#include "sim/util.h"
 
 int main(int argc, char** argv) {
-    int init_agent_count = 10000;
+    int init_agent_count = 5000;
     int window_w = 800;
     int window_h = 600;
     constexpr Vector3 world_size = {100, 100, 100};
-    constexpr int subdivisions = 10;
+    constexpr int subdivisions = 20;
     float cam_speed = 1.f;
-    omp_set_num_threads(16);
+    omp_set_num_threads(omp_get_max_threads());
     float run_for = 60; // how many seconds to run the simulation for
 
-    if (const auto o = get_opt(argv, argv + argc, "-n")) {
+    if (const auto o = swarmulator::get_opt(argv, argv + argc, "-n")) {
         init_agent_count = std::stoi(o);
     }
-    if (const auto o = get_opt(argv, argv + argc, "-w")) {
+    if (const auto o = swarmulator::get_opt(argv, argv + argc, "-w")) {
         window_w = std::stoi(o);
     }
-    if (const auto o = get_opt(argv, argv + argc, "-h")) {
+    if (const auto o = swarmulator::get_opt(argv, argv + argc, "-h")) {
         window_h = std::stoi(o);
     }
-    if (const auto o = get_opt(argv, argv + argc, "-t")) {
+    if (const auto o = swarmulator::get_opt(argv, argv + argc, "-t")) {
         omp_set_num_threads(std::stoi(o));
     }
-    if (opt_exists(argv, argv + argc, "--vsync")) {
+    if (const auto o = swarmulator::get_opt(argv, argv + argc, "-p")) {
+        omp_set_num_threads(std::max(1, std::min(std::stoi(o), omp_get_max_threads()))); // number of threads used should not be greater than the maximum threads available on device
+    }
+    if (swarmulator::opt_exists(argv, argv + argc, "--vsync")) {
         SetConfigFlags(FLAG_VSYNC_HINT);
     }
-    if (opt_exists(argv, argv + argc, "--aa")) {
+    if (swarmulator::opt_exists(argv, argv + argc, "--aa")) {
         SetConfigFlags(FLAG_MSAA_4X_HINT);
     }
 
@@ -60,40 +62,45 @@ int main(int argc, char** argv) {
         CAMERA_PERSPECTIVE,
     };
 
-    auto simulation = Simulation<swarmulator::agent::Boid>(world_size, subdivisions);
+    auto simulation = swarmulator::Simulation(world_size, subdivisions);
 
-    // init agents (shaders and mesh)
-    // this is majorly ugly and sort of janky, but lets us compile the shader source in with the executable, instead of loading at runtime
-    const std::string vs_src =
-#include "shaders/boid.vert"
-        ;
-    const std::string fs_src =
-#include "shaders/agent.frag"
-        ;
-    Shader agent_shader = LoadShaderFromMemory(vs_src.c_str(), fs_src.c_str());
-    auto agent_vao = rlLoadVertexArray();
-    rlEnableVertexArray(agent_vao);
-    constexpr Vector3 mesh[] = {
-        {-0.86, -0.5, 0},
-        {0.86, -0.5, 0},
-        {0, 1, 0},
+    // add the boids
+    std::string vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/boid.vert";
+    const std::string fs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/simobject.frag";
+    const Shader boid_shader = LoadShader(vs_src_path.c_str(), fs_src_path.c_str());
+    const auto tri = std::vector<Vector3>{
+            { -0.86, -0.5, 0.0 },
+            { 0.86, -0.5, 0.0 },
+            { 0.0f,  1.0f, 0.0f }
     };
-    rlEnableVertexAttribute(0);
-    rlLoadVertexBuffer(mesh, sizeof(mesh), false);
-    rlSetVertexAttribute(0, 3, RL_FLOAT, false, 0, 0);
-    rlDisableVertexArray();
+    simulation.object_instancer_.new_group<swarmulator::Boid>(tri, boid_shader);
+
+    // add some other demo objects
+    vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/red.vert";
+    const Shader stat_shader = LoadShader(vs_src_path.c_str(), fs_src_path.c_str());
+    simulation.object_instancer_.new_group<swarmulator::SimObject>(tri, stat_shader);
+
     // initialize all the agents
     for (int i = 0; i < init_agent_count; i++) {
-        const auto p = Vector4{(randfloat() - 0.5f) * world_size.x, (randfloat() - 0.5f) * world_size.y, (randfloat() - 0.5f) * world_size.z, 0};
-        const auto r = Vector4{randfloat() - 0.5f, randfloat() - 0.5f, randfloat() - 0.5f, 0};
-        auto a = std::make_shared<swarmulator::agent::Boid>(xyz(p), xyz(r));
-        a->set_sense_radius(5.f); // boids are much happier with a smaller radius
-        simulation.add_agent(a);
+        const auto p = Vector4{(swarmulator::randfloat() - 0.5f) * world_size.x, (swarmulator::randfloat() - 0.5f) * world_size.y, (swarmulator::randfloat() - 0.5f) * world_size.z, 0};
+        const auto r = Vector4{swarmulator::randfloat() - 0.5f, swarmulator::randfloat() - 0.5f,
+                               swarmulator::randfloat() - 0.5f, 0};
+        auto obj = swarmulator::Boid(swarmulator::xyz(p), swarmulator::xyz(r));
+        simulation.object_instancer_.add_object(obj);
     }
 
-    simulation.set_min_agents(init_agent_count);
+    // initialize some stationary objects
+    for (int i = 0; i < 50; i++) {
+        const auto p = Vector4{(swarmulator::randfloat() - 0.5f) * world_size.x, (swarmulator::randfloat() - 0.5f) * world_size.y, (swarmulator::randfloat() - 0.5f) * world_size.z, 0};
+        const auto r = Vector4{swarmulator::randfloat() - 0.5f, swarmulator::randfloat() - 0.5f,
+                               swarmulator::randfloat() - 0.5f, 0};
+        auto obj = swarmulator::SimObject(swarmulator::xyz(p), swarmulator::xyz(r));
+        simulation.object_instancer_.add_object(obj);
+    }
+
+    /*simulation.set_min_agents(init_agent_count);
     simulation.set_max_agents(init_agent_count);
-    simulation.logging_enabled_ = false;
+    simulation.logging_enabled_ = false;*/
 
     auto start_time = GetTime();
     size_t frames = 0;
@@ -116,27 +123,12 @@ int main(int argc, char** argv) {
 
         // DRAW
         BeginDrawing();
-        ClearBackground(WHITE);
+        ClearBackground(RAYWHITE);
         BeginMode3D(camera);
-        Matrix projection = rlGetMatrixProjection();
         Matrix view = GetCameraMatrix(camera);
-        // agents
-        rlEnableShader(agent_shader.id);
-        SetShaderValueMatrix(agent_shader, 0, projection);
-        SetShaderValueMatrix(agent_shader, 1, view);
-        SetShaderValue(agent_shader, 2, &swarmulator::agent::scale, SHADER_UNIFORM_FLOAT);
-        const auto num_agents = simulation.get_agents_count(); // tell the shader how many agents it needs to draw
-        SetShaderValue(agent_shader, 3, &num_agents, SHADER_UNIFORM_INT);
-        // send agents to draw shader
-        rlBindShaderBuffer(simulation.get_agents_ssbo(), 0);
-        // instanced agent draw
-        rlEnableVertexArray(agent_vao);
-        rlDrawVertexArrayInstanced(0, 3, static_cast<int>(simulation.get_agents_count()));
-        rlDisableVertexArray();
-        rlDisableShader();
-        // spheres
-        //simulation.draw_objects();
-        rlCheckErrors();
+
+        // objects
+        simulation.draw_objects(view);
 
         // gui
         DrawCubeWiresV((Vector3){0, 0, 0}, world_size, DARKGRAY);
@@ -144,11 +136,9 @@ int main(int argc, char** argv) {
 
         // debug info
         DrawFPS(0, 0);
-        DrawText(TextFormat("%zu/%zu agents", simulation.get_agents_count(), simulation.get_max_agents()), 0, 20, 18, DARKGREEN);
+        DrawText(TextFormat("%zu/%zu agents", simulation.object_instancer_.size(), 0), 0, 20, 18, DARKGREEN);
         DrawText(TextFormat("%zu threads", omp_get_max_threads()), 0, 40, 18, DARKGREEN);
-        DrawText(TextFormat("%.0f sim time", swarmulator::globals::sim_time), 0, 60, 18, DARKGREEN);
-        DrawText(TextFormat("%zu agents have existed", simulation.get_total_agents()), 0, 80, 18, DARKGREEN);
-        DrawText(TextFormat("%.3f GRF", swarmulator::agent::global_reward_factor), 0, 100, 18, DARKGREEN);
+        DrawText(TextFormat("%.0f sim time", simulation.get_total_time()), 0, 60, 18, DARKGREEN);
 
         EndDrawing();
         frames++;
@@ -156,7 +146,6 @@ int main(int argc, char** argv) {
     double fps = static_cast<double>(frames) / (GetTime() - start_time);
 
     CloseWindow();
-    UnloadShader(agent_shader);
     std::cout << "Average FPS: " << fps << std::endl;
     return 0;
 }

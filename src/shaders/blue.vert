@@ -23,7 +23,7 @@ out vec4 frag_color;
 void main() {
     sim_object object = objects[gl_InstanceID];
 
-    frag_color.rgb = abs(normalize(object.direction.xyz)) + 0.2;
+    frag_color.rgb = vec3(0, 0, 1);
     frag_color.a = gl_InstanceID < instance_count ? 1.0 : 0.0; // only show this thing if the stuff in the buffer isn't junk
 
     vec3 vertex_view = vertex_position * object.scale.xyz;
