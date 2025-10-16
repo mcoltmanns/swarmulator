@@ -88,26 +88,24 @@ namespace swarmulator {
     inline Vector3 floorv3(const Vector3 &v) { return Vector3(floor(v.x), floorf(v.y), floorf(v.z)); }
     inline Vector3 xyz(const Vector4 &in) { return Vector3(in.x, in.y, in.z); }
 
+    [[nodiscard]] static float wrap(float x, const float upper) {
+        // wrap a float between 0 and upper
+        x = std::fmod(x, upper);
+        return (x < 0) ? x + upper : x;
+    }
+
+    [[nodiscard]] static float wrap(float x, const float min, const float max) {
+        const float range = max - min;
+        x = std::fmod(x - min, range);
+        if (x < 0) x += range;
+        return x + min;
+    }
+
     // wrap out of bounds positions to the opposite sides of the world
     [[nodiscard]] static Vector3 wrap_position(Vector3 position, const Vector3 &world_size) {
-        if (position.x < -world_size.x / 2.f) {
-            position.x = world_size.x / 2.f;
-        }
-        else if (position.x > world_size.x / 2.f) {
-            position.x = -world_size.x / 2.f;
-        }
-        if (position.y < -world_size.y / 2.f) {
-            position.y = world_size.y / 2.f;
-        }
-        else if (position.y > world_size.y / 2.f) {
-            position.y = -world_size.y / 2.f;
-        }
-        if (position.z < -world_size.z / 2.f) {
-            position.z = world_size.z / 2.f;
-        }
-        else if (position.z > world_size.z / 2.f) {
-            position.z = -world_size.z / 2.f;
-        }
+        position.x = wrap(position.x, -world_size.x / 2.f, world_size.x / 2.f);
+        position.y = wrap(position.y, -world_size.y / 2.f, world_size.y / 2.f);
+        position.z = wrap(position.z, -world_size.z / 2.f, world_size.z / 2.f);
 
         return position;
     }

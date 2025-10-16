@@ -7,7 +7,9 @@
 #include "ObjectInstancer.h"
 
 namespace swarmulator {
-    void SimObject::write_to_ssbo(SSBOObject &ssbo) const {
+    SSBOObject SimObject::to_ssbo() const {
+        SSBOObject ssbo;
+
         ssbo.position.x = position_.x;
         ssbo.position.y = position_.y;
         ssbo.position.z = position_.z;
@@ -20,5 +22,7 @@ namespace swarmulator {
         ssbo.scale.x = scale_.x;
         ssbo.scale.y = scale_.y;
         ssbo.scale.z = scale_.z;
+
+        return ssbo;
     }
 }

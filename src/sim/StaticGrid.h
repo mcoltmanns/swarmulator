@@ -26,7 +26,7 @@ private:
     int axis_cell_count_ = 0; // although these are indexes they should stay int because we represent errors in indexing with -1
     int total_cell_count_ = 0;
 
-    std::vector<std::shared_ptr<SimObject>> sorted {}; // here we work with raw pointers because the lifetime of the objects being sorted is of no concern to the grid (since dead objects are removed between sorts)
+    std::vector<SimObject*> sorted {};
     std::vector<uint32_t> segment_start {};
     std::vector<uint32_t> segment_length {};
 
@@ -49,7 +49,7 @@ public:
 
     // get all neighbors of a given object (objects within cells that overlap the passed radius)
     // return does not include object passed
-    [[nodiscard]] std::unique_ptr<std::vector<std::shared_ptr<SimObject>>> get_neighborhood(const SimObject &object) const;
+    [[nodiscard]] std::vector<SimObject *> get_neighborhood(const SimObject *object) const;
 
     // wrap a global position
     [[nodiscard]] Vector3 wrap_position(const Vector3 position) const {

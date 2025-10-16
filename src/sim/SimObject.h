@@ -4,7 +4,6 @@
 
 #ifndef SWARMULATOR_CPP_SIMOBJECT_H
 #define SWARMULATOR_CPP_SIMOBJECT_H
-#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -14,13 +13,13 @@ namespace swarmulator {
     class SimObject {
     protected:
         Vector3 position_ = Vector3(0, 0, 0);
-        Vector3 rotation_ = Vector3(0, 0, 0);
+        Vector3 rotation_ = Vector3(0, 0, 0); // TODO move to quaternions maybe in future
         Vector3 velocity_ = Vector3(0, 0, 0);
         Vector3 scale_ = Vector3(1, 1, 1);
 
         bool active_ = true;
 
-        float interaction_radius_ = 25;
+        float interaction_radius_ = 5;
 
     public:
         SimObject() = default;
@@ -50,10 +49,9 @@ namespace swarmulator {
         void deactivate() { active_ = false; }
 
         // called at every update
-        // if you want to have this object insert a new one into the simulation, return a moved unique ptr to that new object
-        virtual std::shared_ptr<SimObject> update(const std::vector<std::shared_ptr<SimObject>> &neighborhood, float dt) { return nullptr; }
+        virtual void update(const std::vector<SimObject*> &neighborhood, float dt) {}
 
-        void write_to_ssbo(SSBOObject& ssbo) const;
+        SSBOObject to_ssbo() const;
     };
 }
 

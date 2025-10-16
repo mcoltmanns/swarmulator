@@ -12,135 +12,117 @@
 #include <list>
 #include <memory>
 #include <map>
-#include <fstream>
 
-#include "SimObject.h"
+#include "raylib.h"
 #include "rlgl.h"
 
-#define check_t_subtype_simobject static_assert(std::is_base_of_v<SimObject, T>, "Objects registered to or used with the instancer must be or derive from SimObject")
+#include "SimObject.h"
+
+#define check_t_subtype_simobject static_assert(std::is_base_of_v<SimObject, T>, "Objects registered to or used with the instancer must be an instance of or derive from SimObject")
 
 namespace swarmulator {
-    struct object_group {
-        Shader shader{}; // the shader that all these objects are drawn with
-        Mesh mesh{};
-        unsigned int vao{}; // the vertices that all these objects are drawn with
-        unsigned int ssbo{}; // the ssbos that all these objects read their info into
-        SSBOObject* ssbo_buffer{}; // the buffer into which object info is written before the copy to the gpu
-        unsigned int ssbo_buffer_write_place = 0;
-        std::list<std::shared_ptr<SimObject>> objects{};
-    };
-
     class ObjectInstancer {
-    private:
-        static constexpr size_t max_objects_ = 10000; // maximum number of objects allowed
-        static constexpr size_t max_group_size_ = 5000; // maximum number of objects allowed in a group (used to allocate gpu buffers)
+    public:
+        struct object_group {
+            std::list<SimObject*> objects{}; // all the objects part of this group (these must be pointers because of all the super/subclass stuff)
+            Shader shader{}; // shader we use to draw these objects
+            int shader_proj_mat_loc = 0;
+            int shader_view_mat_loc = 0;
+            int shader_instance_count_loc = 0;
+            unsigned int vao_id; // vao for the mesh used to draw these objects
+            std::vector<SSBOObject> ssbo_buffer; // instance information buffer array
+            unsigned int ssbo_id = 0; // gpu id for the ssbo
+            size_t ssbo_capacity = 0; // gpu-side ssbo capacity
+        };
 
-        // map type hash codes to pointers to lists of simobjects and their associated info
-        std::map<std::size_t, object_group> object_groups_ {};
+    private:
+        std::map<size_t, object_group> object_groups_{};
+
+        template<class T>
+        static size_t get_gid() { return typeid(T).hash_code(); }
+
+        // draw a given group
+        // wrap with calls to begin and end 3d mode
+        static void draw(const object_group& group, const Matrix &projection, const Matrix &view);
 
     public:
-        ObjectInstancer();
-        ~ObjectInstancer();
+        ObjectInstancer() = default;
+        ~ObjectInstancer() = default; // TODO write this destructor!
 
-        // load and compile shader sources, initialize a mesh vao, allocate an ssbo for objects of a given type
-        // if the object type was already allocated, sets the instancer error flag and does nothing
-        // you must initialize the raylib context before this is called!
-        // returns a key corresponding to the hash code of the object type alloc'd
+        // allocate a new object group from a type
         template<class T>
-        size_t alloc_object_group(const std::string &vtx_src_p, const std::string &frg_src_p, const Mesh &mesh) {
-            check_t_subtype_simobject;
-
-            const auto key = typeid(T).hash_code();
-            if (object_groups_.contains(key)) {
+        void new_group(const std::vector<Vector3> &mesh, const Shader shader) {
+            check_t_subtype_simobject; // make sure t is a subtype of a simobject
+            const auto gid = get_gid<T>();
+            // make sure group isn't a duplicate
+            if (object_groups_.contains(gid)) {
                 throw std::runtime_error("Object group already exists.");
             }
 
-            // load the shaders
-            const auto shader = LoadShader(vtx_src_p.c_str(), frg_src_p.c_str());
-
-            // allocate the vao
-            const auto vao = rlLoadVertexArray();
-            // and load it
-            rlEnableVertexArray(vao);
-            rlEnableVertexAttribute(0); // TODO is 0 always ok here?
-            rlLoadVertexBuffer(mesh.vertices, mesh.vertexCount, false);
+            // set up mesh
+            object_group group;
+            group.vao_id = rlLoadVertexArray();
+            rlEnableVertexArray(group.vao_id);
+            rlEnableVertexAttribute(0);
+            rlLoadVertexBuffer(mesh.data(), sizeof(Vector3) * mesh.size(), false);
             rlSetVertexAttribute(0, 3, RL_FLOAT, false, 0, 0);
             rlDisableVertexArray();
 
-            // allocate the ssbo buffer
-            const auto ssbo_buffer = static_cast<SSBOObject*>(RL_CALLOC(max_group_size_, sizeof(SSBOObject)));
-            // and the ssbo
-            const auto ssbo = rlLoadShaderBuffer(max_group_size_ * sizeof(SSBOObject), ssbo_buffer, RL_DYNAMIC_COPY);
+            // set up shader
+            group.shader = shader;
+            group.shader_proj_mat_loc = GetShaderLocation(group.shader, "proj_mat");
+            if (group.shader_proj_mat_loc < 0) {
+                throw std::runtime_error("Could not find shader projection matrix location");
+            }
+            group.shader_view_mat_loc = GetShaderLocation(group.shader, "view_mat");
+            if (group.shader_view_mat_loc < 0) {
+                throw std::runtime_error("Could not find shader view matrix location");
+            }
+            group.shader_instance_count_loc = GetShaderLocation(group.shader, "instance_count");
+            if (group.shader_instance_count_loc < 0) {
+                throw std::runtime_error("Could not find shader instance count location");
+            }
 
-            rlCheckErrors();
+            // set up ssbo buffer
+            group.ssbo_capacity = 4096; // initial capacity - power of 2 please!
+            group.ssbo_buffer.resize(group.ssbo_capacity);
 
-            // then throw everything into the maps under a new object type group
-            object_groups_.emplace(key,
-                object_group {
-                    shader,
-                    mesh,
-                    vao,
-                    ssbo,
-                    ssbo_buffer,
-                    {},
-                }
-            );
+            // set up ssbo
+            group.ssbo_id = rlLoadShaderBuffer(group.ssbo_capacity * sizeof(SSBOObject), group.ssbo_buffer.data(), RL_DYNAMIC_COPY);
 
-            // and then finally give the user the key to the thing they alloc'd
-            return key;
+            object_groups_[gid] = group;
         }
 
+        // add an object to its group
+        // the object passed is copied, and management is taken over by the instancer
         template<class T>
-        void free_object_group() {
-            check_t_subtype_simobject;
+        void add_object(const T obj) {
+            check_t_subtype_simobject; // make sure t is a subtype of a simulation object
+            const auto gid = get_gid<T>();
 
-            const auto key = typeid(T).hash_code();
-            free_object_group(key);
-        }
-
-        template<class T>
-        object_group& get_object_group() {
-            check_t_subtype_simobject;
-
-            const auto key = typeid(T).hash_code();
-            const auto it = object_groups_.find(key);
-            if (it == object_groups_.end()) {
+            if (!object_groups_.contains(gid)) {
                 throw std::runtime_error("Object group does not exist.");
             }
-            return it->second;
+
+            object_group &group = object_groups_[gid];
+            auto managed = new T(obj);
+            group.objects.push_back(managed);
         }
 
-        template<class T>
-        void add_object(std::shared_ptr<T> object) {
-            check_t_subtype_simobject;
+        // update shaders with group information
+        void update_gpu();
 
-            if (size() + 1 > max_objects_) {
-                throw std::runtime_error("Maximum objects exceeded.");
-            }
+        // draw all groups
+        // wrap with calls to begin and end 3d mode
+        void draw_all(const Matrix &view) const;
 
-            const auto key = typeid(T).hash_code();
-            const auto place = object_groups_.find(key);
-            if (place == object_groups_.end()) {
-                throw std::runtime_error("Object group does not exist.");
-            }
-            if (place->second.objects.size() + 1 > max_group_size_) {
-                throw std::runtime_error("Maximum objects in group exceeded.");
-            }
-            place->second.objects.push_back(object);
-        }
+        std::map<size_t, object_group>::iterator begin() { return object_groups_.begin(); }
+        std::map<size_t, object_group>::iterator end() { return object_groups_.end(); }
 
-        // frees all the resources associated with a given object type hash code
-        void free_object_group(size_t key);
+        std::map<size_t, object_group>::reverse_iterator rbegin() { return object_groups_.rbegin(); }
+        std::map<size_t, object_group>::reverse_iterator rend() { return object_groups_.rend(); }
 
-        object_group& get_object_group(const size_t key) { return object_groups_.at(key); }
-
-        size_t size() const;
-
-        std::map<size_t, object_group>::iterator groups_begin() { return object_groups_.begin(); }
-        std::map<size_t, object_group>::iterator groups_end() { return object_groups_.end(); }
-
-        std::map<size_t, object_group>::reverse_iterator groups_rbegin() { return object_groups_.rbegin(); }
-        std::map<size_t, object_group>::reverse_iterator groups_rend() { return object_groups_.rend(); }
+        [[nodiscard]] size_t size() const;
     };
 }
 

@@ -17,6 +17,7 @@ namespace swarmulator {
     }
 
     // get the 1d cell index of a given grid space position, and the indices of all cells surrounding that cell in a given radius
+    // wraps the neighborhoods around the world boundaries (toroidal world)
     [[nodiscard]] std::vector<int> StaticGrid::neighborhood_indices(const Vector3 &pos_grid, const float neighborhood_radius) const {
         std::vector<int> indices;
         // offsets are pos_grid - radius, pos_grid + radius
@@ -24,7 +25,11 @@ namespace swarmulator {
             for (int y = -neighborhood_radius; y <= neighborhood_radius; y += cell_size_.y) {
                 for (int z = -neighborhood_radius; z <= neighborhood_radius; z += cell_size_.z) {
                     auto offset = Vector3(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
-                    if (auto index = cell_index(pos_grid + offset); index != -1) {
+                    auto op = pos_grid + offset;
+                    op.x = wrap(op.x, world_size_.x);
+                    op.y = wrap(op.y, world_size_.y);
+                    op.z = wrap(op.z, world_size_.z);
+                    if (auto index = cell_index(op); index != -1) {
                         indices.push_back(index);
                     }
                 }
@@ -55,15 +60,16 @@ namespace swarmulator {
 
     void StaticGrid::sort_objects(ObjectInstancer &in) {
         // nothing wrong in here. not sure why boids are attracted to the center!!
-        sorted = std::vector<std::shared_ptr<SimObject>>(in.size());
+        sorted = std::vector<SimObject*>(in.size());
         segment_start = std::vector<uint32_t>(total_cell_count_, 0);
         segment_length = std::vector<uint32_t>(total_cell_count_, 0);
 
         // count the number of agents in each cell
         // slow with parallel
-        for (auto grp = in.groups_begin(); grp != in.groups_end(); ++grp) {
+        for (auto grp = in.begin(); grp != in.end(); ++grp) {
             for (auto it = grp->second.objects.begin(); it != grp->second.objects.end(); ++it) {
-                const auto pos_grid = it.operator*()->get_position() + 0.5f * world_size_;
+                const auto obj_ptr = *it;
+                const auto pos_grid = obj_ptr->get_position() + 0.5f * world_size_;
                 if (const auto cell = cell_index(pos_grid); cell != -1) { // only add agents if they're in bounds
                     ++segment_start[cell];
                     ++segment_length[cell];
@@ -79,31 +85,31 @@ namespace swarmulator {
 
         // sort agents into their cells
         // slow with parallel
-        for (auto rgrp = in.groups_rbegin(); rgrp != in.groups_rend(); ++rgrp) { // careful! need to iterate in reverse here
+        for (auto rgrp = in.rbegin(); rgrp != in.rend(); ++rgrp) { // careful! need to iterate in reverse here
             for (auto rit = rgrp->second.objects.rbegin(); rit != rgrp->second.objects.rend(); ++rit) {
-                const auto object = *rit;
-                auto pos = object->get_position();
+                const auto obj_ptr = *rit;
+                auto pos = obj_ptr->get_position();
                 const auto pos_grid = pos + 0.5f * world_size_;
                 if (const auto cell = cell_index(pos_grid); cell != -1) {
-                    sorted[--segment_start[cell]] = object;
+                    sorted[--segment_start[cell]] = obj_ptr;
                 }
             }
         }
     }
 
-    std::unique_ptr<std::vector<std::shared_ptr<SimObject>>> StaticGrid::get_neighborhood(const SimObject &object) const {
-        auto neighborhood = std::make_unique<std::vector<std::shared_ptr<SimObject>>>();
-        const auto object_pos = object.get_position();
+    std::vector<SimObject *> StaticGrid::get_neighborhood(const SimObject* object) const {
+        auto neighborhood = std::vector<SimObject*>();
+        const auto object_pos = object->get_position();
         const auto object_pos_grid = object_pos + 0.5f * world_size_;
 
         // iterate over every cell in the neighborhood
         // this is not worth parallelizing - at worst 3^3=27 iterations
-        for (const auto n_i = neighborhood_indices(object_pos_grid, object.get_interaction_radius()); const auto neighborhood_cell : n_i) {
+        for (const auto n_i = neighborhood_indices(object_pos_grid, object->get_interaction_radius()); const auto neighborhood_cell : n_i) {
             // iterate over every agent in the current neighborhood cell
             for (int i = 0; i < segment_length[neighborhood_cell]; i++) {
                 // add the agent to the neighborhood vector if it isn't the agent we're getting the neighborhood of
-                if (auto neighbor = sorted[segment_start[neighborhood_cell] + i]; neighbor.get() != &object) {
-                    neighborhood->push_back(neighbor);
+                if (auto neighbor = sorted[segment_start[neighborhood_cell] + i]; neighbor != object) {
+                    neighborhood.push_back(neighbor);
                 }
             }
         }

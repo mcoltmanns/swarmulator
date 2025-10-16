@@ -11,17 +11,16 @@
 
 #include "raygui.h"
 #include "raylib.h"
-#include "rlgl.h"
 #include "agent/Boid.h"
 #include "sim/Simulation.h"
 #include "sim/util.h"
 
 int main(int argc, char** argv) {
-    int init_agent_count = 5000;
+    int init_agent_count = 20000;
     int window_w = 800;
     int window_h = 600;
     constexpr Vector3 world_size = {100, 100, 100};
-    constexpr int subdivisions = 10;
+    constexpr int subdivisions = 20;
     float cam_speed = 1.f;
     omp_set_num_threads(omp_get_max_threads());
     float run_for = 60; // how many seconds to run the simulation for
@@ -67,17 +66,22 @@ int main(int argc, char** argv) {
 
     // init agents (shaders and mesh)
     // this is majorly ugly and sort of janky, but lets us compile the shader source in with the executable, instead of loading at runtime
-    const std::string vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/boid.vert";
-    const std::string fs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/agent.frag";
-    const auto mesh = GenMeshCube(1, 1, 1);
-    simulation.alloc_object_type<swarmulator::Boid>(vs_src_path, fs_src_path, mesh);
+    const std::string vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/simobject.vert";
+    const std::string fs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/simobject.frag";
+    const Shader shader = LoadShader(vs_src_path.c_str(), fs_src_path.c_str());
+    const auto mesh = std::vector<Vector3>{
+            { -0.86, -0.5, 0.0 },
+            { 0.86, -0.5, 0.0 },
+            { 0.0f,  1.0f, 0.0f }
+    };
+    simulation.object_instancer_.new_group<swarmulator::Boid>(mesh, shader);
     // initialize all the agents
     for (int i = 0; i < init_agent_count; i++) {
         const auto p = Vector4{(swarmulator::randfloat() - 0.5f) * world_size.x, (swarmulator::randfloat() - 0.5f) * world_size.y, (swarmulator::randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{swarmulator::randfloat() - 0.5f, swarmulator::randfloat() - 0.5f,
                                swarmulator::randfloat() - 0.5f, 0};
-        auto obj = std::make_shared<swarmulator::Boid>(swarmulator::xyz(p), swarmulator::xyz(r));
-        simulation.add_object(obj);
+        auto obj = swarmulator::Boid(swarmulator::xyz(p), swarmulator::xyz(r));
+        simulation.object_instancer_.add_object(obj);
     }
 
     /*simulation.set_min_agents(init_agent_count);
@@ -105,13 +109,12 @@ int main(int argc, char** argv) {
 
         // DRAW
         BeginDrawing();
-        ClearBackground(WHITE);
+        ClearBackground(RAYWHITE);
         BeginMode3D(camera);
-        Matrix projection = rlGetMatrixProjection();
         Matrix view = GetCameraMatrix(camera);
 
         // objects
-        simulation.draw_objects(projection, view);
+        simulation.draw_objects(view);
 
         // gui
         DrawCubeWiresV((Vector3){0, 0, 0}, world_size, DARKGRAY);
@@ -119,7 +122,7 @@ int main(int argc, char** argv) {
 
         // debug info
         DrawFPS(0, 0);
-        DrawText(TextFormat("%zu/%zu agents", simulation.get_objects_count(), 0), 0, 20, 18, DARKGREEN);
+        DrawText(TextFormat("%zu/%zu agents", simulation.object_instancer_.size(), 0), 0, 20, 18, DARKGREEN);
         DrawText(TextFormat("%zu threads", omp_get_max_threads()), 0, 40, 18, DARKGREEN);
         DrawText(TextFormat("%.0f sim time", simulation.get_total_time()), 0, 60, 18, DARKGREEN);
 
