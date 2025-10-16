@@ -111,6 +111,7 @@ namespace swarmulator {
 
         // update shaders with group information
         void update_gpu();
+        static std::list<SimObject *>::iterator remove_object(std::map<size_t, object_group>::iterator group_it, std::list<SimObject *>::iterator object_it);
 
         // draw all groups
         // wrap with calls to begin and end 3d mode

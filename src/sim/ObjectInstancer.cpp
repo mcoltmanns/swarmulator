@@ -5,16 +5,16 @@
 #include "ObjectInstancer.h"
 
 namespace swarmulator {
-     ObjectInstancer::~ObjectInstancer() {
-         for (const auto& [id, group] : object_groups_) {
-             UnloadShader(group.shader);
-             rlUnloadVertexArray(group.vao_id);
-             rlUnloadShaderBuffer(group.ssbo_id);
-             for (const auto object : group.objects) {
-                 delete object;
-             }
+    ObjectInstancer::~ObjectInstancer() {
+        for (const auto& [id, group] : object_groups_) {
+            UnloadShader(group.shader);
+            rlUnloadVertexArray(group.vao_id);
+            rlUnloadShaderBuffer(group.ssbo_id);
+            for (const auto object : group.objects) {
+                delete object;
+            }
          }
-     }
+    }
 
     void ObjectInstancer::update_gpu() {
         // all this does is update the ssbos!!
@@ -51,6 +51,11 @@ namespace swarmulator {
                 rlUpdateShaderBuffer(group.ssbo_id, group.ssbo_buffer.data(), group.ssbo_capacity * sizeof(SSBOObject), 0);
             }
         }
+    }
+
+    std::list<SimObject*>::iterator ObjectInstancer::remove_object(const std::map<size_t, object_group>::iterator group_it, const std::list<SimObject*>::iterator object_it) {
+        delete *object_it;
+        return group_it->second.objects.erase(object_it);
     }
 
     void ObjectInstancer::draw(const object_group& group, const Matrix & projection, const Matrix & view) {

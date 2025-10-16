@@ -56,6 +56,9 @@ namespace swarmulator {
         if (std::isnan(position_.x) || std::isnan(position_.y) || std::isnan(position_.z)) {
             throw std::runtime_error("Boid update position gave NaN");
         }
+
+        if (position_.x > 0.5)
+            active_ = false;
     }
 }
 // swarmulator

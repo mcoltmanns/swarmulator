@@ -13,7 +13,7 @@ namespace swarmulator {
             auto obj_it = group_it->second.objects.begin();
             while (obj_it != group_it->second.objects.end()) {
                 if (const auto obj_ptr = *obj_it; !obj_ptr->active()) {
-                    obj_it = group_it->second.objects.erase(obj_it);
+                    obj_it = object_instancer_.remove_object(group_it, obj_it);
                 }
                 else {
                     obj_ptr->set_position(wrap_position(obj_ptr->get_position(), world_size_));
