@@ -8,7 +8,6 @@
 #define STATICGRID_H
 #include <memory>
 #include <vector>
-#include <list>
 
 #include "ObjectInstancer.h"
 #include "SimObject.h"

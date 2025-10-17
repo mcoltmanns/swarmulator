@@ -7,6 +7,7 @@
 namespace swarmulator {
     void Simulation::update(const float dt) {
         total_time_ += dt;
+        ++total_steps_;
 
         // remove inactive objects, wrap bounds
         for (auto group_it = object_instancer_.begin(); group_it != object_instancer_.end(); ++group_it) {
@@ -34,7 +35,7 @@ namespace swarmulator {
         for (auto grp = object_instancer_.begin(); grp != object_instancer_.end(); ++grp) {
             // update objects
             std::list<SimObject*>::iterator it;
-#pragma omp parallel private(it)
+#pragma omp parallel private(it) shared(grp, dt) default(none)
             {
                 for (it = grp->second.objects.begin(); it != grp->second.objects.end(); ++it) {
 #pragma omp single nowait
@@ -42,6 +43,7 @@ namespace swarmulator {
                         const auto object = *it;
                         auto neighborhood = grid_.get_neighborhood(object);
                         object->update(neighborhood, dt);
+                        object->log(logger_, total_steps_); // object.log is threadsafe, because all file modification operations in the logger are mutex-guarded
                     }
                 }
             }

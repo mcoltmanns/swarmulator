@@ -42,25 +42,19 @@ if (APPLE)
 endif ()
 ]]
 
-# OPENMP
+# OPENMP (for cpu-side multithreading)
+# available through package managers
 find_package(OpenMP REQUIRED)
 
-# FANN
-# need fann-dev and fann 2
-# shouldn't need fann any longer
-#find_package(fann)
+# BOOST (we actually don't use this anymore?)
+#find_package(Boost REQUIRED COMPONENTS iostreams)
+#if (Boost_FOUND)
+#    add_definitions(${BOOST_DEFINITIONS} -DBOOST_ALL_NO_LIB)
+#    include_directories(${Boost_INCLUDE_DIRS})
+#    link_directories(${Boost_LIBRARY_DIRS})
+#endif ()
 
-# EIGEN
-#find_package(Eigen3 REQUIRED)
-
-# BOOST
-find_package(Boost REQUIRED COMPONENTS iostreams)
-if (Boost_FOUND)
-    add_definitions(${BOOST_DEFINITIONS} -DBOOST_ALL_NO_LIB)
-    include_directories(${Boost_INCLUDE_DIRS})
-    link_directories(${Boost_LIBRARY_DIRS})
-endif ()
-
+find_package(HDF5 COMPONENTS CXX HL REQUIRED)
 
 set(AGENTS_SOURCES
     src/agent/Boid.cpp
@@ -77,7 +71,8 @@ set(SIM_SOURCES
         src/sim/util.h
         src/sim/ObjectInstancer.cpp
         src/sim/ObjectInstancer.h
-        src/sim/dtypes.h
+        src/sim/Logger.cpp
+        src/sim/Logger.h
 )
 
 set(SHADER_SOURCES
@@ -92,4 +87,4 @@ add_executable(swarmulator_boids_grid
         ${SHADER_SOURCES}
         ${SIM_SOURCES}
 )
-target_link_libraries(swarmulator_boids_grid raylib OpenMP::OpenMP_CXX ${Boost_LIBRARIES})
+target_link_libraries(swarmulator_boids_grid raylib OpenMP::OpenMP_CXX HDF5::HDF5) #${Boost_LIBRARIES})

@@ -29,14 +29,18 @@ namespace swarmulator {
             int shader_proj_mat_loc = 0;
             int shader_view_mat_loc = 0;
             int shader_instance_count_loc = 0;
-            unsigned int vao_id; // vao for the mesh used to draw these objects
-            std::vector<SSBOObject> ssbo_buffer; // instance information buffer array
+            unsigned int vao_id = 0; // vao for the mesh used to draw these objects
+            std::vector<SimObject::SSBOObject> ssbo_buffer; // instance information buffer array
             unsigned int ssbo_id = 0; // gpu id for the ssbo
             size_t ssbo_capacity = 0; // gpu-side ssbo capacity
         };
 
     private:
+        // map type names
         std::map<size_t, object_group> object_groups_{};
+
+        // simobject ids are unique for the lifetime of an objectinstancer
+        size_t next_id_ = 0;
 
         template<class T>
         static size_t get_gid() { return typeid(T).hash_code(); }
@@ -51,7 +55,7 @@ namespace swarmulator {
 
         // allocate a new object group from a type
         template<class T>
-        void new_group(const std::vector<Vector3> &mesh, const Shader shader) {
+        void new_group(const std::vector<Vector3> &mesh, const Shader shader, const std::string& name) {
             check_t_subtype_simobject; // make sure t is a subtype of a simobject
             const auto gid = get_gid<T>();
             // make sure group isn't a duplicate
@@ -59,12 +63,13 @@ namespace swarmulator {
                 throw std::runtime_error("Object group already exists.");
             }
 
-            // set up mesh
             object_group group;
+
+            // set up mesh
             group.vao_id = rlLoadVertexArray();
             rlEnableVertexArray(group.vao_id); // unloaded in destructor
             rlEnableVertexAttribute(0);
-            rlLoadVertexBuffer(mesh.data(), sizeof(Vector3) * mesh.size(), false);
+            rlLoadVertexBuffer(mesh.data(), static_cast<int>(sizeof(Vector3) * mesh.size()), false);
             rlSetVertexAttribute(0, 3, RL_FLOAT, false, 0, 0);
             rlDisableVertexArray();
 
@@ -88,7 +93,7 @@ namespace swarmulator {
             group.ssbo_buffer.resize(group.ssbo_capacity);
 
             // set up ssbo
-            group.ssbo_id = rlLoadShaderBuffer(group.ssbo_capacity * sizeof(SSBOObject), group.ssbo_buffer.data(), RL_DYNAMIC_COPY); // unloaded in destructor
+            group.ssbo_id = rlLoadShaderBuffer(group.ssbo_capacity * sizeof(SimObject::SSBOObject), group.ssbo_buffer.data(), RL_DYNAMIC_COPY); // unloaded in destructor
 
             object_groups_[gid] = group;
         }
@@ -97,7 +102,7 @@ namespace swarmulator {
         // the object passed is copied, and management is taken over by the instancer
         template<class T>
         void add_object(const T& obj) {
-            check_t_subtype_simobject; // make sure t is a subtype of a simulation object
+            check_t_subtype_simobject; // make sure t is a subtype of a simulation object (at compiletime)
             const auto gid = get_gid<T>();
 
             if (!object_groups_.contains(gid)) {
@@ -107,22 +112,33 @@ namespace swarmulator {
             object_group &group = object_groups_[gid];
             auto managed = new T(obj); // deleted in destructor
             group.objects.push_back(managed);
+            group.objects.back()->set_id(next_id_++); // set id (doing it like this avoids having to cast)
         }
 
         // update shaders with group information
         void update_gpu();
-        static std::list<SimObject *>::iterator remove_object(std::map<size_t, object_group>::iterator group_it, std::list<SimObject *>::iterator object_it);
+
+        // remove an object from the simulation, given iterators to its group and itself within the group
+        // using this manages the memory allocated by the instancer
+        // yes, it could be static, but conceptually i like it not that way
+        std::list<SimObject *>::iterator remove_object(std::map<size_t, object_group>::iterator group_it,
+                                                              std::list<SimObject *>::iterator object_it);
 
         // draw all groups
         // wrap with calls to begin and end 3d mode
         void draw_all(const Matrix &view) const;
 
-        std::map<size_t, object_group>::iterator begin() { return object_groups_.begin(); }
-        std::map<size_t, object_group>::iterator end() { return object_groups_.end(); }
+        // iterator to the beginning of the object groups
+        std::map<std::size_t, object_group>::iterator begin() { return object_groups_.begin(); }
+        // iterator to the end of the object groups
+        std::map<std::size_t, object_group>::iterator end() { return object_groups_.end(); }
 
-        std::map<size_t, object_group>::reverse_iterator rbegin() { return object_groups_.rbegin(); }
-        std::map<size_t, object_group>::reverse_iterator rend() { return object_groups_.rend(); }
+        // reverse iterator to the beginning of the object groups
+        std::map<std::size_t, object_group>::reverse_iterator rbegin() { return object_groups_.rbegin(); }
+        // reverse iterator to the end of the object groups
+        std::map<std::size_t, object_group>::reverse_iterator rend() { return object_groups_.rend(); }
 
+        // number of objects currently in the instancer: sum of the size of all object lists in all groups
         [[nodiscard]] size_t size() const;
     };
 }

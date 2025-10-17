@@ -49,16 +49,13 @@ namespace swarmulator {
 
         const auto steer_dir = cohesion_wt_ * cohesion + avoidance_wt_ * avoidance + alignment_wt_ * (alignment - rotation_);
 
-        const float ip = std::exp(-7. * dt);
+        const float ip = std::expf(-7 * dt);
 
         rotation_ = Vector3Lerp(steer_dir, Vector3Normalize(rotation_), ip);
         position_ = position_ + rotation_ * 15 * dt;
         if (std::isnan(position_.x) || std::isnan(position_.y) || std::isnan(position_.z)) {
             throw std::runtime_error("Boid update position gave NaN");
         }
-
-        if (position_.x > 0.5)
-            active_ = false;
     }
 }
 // swarmulator

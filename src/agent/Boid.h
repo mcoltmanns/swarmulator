@@ -10,9 +10,9 @@ namespace swarmulator {
 
 class Boid final : public SimObject {
 private:
-    float cohesion_wt_ = 1;
+    float cohesion_wt_ = 0.75;
     float avoidance_wt_ = 1;
-    float alignment_wt_ = 1;
+    float alignment_wt_ = 0.5;
 
 public:
     Boid() = default;

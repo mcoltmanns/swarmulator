@@ -44,11 +44,11 @@ namespace swarmulator {
 
                 // init new buffers (also updates data)
                 group.ssbo_buffer.resize(group.ssbo_capacity);
-                group.ssbo_id = rlLoadShaderBuffer(group.ssbo_capacity * sizeof(SSBOObject), group.ssbo_buffer.data(), RL_DYNAMIC_COPY);
+                group.ssbo_id = rlLoadShaderBuffer(group.ssbo_capacity * sizeof(SimObject::SSBOObject), group.ssbo_buffer.data(), RL_DYNAMIC_COPY);
             }
             else {
                 // just update buffer data
-                rlUpdateShaderBuffer(group.ssbo_id, group.ssbo_buffer.data(), group.ssbo_capacity * sizeof(SSBOObject), 0);
+                rlUpdateShaderBuffer(group.ssbo_id, group.ssbo_buffer.data(), group.ssbo_capacity * sizeof(SimObject::SSBOObject), 0);
             }
         }
     }

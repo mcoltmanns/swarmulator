@@ -2,13 +2,14 @@
 // Created by moltmanns on 9/24/25.
 //
 
-#include "SimObject.h"
+#include <H5Cpp.h>
 
+#include "SimObject.h"
 #include "ObjectInstancer.h"
 
 namespace swarmulator {
-    SSBOObject SimObject::to_ssbo() const {
-        SSBOObject ssbo;
+    SimObject::SSBOObject SimObject::to_ssbo() const {
+        SSBOObject ssbo{};
 
         ssbo.position.x = position_.x;
         ssbo.position.y = position_.y;
@@ -25,4 +26,8 @@ namespace swarmulator {
 
         return ssbo;
     }
-}
+
+    void SimObject::log(Logger &logger, unsigned long time) const {
+        // in here, tell the logger to do stuff
+    }
+} // namespace swarmulator

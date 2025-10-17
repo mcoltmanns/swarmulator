@@ -4,7 +4,6 @@
 
 #ifndef SWARMULATOR_CPP_SIMULATION_H
 #define SWARMULATOR_CPP_SIMULATION_H
-#include <memory>
 
 #include "ObjectInstancer.h"
 #include "StaticGrid.h"
@@ -20,9 +19,11 @@ private:
     // simulation gets an object instancer
 
     double total_time_ = 0;
+    size_t total_steps_ = 0;
 
 public:
     ObjectInstancer object_instancer_;
+    Logger logger_;
 
     Simulation() : grid_(world_size_, grid_divisions_) {
     }

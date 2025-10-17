@@ -6,8 +6,10 @@
 #define SWARMULATOR_CPP_SIMOBJECT_H
 #include <memory>
 #include <vector>
+#include <H5Cpp.h>
 
-#include "dtypes.h"
+#include "Logger.h"
+#include "raylib.h"
 
 namespace swarmulator {
     class SimObject {
@@ -21,7 +23,17 @@ namespace swarmulator {
 
         float interaction_radius_ = 10;
 
+        size_t id_ = 0;
+
     public:
+        // struct for passing simobject info to gpu buffers
+        struct SSBOObject {
+            Vector4 position;
+            Vector4 rotation;
+            Vector4 scale;
+            Vector4 info;
+        };
+
         SimObject() = default;
         SimObject(const Vector3& position, const Vector3& rotation) : position_(position), rotation_(rotation) {}
         SimObject(const Vector3& position, const Vector3& rotation, const Vector3& scale) : position_(position), rotation_(rotation), scale_(scale) {}
@@ -48,10 +60,17 @@ namespace swarmulator {
         void activate() { active_ = true; }
         void deactivate() { active_ = false; }
 
+        [[nodiscard]] size_t get_id() const { return id_; }
+        void set_id(const size_t id) { id_ = id; }
+
         // called at every update
         virtual void update(const std::vector<SimObject*> &neighborhood, float dt) {}
 
-        SSBOObject to_ssbo() const;
+        [[nodiscard]] SSBOObject to_ssbo() const;
+
+        [[nodiscard]] virtual std::string type_name() const { return "SimObject"; }
+
+        virtual void log(Logger& logger, unsigned long time) const;
     };
 }
 

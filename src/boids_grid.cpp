@@ -8,6 +8,7 @@
 #include <iostream>
 #include <omp.h>
 #include <string>
+#include "H5Cpp.h"
 
 #include "raygui.h"
 #include "raylib.h"
@@ -16,10 +17,10 @@
 #include "sim/util.h"
 
 int main(int argc, char** argv) {
-    int init_agent_count = 5000;
-    int window_w = 800;
-    int window_h = 600;
-    constexpr Vector3 world_size = {100, 100, 100};
+    int init_agent_count = 10000;
+    int window_w = 1080;
+    int window_h = 720;
+    constexpr Vector3 world_size = {150, 150, 150};
     constexpr int subdivisions = 20;
     float cam_speed = 1.f;
     omp_set_num_threads(omp_get_max_threads());
@@ -73,12 +74,12 @@ int main(int argc, char** argv) {
             { 0.86, -0.5, 0.0 },
             { 0.0f,  1.0f, 0.0f }
     };
-    simulation.object_instancer_.new_group<swarmulator::Boid>(tri, boid_shader);
+    simulation.object_instancer_.new_group<swarmulator::Boid>(tri, boid_shader, "boid");
 
     // add some other demo objects
     vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/red.vert";
     const Shader stat_shader = LoadShader(vs_src_path.c_str(), fs_src_path.c_str());
-    simulation.object_instancer_.new_group<swarmulator::SimObject>(tri, stat_shader);
+    simulation.object_instancer_.new_group<swarmulator::SimObject>(tri, stat_shader, "test_stationary");
 
     // initialize all the agents
     for (int i = 0; i < init_agent_count; i++) {
@@ -97,10 +98,6 @@ int main(int argc, char** argv) {
         auto obj = swarmulator::SimObject(swarmulator::xyz(p), swarmulator::xyz(r));
         simulation.object_instancer_.add_object(obj);
     }
-
-    /*simulation.set_min_agents(init_agent_count);
-    simulation.set_max_agents(init_agent_count);
-    simulation.logging_enabled_ = false;*/
 
     auto start_time = GetTime();
     size_t frames = 0;
