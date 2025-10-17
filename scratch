@@ -1,5 +1,6 @@
 the instancer works! we can now support many different object types in the same simulation, all rendered on the gpu
 things seem to top out at about 20k objects in the boid simulation depending on how dense stuff gets
+building release mode is a whole different story - can push 100k boids at 20fps
 
 now we just need to get the logging working all nice
 and finish encapsulation of objectinstancer within simulator

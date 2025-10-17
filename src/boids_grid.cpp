@@ -4,11 +4,9 @@
 
 #define RAYGUI_IMPLEMENTATION
 
-#include <ctime>
-#include <iostream>
 #include <omp.h>
 #include <string>
-#include "H5Cpp.h"
+#include <H5Cpp.h>
 
 #include "raygui.h"
 #include "raylib.h"

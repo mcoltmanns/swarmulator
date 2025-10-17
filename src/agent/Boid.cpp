@@ -4,8 +4,6 @@
 
 #include "Boid.h"
 
-#include <iostream>
-
 #include "raymath.h"
 #include "../sim/util.h"
 
