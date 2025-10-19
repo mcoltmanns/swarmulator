@@ -14,16 +14,6 @@ namespace swarmulator {
         sim_objects_ = root_group_.createGroup("objects");
         sim_static_ = root_group_.createGroup("static");
         sim_dynamic_ = root_group_.createGroup("dynamic");
-    }
-
-    void Logger::set_static_str(std::string &str) {
-    }
-
-    void Logger::set_static_int(int i) {
-
-    }
-
-    void Logger::set_static_float(float f) {
-
+        sim_time_ = root_group_.createGroup("time");
     }
 } // namespace swarmulator

@@ -6,8 +6,9 @@
 #define SWARMULATOR_CPP_LOGGER_H
 #include <H5Cpp.h>
 #include <iostream>
+#include <map>
 #include <mutex>
-#include <ostream>
+#include <vector>
 
 namespace swarmulator {
     /*
@@ -28,10 +29,10 @@ namespace swarmulator {
      * |        |    |- time -> <table mapping log ids to their starting positions and segment lengths in the state table>
      * |        |    |- object -> <table mapping object ids to their indexes in the state table, will need to be built offline>
      * |        |- meta
-     * |            |- time -> <table mapping log ids to simulation times>
      * |            |- object -> <list of all unique object ids used for this type>
      * |- static -> <table of simulation parameters which did not change over time>
      * |- dynamic -> <table of simulation parameters which changed over time>
+     * |- time -> <table mapping log ids to simulation times>
      *
      * you'd better read the hdf5 docs!
      */
@@ -42,18 +43,36 @@ namespace swarmulator {
         const hsize_t chunk_size_ = 1024;
         std::mutex lock_; // use std::lock_guard lock(lock_) to lock the mutex at the beginning of a scope
 
+        // top-level table groups
         H5::Group root_group_;
         H5::Group sim_objects_;
+        // TODO time, static and dynamic are tables, so need dataspaces/datasets not groups!
         H5::Group sim_static_;
         H5::Group sim_dynamic_;
+        H5::Group sim_time_;
+
+        // map simobject names to their type groups in state log
+        std::map<std::string, H5::Group> object_groups_;
+
+        // find or create the h5 group for an object type (state, index, meta subgroups)
+        // also initializes index/time, index/object, meta/object since we already know the shapes of those
+        H5::Group& get_create_object_group(const std::string& name);
+
+        // create the dynamic state table for an object group
+        // does nothing if table exists already
+        void create_object_group_dynamic_state_db(const H5::Group& object_group, const std::vector<std::string>& fields, const std::vector<H5::DataType>& types);
+        // create the static state table for an object group
+        // does nothing if table exists already
+        void create_object_group_static_state_db(const H5::Group& object_group, const std::vector<std::string>& fields, const std::vector<H5::DataType>& types);
 
     public:
         explicit Logger(size_t max_log_entries = 0, const std::string& path="logfile.h5");
         ~Logger() = default;
 
-        void set_static_str(std::string& str);
-        void set_static_int(int i);
-        void set_static_float(float f);
+        template<typename T>
+        void set_object_group_static_val(const H5::Group& object_group, std::string& field_name, T& val) {
+
+        }
     };
 
 } // namespace swarmulator

@@ -1,5 +1,8 @@
 cmake-build-debug
 cmake-build-debug-clang
+cmake-build-release-clang
+cmake-build-debug-gcc
+cmake-build-release-gcc
 build
 debug
 .idea
