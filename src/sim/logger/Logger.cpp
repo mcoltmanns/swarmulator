@@ -155,6 +155,8 @@ namespace swarmulator {
         auto plist = H5::DSetCreatPropList();
         hsize_t chunk_dims[2] = {chunk_size_, object_dynamic_log_width}; // chunk into however many rows per read
         plist.setChunk(2, chunk_dims);
+        // we also compress the dynamic object logs, since those are the really huge bits
+        plist.setDeflate(9); // can be 1-9, higher level -> higher compression but slower io TODO seems to do nothing??
         auto space = H5::DataSpace(2, dims, maxdims);
         const auto dynamic_state = state_group.createDataSet("dynamic", H5::PredType::NATIVE_FLOAT, space, plist);
 
