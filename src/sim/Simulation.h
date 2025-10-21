@@ -7,6 +7,7 @@
 
 #include "ObjectInstancer.h"
 #include "StaticGrid.h"
+#include "logger/Logger.h"
 
 namespace swarmulator {
 class Simulation {
@@ -28,7 +29,7 @@ public:
     Simulation() : grid_(world_size_, grid_divisions_) {
     }
 
-    Simulation(const Vector3 world_size, const int grid_divisions): world_size_(world_size), grid_divisions_(grid_divisions), grid_(world_size, grid_divisions) {
+    Simulation(const Vector3 world_size, const int grid_divisions): world_size_(world_size), grid_divisions_(grid_divisions), grid_(world_size, grid_divisions), logger_(std::numeric_limits<int>::max(), "logfile.h5", 3, 4) {
     }
 
     ~Simulation() = default;

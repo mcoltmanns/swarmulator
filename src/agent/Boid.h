@@ -19,6 +19,9 @@ public:
     Boid(const Vector3 position, const Vector3 rotation) : SimObject(position, rotation) {}
 
     void update(const std::vector<SimObject*> &neighborhood, float dt) override;
+
+    std::string type_name() const override { return "Boid"; };
+    std::vector<float> log() const override { return  { static_cast<float>(id_), position_.x, position_.y, position_.z }; }
 };
 
 }

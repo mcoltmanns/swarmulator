@@ -61,6 +61,13 @@ set(AGENTS_SOURCES
     src/agent/Boid.h
 )
 
+set(LOGGER_SOURCES
+        src/sim/logger/Logger.cpp
+        src/sim/logger/Logger.h
+        src/sim/logger/ThreadsafeQueue.h
+        src/sim/logger/LogTask.h
+)
+
 set(SIM_SOURCES
         src/sim/SimObject.h
         src/sim/SimObject.cpp
@@ -71,8 +78,6 @@ set(SIM_SOURCES
         src/sim/util.h
         src/sim/ObjectInstancer.cpp
         src/sim/ObjectInstancer.h
-        src/sim/Logger.cpp
-        src/sim/Logger.h
 )
 
 set(SHADER_SOURCES
@@ -86,5 +91,6 @@ add_executable(swarmulator_boids_grid
         ${AGENTS_SOURCES}
         ${SHADER_SOURCES}
         ${SIM_SOURCES}
+        ${LOGGER_SOURCES}
 )
 target_link_libraries(swarmulator_boids_grid raylib OpenMP::OpenMP_CXX HDF5::HDF5) #${Boost_LIBRARIES})

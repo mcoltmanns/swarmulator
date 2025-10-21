@@ -26,8 +26,4 @@ namespace swarmulator {
 
         return ssbo;
     }
-
-    void SimObject::log(Logger &logger, unsigned long time) const {
-        // in here, tell the logger to do stuff
-    }
 } // namespace swarmulator

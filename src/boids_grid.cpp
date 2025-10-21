@@ -86,6 +86,8 @@ int main(int argc, char** argv) {
                                swarmulator::randfloat() - 0.5f, 0};
         auto obj = swarmulator::Boid(swarmulator::xyz(p), swarmulator::xyz(r));
         simulation.object_instancer_.add_object(obj);
+        //simulation.logger_.queue_new_object(obj.type_name(), obj.get_id());
+        // FIXME above throws
     }
 
     // initialize some stationary objects
@@ -95,7 +97,18 @@ int main(int argc, char** argv) {
                                swarmulator::randfloat() - 0.5f, 0};
         auto obj = swarmulator::SimObject(swarmulator::xyz(p), swarmulator::xyz(r));
         simulation.object_instancer_.add_object(obj);
+        // simulation.logger_.queue_new_object(obj.type_name(), obj.get_id());
+        // FIXME above throws
     }
+
+    // set up tables in the logger
+    // simobject
+    auto dummy = swarmulator::SimObject();
+    simulation.logger_.create_object_group(dummy.type_name(), dummy.log().size(), 1);
+    //simulation.logger_.queue_log_object_data(dummy.type_name(), {dummy.get_interaction_radius()}, false);
+    // boid
+    auto boid = swarmulator::Boid();
+    simulation.logger_.create_object_group(boid.type_name(), boid.log().size(), 1);
 
     auto start_time = GetTime();
     size_t frames = 0;

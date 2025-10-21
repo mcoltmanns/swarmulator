@@ -6,9 +6,7 @@
 #define SWARMULATOR_CPP_SIMOBJECT_H
 #include <memory>
 #include <vector>
-#include <H5Cpp.h>
 
-#include "Logger.h"
 #include "raylib.h"
 
 namespace swarmulator {
@@ -69,8 +67,9 @@ namespace swarmulator {
         [[nodiscard]] SSBOObject to_ssbo() const;
 
         [[nodiscard]] virtual std::string type_name() const { return "SimObject"; }
-
-        virtual void log(Logger& logger, unsigned long time) const;
+        // dynamic object information
+        // should include the object id cast to float somewhere, since the logger doesn't track that
+        virtual std::vector<float> log() const { return { static_cast<float>(id_), position_.x, position_.y, position_.z, rotation_.x, rotation_.y, rotation_.z}; };
     };
 }
 

@@ -25,6 +25,8 @@ namespace swarmulator {
 
         // sort everything (don't seem to be issues here)
         grid_.sort_objects(object_instancer_);
+        // begin a logging frame
+        logger_.queue_begin_frame(total_time_);
 
         // update everyone
         // iteration is cheap, processing is expensive
@@ -43,7 +45,7 @@ namespace swarmulator {
                         const auto object = *it;
                         auto neighborhood = grid_.get_neighborhood(object);
                         object->update(neighborhood, dt);
-                        object->log(logger_, total_steps_); // object.log is threadsafe, because all file modification operations in the logger are mutex-guarded
+                        logger_.queue_log_object_data(object->type_name(), object->log(), true);
                     }
                 }
             }
@@ -51,6 +53,10 @@ namespace swarmulator {
 
         // update gpu
         object_instancer_.update_gpu();
+
+        // end a logging frame
+        // next logging frame
+        logger_.queue_advance_frame();
     }
 
     void Simulation::draw_objects(const Matrix & view) const {
