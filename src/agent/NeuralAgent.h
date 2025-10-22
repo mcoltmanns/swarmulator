@@ -10,7 +10,6 @@
 #include "../sim/SimObject.h"
 
 namespace swarmulator {
-
     class NeuralAgent : public SimObject {
     protected:
         // brain shape
@@ -41,6 +40,7 @@ namespace swarmulator {
         float signal_cost_ = 0.001; // how much energy it costs to output a signal of 1 per unit time
         float basic_cost_ = 0.01; // how much energy it costs to be alive per unit time
         float move_speed_ = 5; // how many units space you move per unit time
+        size_t parent_id_ = 0;
 
         float max_lifetime_ = 5000; // how many unit time this agent may be alive for at most
 
@@ -60,6 +60,9 @@ namespace swarmulator {
             return x - 1;
         }
 
+        // mutate this agent's weights
+        void mutate(float mutation_chance = 0.05); // mutation chance is the probability each brain weight or bias gets a random value between -1 and 1 added
+
     public:
         NeuralAgent();
         NeuralAgent(Vector3 position, Vector3 rotation);
@@ -67,10 +70,7 @@ namespace swarmulator {
 
         [[nodiscard]] auto get_signals() const { return signals_; }
 
-        void update(const std::list<SimObject *> &neighborhood, float dt) override;
-
-        // returns a mutated copy of this agent
-        NeuralAgent mutate(float mutation_chance = 0.05); // mutation chance is the probability each brain weight or bias gets a random value between -1 and 1 added
+        void update(Simulation &context, const std::list<SimObject *> &neighborhood, float dt) override;
 
         [[nodiscard]] SSBOObject to_ssbo() const override;
 

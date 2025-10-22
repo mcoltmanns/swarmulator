@@ -10,7 +10,6 @@
 #include <map>
 #include <vector>
 
-#include "../SimObject.h"
 #include "LogTask.h"
 #include "ThreadsafeQueue.h"
 

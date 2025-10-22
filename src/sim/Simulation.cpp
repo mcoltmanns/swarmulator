@@ -20,7 +20,7 @@ namespace swarmulator {
         omp_set_num_threads(sim_threads_); // can use maximum threads if not logging
     }
 
-    Simulation::Simulation(const size_t win_w, const size_t win_h, const Vector3 world_size, const size_t grid_divisions) :
+    Simulation::Simulation(const int win_w, const int win_h, const Vector3 world_size, const int grid_divisions) :
         world_size_(world_size), grid_divisions_(grid_divisions), grid_(world_size, grid_divisions), logger_() {
         InitWindow(win_w, win_h, "Swarmulator");
         camera_ = {
@@ -76,7 +76,7 @@ namespace swarmulator {
                     {
                         const auto object = *it;
                         auto neighborhood = grid_.get_neighborhood(object);
-                        object->update(neighborhood, dt);
+                        object->update(*this, neighborhood, dt);
                         if (log) {
                             logger_.queue_log_object_data(object->type_name(), object->log(), true);
                         }

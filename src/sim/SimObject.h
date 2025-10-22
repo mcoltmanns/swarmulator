@@ -11,10 +11,11 @@
 #include "raylib.h"
 
 namespace swarmulator {
+    class Simulation;
     class SimObject {
     protected:
         Vector3 position_ = Vector3(0, 0, 0);
-        Vector3 rotation_ = Vector3(0, 0, 0); // TODO move to quaternions maybe in future
+        Vector3 rotation_ = Vector3(0, 0, 0);
         Vector3 velocity_ = Vector3(0, 0, 0);
         Vector3 scale_ = Vector3(1, 1, 1);
 
@@ -63,7 +64,8 @@ namespace swarmulator {
         void set_id(const size_t id) { id_ = id; }
 
         // called at every update
-        virtual void update(const std::list<SimObject *> &neighborhood, float dt) {}
+        // context is a reference to the running simulation, and should only be used to call add_objects if this simobject needs to add new objects
+        virtual void update(Simulation &context, const std::list<SimObject *> &neighborhood, float dt) { }
 
         [[nodiscard]] virtual SSBOObject to_ssbo() const;
 

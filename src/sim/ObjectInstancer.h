@@ -10,13 +10,13 @@
 #ifndef SWARMULATOR_CPP_OBJECTINSTANCER_H
 #define SWARMULATOR_CPP_OBJECTINSTANCER_H
 #include <list>
+#include <vector>
 #include <memory>
 #include <map>
 
+#include "SimObject.h"
 #include "raylib.h"
 #include "rlgl.h"
-
-#include "SimObject.h"
 
 #define check_t_subtype_simobject static_assert(std::is_base_of_v<SimObject, T>, "Objects registered to or used with the instancer must be an instance of or derive from SimObject")
 

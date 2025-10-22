@@ -6,17 +6,17 @@
 
 #include "raymath.h"
 #include "../sim/util.h"
-
+#include "../sim/Simulation.h"
 
 namespace swarmulator {
-     void Boid::update(const std::list<SimObject *> &neighborhood, const float dt) {
+    void Boid::update(Simulation &context, const std::list<SimObject *> &neighborhood, const float dt) {
         Vector3 cohesion = {0, 0, 0};
         u_int32_t coc = 0;
         Vector3 avoidance = {0, 0, 0};
         u_int32_t alc = 0;
         Vector3 alignment = {0, 0, 0};
 
-        for (auto neighbor : neighborhood) {
+        for (const auto neighbor : neighborhood) {
             if (dynamic_cast<Boid*>(neighbor) != nullptr) {
                 // if this is a boid do boid stuff
                 const auto diff = position_ - neighbor->get_position();
@@ -56,6 +56,10 @@ namespace swarmulator {
         position_ = position_ + rotation_ * 15 * dt;
         if (std::isnan(position_.x) || std::isnan(position_.y) || std::isnan(position_.z)) {
             throw std::runtime_error("Boid update position gave NaN");
+        }
+
+        if (randfloat() < 0.000001f) {
+            context.add_object(Boid(*this));
         }
     }
 }

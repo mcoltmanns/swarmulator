@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "ObjectInstancer.h"
-#include "SimObject.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "util.h"
@@ -40,7 +39,7 @@ private:
     [[nodiscard]] std::vector<int> neighborhood_indices(const Vector3 &pos_grid) const;
 
 public:
-    StaticGrid(const Vector3 world_size, const size_t subdivisions) : world_size_(world_size), cell_size_(world_size / static_cast<double>(subdivisions)), axis_cell_count_(subdivisions), total_cell_count_(subdivisions * subdivisions * subdivisions) {}
+    StaticGrid(const Vector3 world_size, const size_t subdivisions) : world_size_(world_size), cell_size_(world_size / static_cast<float>(subdivisions)), axis_cell_count_(static_cast<int>(subdivisions)), total_cell_count_(static_cast<int>(subdivisions) * static_cast<int>(subdivisions) * static_cast<int>(subdivisions)) {}
     ~StaticGrid() = default;
 
     // sort all objects in an objectinstancer into the grid

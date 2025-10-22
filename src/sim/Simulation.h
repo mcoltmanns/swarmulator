@@ -16,7 +16,7 @@ protected:
     int grid_divisions_ = 20;
 
     // we need a camera
-    Camera camera_;
+    Camera camera_{};
 
     // simulation gets a grid
     StaticGrid grid_;
@@ -26,15 +26,15 @@ protected:
     Logger logger_;
 
     // how much simulation time to run for (0 for endless)
-    double run_for_ = 0;
+    float run_for_ = 0;
     // how much simulation time has passed
-    double total_time_ = 0;
+    float total_time_ = 0;
     // how much time passes per update (0 for real time)
-    double time_step_ = 0;
+    float time_step_ = 0;
     // how many updates have been performed (same as number of frames rendered)
     size_t total_steps_ = 0;
     // how many threads the simulation is running on
-    size_t sim_threads_;
+    int sim_threads_;
 
     // perform one update
     // dt is the amount of time that has passed since the last update
@@ -55,12 +55,12 @@ public:
     Simulation();
 
     // specify window and world size, still no logger, unlimited runtime
-    Simulation(size_t win_w, size_t win_h, Vector3 world_size, size_t grid_divisions);
+    Simulation(int win_w, int win_h, Vector3 world_size, int grid_divisions);
 
     // specify window and world size, as well as logger and compression level
     // total number of log entries must be known for the logger to run
     // TODO write logging mode constructor
-    Simulation(size_t win_w, size_t win_h, Vector3 world_size, size_t grid_divisions, std::string& logfile_path, size_t log_compression, size_t log_interval_);
+    Simulation(int win_w, int win_h, Vector3 world_size, int grid_divisions, std::string& logfile_path, int log_compression, int log_interval_);
 
     // Simulation(const Vector3 world_size, const int grid_divisions, const std::string& log_path, const size_t
     // max_steps);
@@ -87,15 +87,20 @@ public:
     // if the simulation was set up to log, also logs object addition
     template<class T>
     void add_object(const T& obj) {
-        object_instancer_.add_object(obj);
+#pragma omp critical
+        {
+            object_instancer_.add_object(obj);
 
-        if (logger_.initialized()) {
-            logger_.queue_new_object(obj.type_name(), obj.get_id());
+            if (logger_.initialized()) {
+                logger_.queue_new_object(obj.type_name(), obj.get_id());
+            }
         }
     }
 
     // start running the simulation
     void run();
+
+    [[nodiscard]] Vector3 get_world_size() const { return world_size_; }
 };
 } // swarmulator
 

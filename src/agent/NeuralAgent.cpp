@@ -4,6 +4,7 @@
 
 #include "NeuralAgent.h"
 
+#include "../sim/Simulation.h"
 #include "../sim/util.h"
 #include "raymath.h"
 
@@ -26,7 +27,7 @@ namespace swarmulator {
         input_.setZero();
     }
 
-    void NeuralAgent::update(const std::list<SimObject *> &neighborhood, float dt) {
+    void NeuralAgent::update(Simulation &context, const std::list<SimObject *> &neighborhood, float dt) {
         for (const auto thing : neighborhood) {
             if (const auto neighbor = dynamic_cast<NeuralAgent*>(thing); neighbor != nullptr) {
                 // if the neighbor is another neuralagent, add its signals to the input vector
@@ -93,22 +94,31 @@ namespace swarmulator {
         position_ = position_ + rotation_ * move_speed_ * dt;
         // update energy
         energy_ -= (signal_cost_ * (std::abs(signals_[0]) + std::abs(signals_[1])) + basic_cost_) * dt;
+
+        if (energy_ >= reproduction_threshold_) {
+            energy_ -= reproduction_cost_;
+            auto child = *this;
+            child.position_ = {
+                (randfloat() * 2.f - 1.f) * context.get_world_size().x,
+                (randfloat() * 2.f - 1.f) * context.get_world_size().y,
+                (randfloat() * 2.f - 1.f) * context.get_world_size().z
+            };
+            child.mutate();
+            child.parent_id_ = id_;
+            context.add_object(child);
+        }
     }
 
-    NeuralAgent NeuralAgent::mutate(const float mutation_chance) {
-        auto copy = NeuralAgent(*this);
-
-        for (int i = 0; i < copy.num_hidden_; i++) {
-            for (int j = 0; j < copy.num_inputs_; j++) {
-                copy.w_in_hidden_(j, i) += randfloat() < mutation_chance ? randfloat() * 2.f - 1.f : 0;
+    void NeuralAgent::mutate(const float mutation_chance) {
+        for (int i = 0; i < swarmulator::NeuralAgent::num_hidden_; i++) {
+            for (int j = 0; j < swarmulator::NeuralAgent::num_inputs_; j++) {
+                w_in_hidden_(j, i) += randfloat() < mutation_chance ? randfloat() * 2.f - 1.f : 0;
             }
-            for (int k = 0; k < copy.num_outputs_; k++) {
-                copy.w_hidden_out_(i, k) += randfloat() < mutation_chance ? randfloat() * 2.f - 1.f : 0;
+            for (int k = 0; k < swarmulator::NeuralAgent::num_outputs_; k++) {
+                w_hidden_out_(i, k) += randfloat() < mutation_chance ? randfloat() * 2.f - 1.f : 0;
             }
-            copy.b_hidden_(0, i) += randfloat() < mutation_chance ? 0 : randfloat() * 2.f - 1.f;
+            b_hidden_(0, i) += randfloat() < mutation_chance ? 0 : randfloat() * 2.f - 1.f;
         }
-
-        return copy;
     }
 
     SimObject::SSBOObject NeuralAgent::to_ssbo() const {
@@ -136,6 +146,7 @@ namespace swarmulator {
     std::vector<float> NeuralAgent::log() const {
         std::vector out = {
             static_cast<float>(id_),
+            static_cast<float>(parent_id_),
             position_.x,
             position_.y,
             position_.z,
