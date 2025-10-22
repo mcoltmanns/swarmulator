@@ -59,6 +59,7 @@ public:
 
     // specify window and world size, as well as logger and compression level
     // total number of log entries must be known for the logger to run
+    // TODO write logging mode constructor
     Simulation(size_t win_w, size_t win_h, Vector3 world_size, size_t grid_divisions, std::string& logfile_path, size_t log_compression, size_t log_interval_);
 
     // Simulation(const Vector3 world_size, const int grid_divisions, const std::string& log_path, const size_t
@@ -94,9 +95,6 @@ public:
     }
 
     // start running the simulation
-    // time_step determines amount of simulation time in between updates
-    // default of 0 means realtime (simulation updates as fast as possible, and timestep is last frame render time)
-    // values greater than 1 are not recommended
     void run();
 };
 } // swarmulator

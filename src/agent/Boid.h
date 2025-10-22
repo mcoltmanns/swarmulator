@@ -21,7 +21,16 @@ public:
     void update(const std::list<SimObject *> &neighborhood, float dt) override;
 
     std::string type_name() const override { return "Boid"; };
-    std::vector<float> log() const override { return  { static_cast<float>(id_), position_.x, position_.y, position_.z }; }
+    std::vector<float> log() const override { return  { static_cast<float>(id_), position_.x, position_.y, position_.z, rotation_.x, rotation_.y, rotation_.z }; }
+};
+
+class BoidEffector final : public SimObject {
+public:
+    BoidEffector() = default;
+    BoidEffector(const Vector3 position, const Vector3 rotation) : SimObject(position, rotation) {}
+
+    std::string type_name() const override { return "BoidEffector"; }
+    std::vector<float> log() const override { return { static_cast<float>(id_), position_.x, position_.y, position_.z }; };
 };
 
 }

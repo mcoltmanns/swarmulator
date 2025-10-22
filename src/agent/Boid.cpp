@@ -17,22 +17,26 @@ namespace swarmulator {
         Vector3 alignment = {0, 0, 0};
 
         for (auto neighbor : neighborhood) {
-            // do stuff
-            // default behavior is boids
-            if (dynamic_cast<Boid*>(neighbor) == nullptr) { // skip if this is not a boid
-                continue;
+            if (dynamic_cast<Boid*>(neighbor) != nullptr) {
+                // if this is a boid do boid stuff
+                const auto diff = position_ - neighbor->get_position();
+                const auto dist = Vector3Distance(neighbor->get_position(), position_);
+                if (dist < interaction_radius_ / 2.f) { // if the other agent is really close to us, avoid it
+                    auto d = Vector3Length(diff);
+                    avoidance = avoidance + diff / (1 + d); // watch the divide by 0!
+                }
+                // always do cohesion and alignment
+                cohesion = cohesion + neighbor->get_position();
+                coc++;
+                alignment = alignment + neighbor->get_rotation();
+                alc++;
             }
-            const auto diff = position_ - neighbor->get_position();
-            const auto dist = Vector3Distance(neighbor->get_position(), position_);
-            if (dist < interaction_radius_ / 2.f) { // if the other agent is really close to us, avoid it
+            else if (dynamic_cast<BoidEffector*>(neighbor) != nullptr) {
+                // if this is a boid effector just do avoidance
+                const auto diff = position_ - neighbor->get_position();
                 auto d = Vector3Length(diff);
-                avoidance = avoidance + diff / (1 + d); // watch the divide by 0!
+                avoidance = avoidance + (10 * (diff / (1 + d))); // be REALLY scared of effectors
             }
-            // always do cohesion and alignment
-            cohesion = cohesion + neighbor->get_position();
-            coc++;
-            alignment = alignment + neighbor->get_rotation();
-            alc++;
         }
 
         if (coc > 0) {

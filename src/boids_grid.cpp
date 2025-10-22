@@ -15,7 +15,7 @@
 #include "sim/util.h"
 
 int main(int argc, char** argv) {
-    int init_agent_count = 10000;
+    int init_agent_count = 1000;
     int window_w = 1080;
     int window_h = 720;
     constexpr Vector3 world_size = {150, 150, 150};
@@ -60,12 +60,25 @@ int main(int argc, char** argv) {
     };
     simulation.new_object_type<swarmulator::Boid>(tri, vs_src_path, fs_src_path);
 
-    // initialize all the agents
+    // add the effectors
+    vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/red.vert";
+    simulation.new_object_type<swarmulator::BoidEffector>(tri, vs_src_path, fs_src_path);
+
+    // initialize the boids
     for (int i = 0; i < init_agent_count; i++) {
         const auto p = Vector4{(swarmulator::randfloat() - 0.5f) * world_size.x, (swarmulator::randfloat() - 0.5f) * world_size.y, (swarmulator::randfloat() - 0.5f) * world_size.z, 0};
         const auto r = Vector4{swarmulator::randfloat() - 0.5f, swarmulator::randfloat() - 0.5f,
                                swarmulator::randfloat() - 0.5f, 0};
         auto obj = swarmulator::Boid(swarmulator::xyz(p), swarmulator::xyz(r));
+        simulation.add_object(obj);
+    }
+
+    // initialize the effectors
+    for (int i = 0; i < 50; i++) {
+        const auto p = Vector4{(swarmulator::randfloat() - 0.5f) * world_size.x, (swarmulator::randfloat() - 0.5f) * world_size.y, (swarmulator::randfloat() - 0.5f) * world_size.z, 0};
+        const auto r = Vector4{swarmulator::randfloat() - 0.5f, swarmulator::randfloat() - 0.5f,
+                               swarmulator::randfloat() - 0.5f, 0};
+        auto obj = swarmulator::BoidEffector(swarmulator::xyz(p), swarmulator::xyz(r));
         simulation.add_object(obj);
     }
 
