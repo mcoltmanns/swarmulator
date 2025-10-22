@@ -15,7 +15,7 @@
 #include "sim/util.h"
 
 int main(int argc, char** argv) {
-    int init_agent_count = 1000;
+    int init_agent_count = 100;
     int window_w = 1080;
     int window_h = 720;
     constexpr Vector3 world_size = {150, 150, 150};

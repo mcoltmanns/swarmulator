@@ -130,9 +130,6 @@ namespace swarmulator {
             DrawText(TextFormat("%.0f sim time", total_time_), 0, 60, 18, DARKGREEN);
             DrawText(TextFormat("%zu updates", total_steps_), 0, 80, 18, DARKGREEN);
             EndDrawing();
-
-            total_steps_++;
-            total_time_ += dt;
         }
 
         double fps = static_cast<double>(total_steps_) / total_time_;
