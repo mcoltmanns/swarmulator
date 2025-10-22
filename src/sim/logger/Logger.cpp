@@ -14,6 +14,10 @@ namespace swarmulator {
 
             // check if our task is to begin a new frame
             if (const auto begin_frame = dynamic_cast<BeginFrame*>(task); begin_frame != nullptr) {
+                if (frame_id_ >= max_entries_) {
+                    throw std::runtime_error("Maximum number of log entries exceeded.");
+                }
+
                 write_frow(frame_id_, {begin_frame->real_time}, sim_time_);
 
                 for (const auto& [gname, group] : object_groups_) {
@@ -29,9 +33,6 @@ namespace swarmulator {
             // check if our task is to advance to a new frame
             else if (const auto advance_frame = dynamic_cast<AdvanceFrame*>(task); advance_frame != nullptr) {
                 frame_id_++;
-                if (frame_id_ >= max_entries_) {
-                    throw std::runtime_error("Maximum number of log entries exceeded.");
-                }
             }
             // check if our task is to log some object data
             else if (const auto log_obj = dynamic_cast<LogObjectData*>(task); log_obj != nullptr) {
@@ -100,31 +101,43 @@ namespace swarmulator {
         }
     }
 
-    Logger::Logger(const size_t max_log_entries, const std::string &path, const size_t static_width, const size_t dynamic_width) {
-        max_entries_ = max_log_entries;
-        // first thing we can do is set up the basic table structure and create the file
+    void Logger::initialize(const std::string& path, const size_t deflate_level, const size_t max_entries, const size_t static_sim_entry_width, const size_t dynamic_sim_entry_width) {
+        if (initialized_) {
+            throw std::runtime_error("Logger already initialized.");
+        }
+        initialized_ = true;
+
+        if (deflate_level > 9) {
+            compression_level_ = 9;
+        }
+        else {
+            compression_level_ = deflate_level;
+        }
+
+        max_entries_ = max_entries;
+
+        // set up the basic table structure and create the file
         file_ = H5Fcreate(path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-        root_group_ = file_.createGroup("simulation");
-        sim_objects_ = root_group_.createGroup("objects");
+        sim_objects_ = file_.createGroup("objects");
 
         // set up time index table
         hsize_t dims[2];
         dims[0] = max_entries_; // index is log entry id
         dims[1] = 1; // value is real sim time
         auto space = H5::DataSpace(2, dims);
-        sim_time_ = root_group_.createDataSet("time", H5::PredType::NATIVE_FLOAT, space);
+        sim_time_ = file_.createDataSet("time", H5::PredType::NATIVE_FLOAT, space);
 
         // static property table
         dims[0] = 1;
-        dims[1] = static_width;
+        dims[1] = static_sim_entry_width;
         space = H5::DataSpace(2, dims);
-        sim_static_ = root_group_.createDataSet("static", H5::PredType::NATIVE_FLOAT, space);
+        sim_static_ = file_.createDataSet("static", H5::PredType::NATIVE_FLOAT, space);
 
         // dynamic property table
         dims[0] = max_entries_;
-        dims[1] = dynamic_width;
+        dims[1] = dynamic_sim_entry_width;
         space = H5::DataSpace(2, dims);
-        sim_dynamic_ = root_group_.createDataSet("dynamic", H5::PredType::NATIVE_FLOAT, space);
+        sim_dynamic_ = file_.createDataSet("dynamic", H5::PredType::NATIVE_FLOAT, space);
 
         // start up the worker loop
         worker_thread_ = std::thread(&Logger::worker_loop, this);
@@ -132,14 +145,19 @@ namespace swarmulator {
     }
 
     Logger::~Logger() {
-        // destructor just waits for the worker to finish logging
-        std::cout << "Finishing logs..." << std::endl;
-        want_exit_ = true; // tell the worker we want to be done
-        task_queue_.stop(); // tell the queue there won't be any more things coming in
-        worker_thread_.join(); // wait for the worker to finish processing all the accumulated log entries
+        // only need to do fancy cleanup if we initialized
+        if (initialized_) {
+            // destructor just waits for the worker to finish logging
+            std::cout << "Finishing logs..." << std::endl;
+            want_exit_ = true; // tell the worker we want to be done
+            task_queue_.stop(); // tell the queue there won't be any more things coming in
+            worker_thread_.join(); // wait for the worker to finish processing all the accumulated log entries
+        }
     }
 
     void Logger::create_object_group(const std::string &name, const size_t object_dynamic_log_width, size_t object_static_log_width) {
+        init_guard();
+
         if (sim_objects_.exists(name)) {
             return;
         }
@@ -156,7 +174,7 @@ namespace swarmulator {
         hsize_t chunk_dims[2] = {chunk_size_, object_dynamic_log_width}; // chunk into however many rows per read
         plist.setChunk(2, chunk_dims);
         // we also compress the dynamic object logs, since those are the really huge bits
-        plist.setDeflate(9); // can be 1-9, higher level -> higher compression but slower io TODO seems to do nothing??
+        plist.setDeflate(compression_level_); // can be 1-9, higher level -> higher compression but slower io. only makes a difference if lots of repetitive rows are logged, or many rows that are partially similar
         auto space = H5::DataSpace(2, dims, maxdims);
         const auto dynamic_state = state_group.createDataSet("dynamic", H5::PredType::NATIVE_FLOAT, space, plist);
 
@@ -194,16 +212,22 @@ namespace swarmulator {
     }
 
     void Logger::queue_begin_frame(const float real_time) {
+        init_guard();
+
         const auto task = new BeginFrame();
         task->real_time = real_time;
         task_queue_.push(task);
     }
 
     void Logger::queue_advance_frame() {
+        init_guard();
+
         task_queue_.push(new AdvanceFrame());
     }
 
     void Logger::queue_log_object_data(const std::string &object_type_name, const std::vector<float> &vals, const bool dynamic) {
+        init_guard();
+
         const auto task = new LogObjectData();
         task->object_type_name = object_type_name;
         task->values = vals;
@@ -212,6 +236,8 @@ namespace swarmulator {
     }
 
     void Logger::queue_new_object(const std::string &object_type_name, const size_t id) {
+        init_guard();
+
         const auto task = new NewObject();
         task->object_type_name = object_type_name;
         task->id = static_cast<int>(id);
@@ -219,6 +245,8 @@ namespace swarmulator {
     }
 
     void Logger::queue_log_sim_data(std::vector<float> vals, bool dynamic) {
+        init_guard();
+
         const auto task = new LogSimData();
         task->values = vals;
         task->dynamic = dynamic;

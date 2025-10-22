@@ -97,8 +97,8 @@ namespace swarmulator {
         }
     }
 
-    std::vector<SimObject *> StaticGrid::get_neighborhood(const SimObject* object) const {
-        auto neighborhood = std::vector<SimObject*>();
+    std::list<SimObject *> StaticGrid::get_neighborhood(const SimObject *object) const {
+        auto neighborhood = std::list<SimObject*>();
         const auto object_pos = object->get_position();
         const auto object_pos_grid = object_pos + 0.5f * world_size_;
 
@@ -107,8 +107,10 @@ namespace swarmulator {
         for (const auto n_i = neighborhood_indices(object_pos_grid, object->get_interaction_radius()); const auto neighborhood_cell : n_i) {
             // iterate over every agent in the current neighborhood cell
             for (int i = 0; i < segment_length[neighborhood_cell]; i++) {
-                // add the agent to the neighborhood vector if it isn't the agent we're getting the neighborhood of
-                if (auto neighbor = sorted[segment_start[neighborhood_cell] + i]; neighbor != object) {
+                // add the agent to the neighborhood vector if it isn't the agent we're getting the neighborhood of, and if it's within our interaction radius
+                if (auto neighbor = sorted[segment_start[neighborhood_cell] + i];
+                    neighbor != object &&
+                    Vector3DistanceSqr(neighbor->get_position(), object->get_position()) <= object->get_interaction_radius() * object->get_interaction_radius()) {
                     neighborhood.push_back(neighbor);
                 }
             }

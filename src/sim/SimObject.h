@@ -4,6 +4,7 @@
 
 #ifndef SWARMULATOR_CPP_SIMOBJECT_H
 #define SWARMULATOR_CPP_SIMOBJECT_H
+#include <list>
 #include <memory>
 #include <vector>
 
@@ -62,14 +63,17 @@ namespace swarmulator {
         void set_id(const size_t id) { id_ = id; }
 
         // called at every update
-        virtual void update(const std::vector<SimObject*> &neighborhood, float dt) {}
+        virtual void update(const std::list<SimObject *> &neighborhood, float dt) {}
 
-        [[nodiscard]] SSBOObject to_ssbo() const;
+        [[nodiscard]] virtual SSBOObject to_ssbo() const;
 
         [[nodiscard]] virtual std::string type_name() const { return "SimObject"; }
         // dynamic object information
         // should include the object id cast to float somewhere, since the logger doesn't track that
-        virtual std::vector<float> log() const { return { static_cast<float>(id_), position_.x, position_.y, position_.z, rotation_.x, rotation_.y, rotation_.z}; };
+        [[nodiscard]] virtual std::vector<float> log() const { return { static_cast<float>(id_), position_.x, position_.y, position_.z, rotation_.x, rotation_.y, rotation_.z}; };
+        // static object information
+        // object parameters which do not change over time for all objects of this type
+        [[nodiscard]] virtual std::vector<float> static_log() const { return { interaction_radius_ }; }
     };
 }
 

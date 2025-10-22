@@ -40,15 +40,15 @@ private:
     [[nodiscard]] std::vector<int> neighborhood_indices(const Vector3 &pos_grid) const;
 
 public:
-    StaticGrid(const Vector3 world_size, const int subdivisions) : world_size_(world_size), cell_size_(world_size / static_cast<float>(subdivisions)), axis_cell_count_(subdivisions), total_cell_count_(subdivisions * subdivisions * subdivisions) {}
+    StaticGrid(const Vector3 world_size, const size_t subdivisions) : world_size_(world_size), cell_size_(world_size / static_cast<double>(subdivisions)), axis_cell_count_(subdivisions), total_cell_count_(subdivisions * subdivisions * subdivisions) {}
     ~StaticGrid() = default;
 
     // sort all objects in an objectinstancer into the grid
     void sort_objects(ObjectInstancer &in);
 
-    // get all neighbors of a given object (objects within cells that overlap the passed radius)
+    // get all neighbors of a given object (objects within that object's interaction radius)
     // return does not include object passed
-    [[nodiscard]] std::vector<SimObject *> get_neighborhood(const SimObject *object) const;
+    [[nodiscard]] std::list<SimObject *> get_neighborhood(const SimObject *object) const;
 
     // wrap a global position
     [[nodiscard]] Vector3 wrap_position(const Vector3 position) const {

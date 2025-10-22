@@ -9,7 +9,7 @@
 
 
 namespace swarmulator {
-     void Boid::update(const std::vector<SimObject*> &neighborhood, const float dt) {
+     void Boid::update(const std::list<SimObject *> &neighborhood, const float dt) {
         Vector3 cohesion = {0, 0, 0};
         u_int32_t coc = 0;
         Vector3 avoidance = {0, 0, 0};
@@ -19,21 +19,20 @@ namespace swarmulator {
         for (auto neighbor : neighborhood) {
             // do stuff
             // default behavior is boids
-            if (neighbor == this || dynamic_cast<Boid*>(neighbor) == nullptr) { // skip if this is you (shouldn't be necessary), or if this is not a boid
+            if (dynamic_cast<Boid*>(neighbor) == nullptr) { // skip if this is not a boid
                 continue;
             }
             const auto diff = position_ - neighbor->get_position();
             const auto dist = Vector3Distance(neighbor->get_position(), position_);
-            if (dist < interaction_radius_ / 2.f) {
+            if (dist < interaction_radius_ / 2.f) { // if the other agent is really close to us, avoid it
                 auto d = Vector3Length(diff);
                 avoidance = avoidance + diff / (1 + d); // watch the divide by 0!
             }
-            if (dist < interaction_radius_) {
-                cohesion = cohesion + neighbor->get_position();
-                coc++;
-                alignment = alignment + neighbor->get_rotation();
-                alc++;
-            }
+            // always do cohesion and alignment
+            cohesion = cohesion + neighbor->get_position();
+            coc++;
+            alignment = alignment + neighbor->get_rotation();
+            alc++;
         }
 
         if (coc > 0) {

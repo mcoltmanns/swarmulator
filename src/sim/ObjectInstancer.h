@@ -55,7 +55,7 @@ namespace swarmulator {
 
         // allocate a new object group from a type
         template<class T>
-        void new_group(const std::vector<Vector3> &mesh, const Shader shader, const std::string& name) {
+        void new_group(const std::vector<Vector3> &mesh, const std::string& vertex_src_path, const std::string& fragment_src_path) {
             check_t_subtype_simobject; // make sure t is a subtype of a simobject
             const auto gid = get_gid<T>();
             // make sure group isn't a duplicate
@@ -74,7 +74,8 @@ namespace swarmulator {
             rlDisableVertexArray();
 
             // set up shader
-            group.shader = shader; // unloaded by user
+            // load shader
+            group.shader = LoadShader(vertex_src_path.c_str(), fragment_src_path.c_str()); // unloaded at destruction
             group.shader_proj_mat_loc = GetShaderLocation(group.shader, "proj_mat");
             if (group.shader_proj_mat_loc < 0) {
                 throw std::runtime_error("Could not find shader projection matrix location");
@@ -99,6 +100,7 @@ namespace swarmulator {
         }
 
         // add an object to its group
+        // object id is set according to the next available object id
         // the object passed is copied, and management is taken over by the instancer
         template<class T>
         void add_object(const T& obj) {
@@ -121,8 +123,7 @@ namespace swarmulator {
         // remove an object from the simulation, given iterators to its group and itself within the group
         // using this manages the memory allocated by the instancer
         // yes, it could be static, but conceptually i like it not that way
-        std::list<SimObject *>::iterator remove_object(std::map<size_t, object_group>::iterator group_it,
-                                                              std::list<SimObject *>::iterator object_it);
+        std::list<SimObject *>::iterator remove_object(std::map<size_t, object_group>::iterator group_it, std::list<SimObject *>::iterator object_it);
 
         // draw all groups
         // wrap with calls to begin and end 3d mode

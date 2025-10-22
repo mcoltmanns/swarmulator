@@ -52,10 +52,7 @@ namespace swarmulator {
         };
 
         H5::H5File file_; // logfile to write to
-        size_t max_entries_ = 1000; // knowable since simulation lengths are bounded
-        const hsize_t chunk_size_ = 1024;
 
-        H5::Group root_group_; // root simulation group
         // map object type names to their datasets
         std::map<std::string, object_group> object_groups_; // keeping dataset handles in memory is much faster than querying/opening every time
         H5::Group sim_objects_;
@@ -72,6 +69,13 @@ namespace swarmulator {
         ThreadsafeQueue<LogTask*> task_queue_;
         std::thread worker_thread_;
         std::atomic<bool> want_exit_;
+
+        // state info
+        bool initialized_ = false;
+        // parameters
+        size_t max_entries_; // knowable since simulation lengths are bounded
+        static constexpr hsize_t chunk_size_ = 1024;
+        size_t compression_level_ = 0; // 0 to 9
 
         // write a row of floats to a known-length dataset
         static void write_frow(const size_t idx, const std::vector<float>& values, const H5::DataSet& dataset) {
@@ -147,9 +151,17 @@ namespace swarmulator {
 
         void worker_loop();
 
+        void init_guard() const {
+            if (!initialized_) {
+                throw std::runtime_error("Logger was not initialized.");
+            }
+        }
+
     public:
-        explicit Logger(size_t max_log_entries = 0, const std::string& path="logfile.h5", size_t static_width = 0, size_t dynamic_width = 0);
+        Logger() = default;
         ~Logger();
+
+        void initialize(const std::string& path, size_t deflate_level, size_t max_entries, size_t static_sim_entry_width, size_t dynamic_sim_entry_width);
 
         // create the h5 group for an object type (state, index, meta subgroups)
         // does nothing if the group exists
@@ -167,6 +179,9 @@ namespace swarmulator {
         void queue_log_object_data(const std::string &object_type_name, const std::vector<float> &vals, bool dynamic);
         void queue_new_object(const std::string &object_type_name, size_t id);
         void queue_log_sim_data(std::vector<float> vals, bool dynamic);
+
+        [[nodiscard]] std::size_t tasks_queued() { return task_queue_.size(); }
+        [[nodiscard]] bool initialized() const { return initialized_; }
     };
 
 } // namespace swarmulator

@@ -54,11 +54,19 @@ find_package(OpenMP REQUIRED)
 #    link_directories(${Boost_LIBRARY_DIRS})
 #endif ()
 
-find_package(HDF5 COMPONENTS CXX HL REQUIRED)
+# HDF5 (for logging)
+# available through package managers
+find_package(HDF5 COMPONENTS CXX REQUIRED)
+
+find_package(Eigen3 REQUIRED)
 
 set(AGENTS_SOURCES
     src/agent/Boid.cpp
     src/agent/Boid.h
+        src/agent/ForageAgent.cpp
+        src/agent/ForageAgent.h
+        src/agent/NeuralAgent.cpp
+        src/agent/NeuralAgent.h
 )
 
 set(LOGGER_SOURCES
@@ -80,17 +88,11 @@ set(SIM_SOURCES
         src/sim/ObjectInstancer.h
 )
 
-set(SHADER_SOURCES
-        src/shaders/simobject.frag
-        src/shaders/boid.vert
-)
-
 add_executable(swarmulator_boids_grid
         src/boids_grid.cpp
         external/raygui.h
         ${AGENTS_SOURCES}
-        ${SHADER_SOURCES}
         ${SIM_SOURCES}
         ${LOGGER_SOURCES}
 )
-target_link_libraries(swarmulator_boids_grid raylib OpenMP::OpenMP_CXX HDF5::HDF5) #${Boost_LIBRARIES})
+target_link_libraries(swarmulator_boids_grid raylib OpenMP::OpenMP_CXX HDF5::HDF5 Eigen3::Eigen)

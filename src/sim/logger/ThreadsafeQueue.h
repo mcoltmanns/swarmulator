@@ -17,7 +17,8 @@ namespace swarmulator {
         std::mutex lock_;
         std::condition_variable not_full_, not_empty_;
         bool stopped_ = false;
-        size_t max_size_ = 1024 * 1024 * 32; // the maximum number of tasks to queue before this becomes a blocking queue
+        size_t max_size_ = 1024 * 1024; // the maximum number of tasks to queue before this becomes a blocking queue
+        // 1 million is a lot, and the queue is loath to release memory
 
     public:
         void push(T item) {
