@@ -1,0 +1,169 @@
+//
+// Created by moltma on 10/22/25.
+//
+
+#include "NeuralAgent.h"
+
+#include "../sim/util.h"
+#include "raymath.h"
+
+namespace swarmulator {
+    NeuralAgent::NeuralAgent() : SimObject() {
+        signals_.fill(0);
+    }
+
+    NeuralAgent::NeuralAgent(const Vector3 position, const Vector3 rotation) : SimObject(position, rotation) {
+        signals_.fill(0);
+    }
+
+    void NeuralAgent::think() {
+        // normalize input
+        input_.normalize();
+        // run the network
+        hidden_out_ = (input_ * w_in_hidden_ + hidden_out_ * context_weight_).unaryExpr(&sigmoid) + b_hidden_;
+        output_ = (hidden_out_ * w_hidden_out_).unaryExpr(&sigmoid);
+        // when you're done thinking, zero your input
+        input_.setZero();
+    }
+
+    void NeuralAgent::update(const std::list<SimObject *> &neighborhood, float dt) {
+        for (const auto thing : neighborhood) {
+            if (const auto neighbor = dynamic_cast<NeuralAgent*>(thing); neighbor != nullptr) {
+                // if the neighbor is another neuralagent, add its signals to the input vector
+                const auto dist_sqr = Vector3DistanceSqr(position_, neighbor->get_position());
+                const float weight = 1.f / (1.f + dist_sqr); // neurals are weighted by their inverse distance squared
+                const auto neighbor_signals = neighbor->get_signals();
+                // absolute position difference relative to world axes
+                const auto [dx, dy, dz] = neighbor->get_position() - position_;
+                // magnitudes of differences tell us which cardinal segment the neighbor is in
+                if (std::abs(dx) > std::abs(dy) && std::abs(dx) > std::abs(dz)) {
+                    if (dx > 0) {
+                        // neighbor is in front of us
+                        input_(0, 0) += weight * neighbor_signals[0];
+                        input_(0, 1) += weight * neighbor_signals[1];
+                    }
+                    else {
+                        // neighbor is behind us
+                        input_(0, 2) += weight * neighbor_signals[0];
+                        input_(0, 3) += weight * neighbor_signals[1];
+                    }
+                }
+                else if (std::abs(dy) > std::abs(dx) && std::abs(dy) > std::abs(dz)) {
+                    if (dy > 0) {
+                        // neighbor is above us
+                        input_(0, 4) += weight * neighbor_signals[0];
+                        input_(0, 5) += weight * neighbor_signals[1];
+                    }
+                    else {
+                        // neighbor is below us
+                        input_(0, 6) += weight * neighbor_signals[0];
+                        input_(0, 7) += weight * neighbor_signals[1];
+                    }
+                }
+                else if (std::abs(dz) > std::abs(dx) && std::abs(dz) > std::abs(dy)) {
+                    if (dz > 0) {
+                        // neighbor is left of us
+                        input_(0, 8) += weight * neighbor_signals[0];
+                        input_(0, 9) += weight * neighbor_signals[1];
+                    }
+                    else {
+                        // neighbor is right of us
+                        input_(0, 10) += weight * neighbor_signals[0];
+                        input_(0, 11) += weight * neighbor_signals[1];
+                    }
+                }
+            }
+            // if you want to do other things with other objects, do them here
+        }
+        // run the network
+        think();
+        // network output is between 0 and 1, so scale between -1 and 1 and use that to choose an angle between 0 and 2pi to rotate by
+        const float pitch = output_(0, 0) * 2.f * std::numbers::pi; // as in witkowski/ikegami - agents select an angle between 0 and 2pi to steer in
+        const float yaw = output_(0, 1) * 2.f * std::numbers::pi; // no tiller steering! direct heading control!
+        // apply signals
+        signals_[0] = output_(0, 2);
+        signals_[1] = output_(0, 3);
+        // apply rotations according to tait-bryan convention - always heading/yaw (z), pitch(y) roll(x)
+        // omit roll because 2 axes are enough
+        // because we do direct control and not tiller steering, start with an x unit vector and rotate that
+        rotation_ = Vector3RotateByAxisAngle(Vector3UnitX, Vector3UnitZ, yaw); // apply yaw
+        rotation_ = Vector3RotateByAxisAngle(rotation_, Vector3UnitY, pitch); // apply pitch
+        rotation_ = Vector3Normalize(rotation_);
+        // now move
+        position_ = position_ + rotation_ * move_speed_ * dt;
+        // update energy
+        energy_ -= (signal_cost_ * (std::abs(signals_[0]) + std::abs(signals_[1])) + basic_cost_) * dt;
+    }
+
+    NeuralAgent NeuralAgent::mutate(const float mutation_chance) {
+        auto copy = NeuralAgent(*this);
+
+        for (int i = 0; i < copy.num_hidden_; i++) {
+            for (int j = 0; j < copy.num_inputs_; j++) {
+                copy.w_in_hidden_(j, i) += randfloat() < mutation_chance ? randfloat() * 2.f - 1.f : 0;
+            }
+            for (int k = 0; k < copy.num_outputs_; k++) {
+                copy.w_hidden_out_(i, k) += randfloat() < mutation_chance ? randfloat() * 2.f - 1.f : 0;
+            }
+            copy.b_hidden_(0, i) += randfloat() < mutation_chance ? 0 : randfloat() * 2.f - 1.f;
+        }
+
+        return copy;
+    }
+
+    SimObject::SSBOObject NeuralAgent::to_ssbo() const {
+        SSBOObject out;
+        out.position.w = 0;
+        out.position.x = position_.x;
+        out.position.y = position_.y;
+        out.position.z = position_.z;
+
+        out.rotation.w = 0;
+        out.rotation.x = rotation_.x;
+        out.rotation.y = rotation_.y;
+        out.rotation.z = rotation_.z;
+
+        out.info.w = 0;
+        out.info.x = signals_[0];
+        out.info.y = signals_[1];
+        out.info.z = 0;
+
+        out.scale = Vector4(1, 1, 1, 1);
+
+        return out;
+    }
+
+    std::vector<float> NeuralAgent::log() const {
+        std::vector out = {
+            static_cast<float>(id_),
+            position_.x,
+            position_.y,
+            position_.z,
+            rotation_.x,
+            rotation_.y,
+            rotation_.z,
+        };
+
+        // weight matrices are flattened column-major
+        // a b
+        // c d
+        // becomes a c b d
+        // push back in-hidden weights
+        const float* flat = w_in_hidden_.data();
+        for (int i = 0; i < w_in_hidden_.size(); i++) {
+            out.push_back(flat[i]);
+        }
+        // push back hidden-out weights
+        flat = w_hidden_out_.data();
+        for (int i = 0; i < w_hidden_out_.size(); i++) {
+            out.push_back(flat[i]);
+        }
+        // push back biases
+        flat = b_hidden_.data();
+        for (int i = 0; i < b_hidden_.size(); i++) {
+            out.push_back(flat[i]);
+        }
+
+        return out;
+    }
+} // namespace swarmulator
