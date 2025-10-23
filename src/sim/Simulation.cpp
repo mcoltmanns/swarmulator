@@ -34,10 +34,31 @@ namespace swarmulator {
         omp_set_num_threads(sim_threads_); // can use maximum threads if not logging
     }
 
-    void Simulation::update(const float dt, const bool log) {
-        total_time_ += dt;
-        ++total_steps_;
+     Simulation::Simulation(const int win_w, const int win_h, const Vector3 world_size, const int grid_divisions, const float timestep, const size_t max_updates, const std::string &logfile_path, const int log_compression, const int log_interval) : world_size_(world_size), grid_divisions_(grid_divisions), grid_(world_size, grid_divisions), logger_() {
+        InitWindow(win_w, win_h, "Swarmulator");
+        camera_ = {
+            2 * world_size_,
+            Vector3Zeros,
+            Vector3UnitY,
+            35,
+            CAMERA_PERSPECTIVE
+        };
+        sim_threads_ = omp_get_max_threads() - 1; // use max threads -1 so the logger has a core
+        omp_set_num_threads(sim_threads_);
 
+        time_step_ = timestep;
+        run_for_ = max_updates;
+
+        // save logger variables
+        // logger setup happens at top of any method which might use the logger if the logger hasn't been initialized yet
+        // can't call it here because it makes reference to virtual functions, which are selected at compile-time
+        logging_interval_ = log_interval;
+        logfile_path_ = logfile_path;
+        logger_deflate_ = log_compression;
+    }
+
+
+    void Simulation::update(const float dt, const bool log) {
         // remove inactive objects, wrap bounds (donut world)
         for (auto group_it = object_instancer_.begin(); group_it != object_instancer_.end(); ++group_it) {
             auto obj_it = group_it->second.objects.begin();
@@ -56,7 +77,7 @@ namespace swarmulator {
         grid_.sort_objects(object_instancer_);
         // begin a logging frame and log dynamic sim attributes if applicable
         if (log) {
-            logger_.queue_begin_frame(total_time_);
+            logger_.queue_begin_frame(total_steps_);
             logger_.queue_log_sim_data(log_dynamic(), true);
         }
 
@@ -92,11 +113,15 @@ namespace swarmulator {
         if (log) {
             logger_.queue_advance_frame();
         }
+        ++total_steps_;
     }
 
     void Simulation::run() {
+        initialize_logger_if_not_init();
+
+        const double start = GetTime();
         // everything is initialized, so we can run right into the main loop
-        while (!WindowShouldClose() && (total_time_ < run_for_ || run_for_ == 0)) {
+        while (!WindowShouldClose() && (total_steps_ < run_for_ || run_for_ == 0)) {
             const float dt = time_step_ == 0 ? GetFrameTime() : time_step_;
 
             // get input
@@ -112,7 +137,8 @@ namespace swarmulator {
             if (IsKeyDown(KEY_E)) CameraMoveToTarget(&camera_, -cam_speed_factor * Vector3Distance(camera_.position, camera_.target));
 
             // update
-            update(dt, logger_.initialized());
+            // only log if we're in a logging interval and the logger is enabled
+            update(dt, logger_.initialized() && total_steps_ % logging_interval_ == 0);
 
             // draw
             BeginDrawing();
@@ -127,13 +153,12 @@ namespace swarmulator {
             DrawFPS(0, 0);
             DrawText(TextFormat("%zu objects", object_instancer_.size()), 0, 20, 18, DARKGREEN);
             DrawText(TextFormat("%zu threads", sim_threads_), 0, 40, 18, DARKGREEN);
-            DrawText(TextFormat("%.0f sim time", total_time_), 0, 60, 18, DARKGREEN);
-            DrawText(TextFormat("%zu updates", total_steps_), 0, 80, 18, DARKGREEN);
+            DrawText(TextFormat("%zu updates", total_steps_), 0, 60, 18, DARKGREEN);
+            DrawText(TextFormat("%zu log tasks", logger_.tasks_queued()), 0, 80, 18, DARKGREEN);
             EndDrawing();
         }
 
-        double fps = static_cast<double>(total_steps_) / total_time_;
-
+        const double fps = static_cast<double>(total_steps_) / (GetTime() - start);
         CloseWindow();
         std::cout << "Average FPS: " << fps << std::endl;
     }

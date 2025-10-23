@@ -48,7 +48,8 @@ int main(int argc, char** argv) {
     srand(s);
     std::cout << "Random seed: " << s << std::endl;
 
-    auto simulation = swarmulator::Simulation(window_w, window_h, world_size, subdivisions);
+    auto simulation = swarmulator::Simulation(window_w, window_h, world_size, subdivisions, 0.001, 10000, "logfile.h5", 0, 1000);
+    //auto simulation = swarmulator::Simulation(window_w, window_h, world_size, subdivisions);
 
     // add the boids
     std::string vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/boid.vert";

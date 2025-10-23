@@ -102,8 +102,9 @@ namespace swarmulator {
         // add an object to its group
         // object id is set according to the next available object id
         // the object passed is copied, and management is taken over by the instancer
+        // return a pointer to the copy managed by the instancer
         template<class T>
-        void add_object(const T& obj) {
+        SimObject* add_object(const T &obj) {
             check_t_subtype_simobject; // make sure t is a subtype of a simulation object (at compiletime)
             const auto gid = get_gid<T>();
 
@@ -115,6 +116,7 @@ namespace swarmulator {
             auto managed = new T(obj); // deleted in destructor
             group.objects.push_back(managed);
             group.objects.back()->set_id(next_id_++); // set id (doing it like this avoids having to cast)
+            return group.objects.back();
         }
 
         // update shaders with group information

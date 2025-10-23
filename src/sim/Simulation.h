@@ -25,16 +25,27 @@ protected:
     // and a logger
     Logger logger_;
 
-    // how much simulation time to run for (0 for endless)
-    float run_for_ = 0;
-    // how much simulation time has passed
-    float total_time_ = 0;
+    // how many updates to run for (0 for endless)
+    size_t run_for_ = 0;
     // how much time passes per update (0 for real time)
     float time_step_ = 0;
     // how many updates have been performed (same as number of frames rendered)
     size_t total_steps_ = 0;
     // how many threads the simulation is running on
     int sim_threads_;
+
+    // where the logfile is stored
+    std::string logfile_path_ = "";
+    // logger compression level
+    int logger_deflate_ = 0;
+    // how many updates between each log entry
+    int logging_interval_ = 0;
+
+    void initialize_logger_if_not_init() {
+        if (logfile_path_ != "" && !logger_.initialized()) {
+            logger_.initialize(logfile_path_, logger_deflate_, run_for_ / logging_interval_, log_static().size(), log_dynamic().size());
+        }
+    }
 
     // perform one update
     // dt is the amount of time that has passed since the last update
@@ -58,9 +69,10 @@ public:
     Simulation(int win_w, int win_h, Vector3 world_size, int grid_divisions);
 
     // specify window and world size, as well as logger and compression level
-    // total number of log entries must be known for the logger to run
-    // TODO write logging mode constructor
-    Simulation(int win_w, int win_h, Vector3 world_size, int grid_divisions, std::string& logfile_path, int log_compression, int log_interval_);
+    // and the logger interval (how many simulation steps between logging steps)
+    // and the step time (because this will have to run in fixedstep)
+    // smaller timestep is a more accurate simulation
+    Simulation(int win_w, int win_h, Vector3 world_size, int grid_divisions, float timestep, size_t max_updates, const std::string& logfile_path, int log_compression, int log_interval);
 
     // Simulation(const Vector3 world_size, const int grid_divisions, const std::string& log_path, const size_t
     // max_steps);
@@ -72,6 +84,7 @@ public:
     // set up its tables in the logger and log its static data, if the simulation was set up to log
     template<class T>
     void new_object_type(const std::vector<Vector3>& mesh, const std::string& vertex_src_path, const std::string& fragment_src_path) {
+        initialize_logger_if_not_init();
         object_instancer_.new_group<T>(mesh, vertex_src_path, fragment_src_path);
 
         if (logger_.initialized()) {
@@ -87,12 +100,14 @@ public:
     // if the simulation was set up to log, also logs object addition
     template<class T>
     void add_object(const T& obj) {
+        initialize_logger_if_not_init();
 #pragma omp critical
         {
-            object_instancer_.add_object(obj);
+            initialize_logger_if_not_init();
+            auto added = object_instancer_.add_object(obj);
 
             if (logger_.initialized()) {
-                logger_.queue_new_object(obj.type_name(), obj.get_id());
+                logger_.queue_new_object(added->type_name(), added->get_id());
             }
         }
     }
