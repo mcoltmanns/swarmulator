@@ -21,9 +21,11 @@ namespace swarmulator {
     [[nodiscard]] std::vector<int> StaticGrid::neighborhood_indices(const Vector3 &pos_grid, const float neighborhood_radius) const {
         std::vector<int> indices;
         // offsets are pos_grid - radius, pos_grid + radius
-        for (int x = -neighborhood_radius; x <= neighborhood_radius; x += cell_size_.x) {
-            for (int y = -neighborhood_radius; y <= neighborhood_radius; y += cell_size_.y) {
-                for (int z = -neighborhood_radius; z <= neighborhood_radius; z += cell_size_.z) {
+        const auto start = std::round(-neighborhood_radius);
+        const auto end = std::round(neighborhood_radius);
+        for (int x = start; x <= end; x += cell_size_.x) {
+            for (int y = start; y <= end; y += cell_size_.y) {
+                for (int z = start; z <= end; z += cell_size_.z) {
                     auto offset = Vector3(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
                     auto op = pos_grid + offset;
                     //op.x = wrap(op.x, world_size_.x);
