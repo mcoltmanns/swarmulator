@@ -17,7 +17,7 @@ namespace swarmulator {
     }
 
     // get the 1d cell index of a given grid space position, and the indices of all cells surrounding that cell in a given radius
-    // wraps the neighborhoods around the world boundaries (toroidal world)
+    // does not wrap around world boundaries
     [[nodiscard]] std::vector<int> StaticGrid::neighborhood_indices(const Vector3 &pos_grid, const float neighborhood_radius) const {
         std::vector<int> indices;
         // offsets are pos_grid - radius, pos_grid + radius
@@ -26,9 +26,9 @@ namespace swarmulator {
                 for (int z = -neighborhood_radius; z <= neighborhood_radius; z += cell_size_.z) {
                     auto offset = Vector3(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
                     auto op = pos_grid + offset;
-                    op.x = wrap(op.x, world_size_.x);
-                    op.y = wrap(op.y, world_size_.y);
-                    op.z = wrap(op.z, world_size_.z);
+                    //op.x = wrap(op.x, world_size_.x);
+                    //op.y = wrap(op.y, world_size_.y);
+                    //op.z = wrap(op.z, world_size_.z);
                     if (auto index = cell_index(op); index != -1) {
                         indices.push_back(index);
                     }
@@ -111,7 +111,7 @@ namespace swarmulator {
                 if (auto neighbor = sorted[segment_start[neighborhood_cell] + i];
                     neighbor != object &&
                     Vector3DistanceSqr(neighbor->get_position(), object->get_position()) <= object->get_interaction_radius() * object->get_interaction_radius()) {
-                    neighborhood.push_back(neighbor);
+                        neighborhood.push_back(neighbor);
                 }
             }
         }
