@@ -28,50 +28,36 @@ namespace swarmulator {
     }
 
     void NeuralAgent::update(Simulation &context, const std::list<SimObject *> &neighborhood, float dt) {
+        // consider neighbor signals
         for (const auto thing : neighborhood) {
             if (const auto neighbor = dynamic_cast<NeuralAgent*>(thing); neighbor != nullptr) {
                 // if the neighbor is another neuralagent, add its signals to the input vector
                 const auto dist_sqr = Vector3DistanceSqr(position_, neighbor->get_position());
+                const auto wrapped = dist_sqr > interaction_radius_ * interaction_radius_; // if the distance to the other neighbor is further than our interaction radius, that neighbor's position must have been wrapped by the instancer
                 const float weight = 1.f / (1.f + dist_sqr); // neurals are weighted by their inverse distance squared
                 const auto neighbor_signals = neighbor->get_signals();
                 // absolute position difference relative to world axes
                 const auto [dx, dy, dz] = neighbor->get_position() - position_;
                 // magnitudes of differences tell us which cardinal segment the neighbor is in
                 if (std::abs(dx) > std::abs(dy) && std::abs(dx) > std::abs(dz)) {
-                    if (dx > 0) {
-                        // neighbor is in front of us
-                        input_(0, 0) += weight * neighbor_signals[0];
-                        input_(0, 1) += weight * neighbor_signals[1];
-                    }
-                    else {
-                        // neighbor is behind us
-                        input_(0, 2) += weight * neighbor_signals[0];
-                        input_(0, 3) += weight * neighbor_signals[1];
-                    }
+                    // greatest difference was x, so the neighbor is in front or behind us
+                    // this is way nicer than the old code
+                    const bool dir = (dx > 0) ^ wrapped; // true is front, back is false
+                    const int base = dir ? 0 : 2; // select starting index offset based on direction bool (front inputs are cols 0, 1, back inputs are cols 2, 3)
+                    input_(0, base) += weight * neighbor_signals[0];
+                    input_(0, base + 1) += weight * neighbor_signals[1];
                 }
                 else if (std::abs(dy) > std::abs(dx) && std::abs(dy) > std::abs(dz)) {
-                    if (dy > 0) {
-                        // neighbor is above us
-                        input_(0, 4) += weight * neighbor_signals[0];
-                        input_(0, 5) += weight * neighbor_signals[1];
-                    }
-                    else {
-                        // neighbor is below us
-                        input_(0, 6) += weight * neighbor_signals[0];
-                        input_(0, 7) += weight * neighbor_signals[1];
-                    }
+                    const bool dir = (dy > 0) ^ wrapped; // true is above, false is below
+                    const int base = dir ? 4 : 6; // top inputs are cols 4, 5, bottom inputs are cols 6, 7
+                    input_(0, base) += weight * neighbor_signals[0];
+                    input_(0, base + 1) += weight * neighbor_signals[1];
                 }
                 else if (std::abs(dz) > std::abs(dx) && std::abs(dz) > std::abs(dy)) {
-                    if (dz > 0) {
-                        // neighbor is left of us
-                        input_(0, 8) += weight * neighbor_signals[0];
-                        input_(0, 9) += weight * neighbor_signals[1];
-                    }
-                    else {
-                        // neighbor is right of us
-                        input_(0, 10) += weight * neighbor_signals[0];
-                        input_(0, 11) += weight * neighbor_signals[1];
-                    }
+                    const bool dir = (dz > 0) ^ wrapped; // true is left, false is right
+                    const int base = dir ? 8 : 10; // left inputs are cols 8, 9, right inputs are cols 10, 11
+                    input_(0, base) += weight * neighbor_signals[0];
+                    input_(0, base + 1) += weight * neighbor_signals[1];
                 }
             }
             // if you want to do other things with other objects, do them here
@@ -95,6 +81,7 @@ namespace swarmulator {
         // update energy
         energy_ -= (signal_cost_ * (std::abs(signals_[0]) + std::abs(signals_[1])) + basic_cost_) * dt;
 
+        // if you can reproduce, do it
         if (energy_ >= reproduction_threshold_) {
             energy_ -= reproduction_cost_;
             auto child = *this;
@@ -105,7 +92,12 @@ namespace swarmulator {
             };
             child.mutate();
             child.parent_id_ = id_;
+            child.time_born_ = context.get_sim_time();
             context.add_object(child);
+        }
+        // if you died or exceeded max lifetime, deactivate yourself (will be removed at next update)
+        else if (energy_ <= 0 || context.get_sim_time() - time_born_ > max_lifetime_) {
+            deactivate();
         }
     }
 
