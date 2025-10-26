@@ -29,20 +29,25 @@ protected:
     size_t run_for_ = 0;
     // how much time passes per update (0 for real time)
     float time_step_ = 0;
+    // how much simulation time has passed
+    float sim_time_ = 0;
     // how many updates have been performed (same as number of frames rendered)
     size_t total_steps_ = 0;
     // how many threads the simulation is running on
     int sim_threads_;
 
+    // vector of global float params
+    std::map<std::string, float> globals_ = {};
+
     // where the logfile is stored
-    std::string logfile_path_ = "";
+    std::string logfile_path_;
     // logger compression level
     int logger_deflate_ = 0;
     // how many updates between each log entry
     int logging_interval_ = 0;
 
     void initialize_logger_if_not_init() {
-        if (logfile_path_ != "" && !logger_.initialized()) {
+        if (!logfile_path_.empty() && !logger_.initialized()) {
             logger_.initialize(logfile_path_, logger_deflate_, run_for_ / logging_interval_, log_static().size(), log_dynamic().size());
         }
     }
@@ -100,7 +105,6 @@ public:
     // if the simulation was set up to log, also logs object addition
     template<class T>
     void add_object(const T& obj) {
-        initialize_logger_if_not_init();
 #pragma omp critical
         {
             initialize_logger_if_not_init();
@@ -115,7 +119,12 @@ public:
     // start running the simulation
     void run();
 
-    [[nodiscard]] Vector3 get_world_size() const { return world_size_; }
+    [[nodiscard]] auto get_world_size() const { return world_size_; }
+    [[nodiscard]] auto get_total_num_objects() const { return object_instancer_.size(); }
+    [[nodiscard]] auto get_sim_time() const { return sim_time_; }
+
+    void set_global(const std::string& key, const float val) { globals_[key] = val; };
+    [[nodiscard]] float get_global(const std::string& key) { return globals_[key]; }
 };
 } // swarmulator
 

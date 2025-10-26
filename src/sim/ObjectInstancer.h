@@ -143,6 +143,15 @@ namespace swarmulator {
 
         // number of objects currently in the instancer: sum of the size of all object lists in all groups
         [[nodiscard]] size_t size() const;
+
+        // number of objects in a given object group
+        template<class T>
+        [[nodiscard]] size_t group_size() const {
+            check_t_subtype_simobject;
+
+            const auto gid = get_gid<T>();
+            return object_groups_[gid].objects.size();
+        }
     };
 }
 

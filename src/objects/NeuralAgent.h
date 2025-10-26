@@ -8,14 +8,17 @@
 #include <eigen3/Eigen/Eigen>
 
 #include "../sim/SimObject.h"
+#include "../sim/util.h"
 
 namespace swarmulator {
     class NeuralAgent : public SimObject {
     protected:
+        float interaction_radius_ = 10;
+
         // brain shape
-        static constexpr unsigned int num_inputs_ = 12;
-        static constexpr unsigned int num_hidden_ = 10;
-        static constexpr unsigned int num_outputs_ = 5;
+        static constexpr unsigned int num_inputs_ = 12; // 6 cardinal dirs, 2 signals from each dir
+        static constexpr unsigned int num_hidden_ = 10; // chosen pretty arbitrarily (sort of near the average of 12 and 5)
+        static constexpr unsigned int num_outputs_ = 4; // pitch, yaw, signal 0, signal 1, decision (for pd)
 
         // signal output array
         std::array<float, 2> signals_ = {0, 0};
@@ -37,12 +40,13 @@ namespace swarmulator {
         float energy_ = initial_energy_; // how much energy the agent has
         float reproduction_threshold_ = 10; // how much energy needed to reproduce
         float reproduction_cost_ = 8; // how much energy reproduction costs
-        float signal_cost_ = 0.001; // how much energy it costs to output a signal of 1 per unit time
+        float signal_cost_ = 0.001; // how much energy it costs to output a signal of 1 per unit time (if this is too high, no one engages in signalling)
         float basic_cost_ = 0.01; // how much energy it costs to be alive per unit time
-        float move_speed_ = 5; // how many units space you move per unit time
+        float move_speed_ = 1; // how many units space you move per unit time (smaller value forces the agent to deal with what is at hand rather than run away)
         size_t parent_id_ = 0;
 
         float max_lifetime_ = 5000; // how many unit time this agent may be alive for at most
+        double time_born_ = 0;
 
         // run input through the brain and set outputs
         // zero input when done
@@ -60,8 +64,10 @@ namespace swarmulator {
             return x - 1;
         }
 
-        // mutate this agent's weights
-        void mutate(float mutation_chance = 0.05); // mutation chance is the probability each brain weight or bias gets a random value between -1 and 1 added
+        // mutate this agent's weights (as well as its context weight)
+        void mutate(float mutation_chance = 0.05); // mutation chance is the probability each weight or bias changes
+        // we have 181 parameters, and 5-10 changes per generation are a good target (see stanley's NEAT papers, 2002-2004)
+        // 7/181 = x ~= 4% chance for the number of changes we want
 
     public:
         NeuralAgent();
@@ -69,6 +75,9 @@ namespace swarmulator {
         ~NeuralAgent() override = default;
 
         [[nodiscard]] auto get_signals() const { return signals_; }
+
+        [[nodiscard]] auto get_energy() const { return energy_; }
+        void change_energy(const float amount) { energy_ += amount; }
 
         void update(Simulation &context, const std::list<SimObject *> &neighborhood, float dt) override;
 

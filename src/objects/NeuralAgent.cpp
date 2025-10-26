@@ -18,99 +18,180 @@ namespace swarmulator {
     }
 
     void NeuralAgent::think() {
-        // normalize input
-        input_.normalize();
         // run the network
+        input_.normalize();
         hidden_out_ = (input_ * w_in_hidden_ + hidden_out_ * context_weight_).unaryExpr(&sigmoid) + b_hidden_;
         output_ = (hidden_out_ * w_hidden_out_).unaryExpr(&sigmoid);
-        // when you're done thinking, zero your input
-        input_.setZero();
     }
 
     void NeuralAgent::update(Simulation &context, const std::list<SimObject *> &neighborhood, float dt) {
+        input_.setZero(); // zero your input!
+        // agent axes relative to agent's current rotation
+        const auto forward = rotation_;
+        const auto right = Vector3CrossProduct(forward, Vector3UnitY);
+        const auto up = Vector3CrossProduct(right, forward);
         // consider neighbor signals
         for (const auto thing : neighborhood) {
             if (const auto neighbor = dynamic_cast<NeuralAgent*>(thing); neighbor != nullptr) {
                 // if the neighbor is another neuralagent, add its signals to the input vector
                 const auto dist_sqr = Vector3DistanceSqr(position_, neighbor->get_position());
-                const auto wrapped = dist_sqr > interaction_radius_ * interaction_radius_; // if the distance to the other neighbor is further than our interaction radius, that neighbor's position must have been wrapped by the instancer
                 const float weight = 1.f / (1.f + dist_sqr); // neurals are weighted by their inverse distance squared
                 const auto neighbor_signals = neighbor->get_signals();
                 // absolute position difference relative to world axes
                 const auto [dx, dy, dz] = neighbor->get_position() - position_;
-                // magnitudes of differences tell us which cardinal segment the neighbor is in
-                if (std::abs(dx) > std::abs(dy) && std::abs(dx) > std::abs(dz)) {
+                const auto sum = std::abs(dx) + std::abs(dy) + std::abs(dz) + 1e-7f;
+                // distribute neighbor signals across direction bins according to percentage of total magnitude
+                if (dx > 0) {
                     // greatest difference was x, so the neighbor is in front or behind us
-                    // this is way nicer than the old code
-                    const bool dir = (dx > 0) ^ wrapped; // true is front, back is false
+                    const bool dir = (dx > 0); // true is front, back is false
                     const int base = dir ? 0 : 2; // select starting index offset based on direction bool (front inputs are cols 0, 1, back inputs are cols 2, 3)
-                    input_(0, base) += weight * neighbor_signals[0];
-                    input_(0, base + 1) += weight * neighbor_signals[1];
+                    const float frac = std::abs(dx) / sum; // how much this signal should affect the forward direction relative to the other parts
+                    input_(0, base) += weight * neighbor_signals[0] * frac;
+                    input_(0, base + 1) += weight * neighbor_signals[1] * frac;
                 }
-                else if (std::abs(dy) > std::abs(dx) && std::abs(dy) > std::abs(dz)) {
-                    const bool dir = (dy > 0) ^ wrapped; // true is above, false is below
+                if (dy > 0) {
+                    const bool dir = (dy > 0); // true is above, false is below
                     const int base = dir ? 4 : 6; // top inputs are cols 4, 5, bottom inputs are cols 6, 7
-                    input_(0, base) += weight * neighbor_signals[0];
-                    input_(0, base + 1) += weight * neighbor_signals[1];
+                    const float frac = std::abs(dy) / sum;
+                    input_(0, base) += weight * neighbor_signals[0] * frac;
+                    input_(0, base + 1) += weight * neighbor_signals[1] * frac;
                 }
-                else if (std::abs(dz) > std::abs(dx) && std::abs(dz) > std::abs(dy)) {
-                    const bool dir = (dz > 0) ^ wrapped; // true is left, false is right
+                if (dz > 0) {
+                    const bool dir = (dz > 0); // true is left, false is right
                     const int base = dir ? 8 : 10; // left inputs are cols 8, 9, right inputs are cols 10, 11
-                    input_(0, base) += weight * neighbor_signals[0];
-                    input_(0, base + 1) += weight * neighbor_signals[1];
+                    const float frac = std::abs(dz) / sum;
+                    input_(0, base) += weight * neighbor_signals[0] * frac;
+                    input_(0, base + 1) += weight * neighbor_signals[1] * frac;
                 }
+                // agent axes relative to agent's rotation
+                /*const auto diff = neighbor->get_position() - position_;
+                // distances in direction relative to agent rotation
+                const auto front = Vector3DotProduct(diff, forward); // the alignment (between -1 for opposite, 0 for perpendicular, 1 for parallel) of your forward vector and the distance
+                const auto side = Vector3DotProduct(diff, right); // the alignment of your right vector and the distance
+                const auto top = Vector3DotProduct(diff, up); // the alignment of your top vector and the distance
+                // now distribute neighbor signal to inputs proportional to its emitter's location
+                const float sum = std::abs(front) + std::abs(side) + std::abs(top) + 1e-6f;
+
+                if (front != 0) {
+                    const int base = (front > 0) ? 0 : 2;
+                    const float frac = std::abs(front) / sum;
+                    input_(0, base) += weight * neighbor_signals[0] * frac;
+                    input_(0, base + 1) += weight * neighbor_signals[1] * frac;
+                }
+
+                if (top != 0) {
+                    const int base = (top > 0) ? 4 : 6;
+                    const float frac = std::abs(top) / sum;
+                    input_(0, base) += weight * neighbor_signals[0] * frac;
+                    input_(0, base + 1) += weight * neighbor_signals[1] * frac;
+                }
+
+                if (side != 0) {
+                    const int base = (side > 0) ? 8 : 10;
+                    const float frac = std::abs(side) / sum;
+                    input_(0, base) += weight * neighbor_signals[0] * frac;
+                    input_(0, base + 1) += weight * neighbor_signals[1] * frac;
+                }*/
             }
             // if you want to do other things with other objects, do them here
         }
         // run the network
         think();
-        // network output is between 0 and 1, so scale between -1 and 1 and use that to choose an angle between 0 and 2pi to rotate by
-        const float pitch = output_(0, 0) * 2.f * std::numbers::pi; // as in witkowski/ikegami - agents select an angle between 0 and 2pi to steer in
-        const float yaw = output_(0, 1) * 2.f * std::numbers::pi; // no tiller steering! direct heading control!
+        // network output is between 0 and 1, so scale between 0 and 2 and use that to choose an angle between 0 and 2pi to rotate by
+        float pitch = output_(0, 0) * 2.f * static_cast<float>(std::numbers::pi); // as in witkowski/ikegami - agents select an angle between 0 and 2pi to steer in
+        float yaw = output_(0, 1) * 2.f * static_cast<float>(std::numbers::pi); // no tiller steering! direct heading control!
+        //pitch += randfloat(-0.2f, 0.2f);
+        //yaw += randfloat(-0.2f, 0.2f); // a little steering jitter to add noise to the system
         // apply signals
         signals_[0] = output_(0, 2);
         signals_[1] = output_(0, 3);
         // apply rotations according to tait-bryan convention - always heading/yaw (z), pitch(y) roll(x)
         // omit roll because 2 axes are enough
         // because we do direct control and not tiller steering, start with an x unit vector and rotate that
-        rotation_ = Vector3RotateByAxisAngle(Vector3UnitX, Vector3UnitZ, yaw); // apply yaw
-        rotation_ = Vector3RotateByAxisAngle(rotation_, Vector3UnitY, pitch); // apply pitch
+        rotation_ = Vector3RotateByAxisAngle(Vector3UnitX, Vector3UnitY, yaw); // apply yaw (rotate the world forward about the world up - gives us our yaw)
+        rotation_ = Vector3RotateByAxisAngle(rotation_, Vector3UnitZ, pitch); // apply pitch (rotate the yawed direction about the world side (could be z or x, doesn't really matter)
         rotation_ = Vector3Normalize(rotation_);
         // now move
         position_ = position_ + rotation_ * move_speed_ * dt;
         // update energy
         energy_ -= (signal_cost_ * (std::abs(signals_[0]) + std::abs(signals_[1])) + basic_cost_) * dt;
 
-        // if you can reproduce, do it
+        // DEBUG
+        // update energy based on distance from world center
+        /*constexpr float breakeven_dist = 25; // maximum distance agent can be from center and still break even on
+        their basic cost const float max_gain = reproduction_cost_; // maximum energy an agent can gain if they are as
+        close to the source as possible const float dist = Vector3Distance(position_, Vector3Zeros); float reward = 0;
+        if (dist <= breakeven_dist) {
+            reward = ((basic_cost_ - max_gain) / breakeven_dist) * dist + max_gain;
+        }
+        else {
+            reward = 1.f / dist;
+        }*/
+        const float tune = std::clamp(1.f - static_cast<float>(context.get_total_num_objects()) / 2000.f, 0.f, 1.f);
+        constexpr float falloff = 1.2f;
+        const float a = (1.f) / ((1.f / reproduction_cost_) + Vector3DistanceSqr(position_, Vector3Zeros) * (static_cast<float>(context.get_total_num_objects()) / 2000.f)); // the most you can make is the reproduction cost, if you are exactly on the source. then it drops off exponentially with distance
+        energy_ += a * dt;
+
+        // if you can reproduce, do it (only if that wouldn't make for too many objects)
         if (energy_ >= reproduction_threshold_) {
             energy_ -= reproduction_cost_;
             auto child = *this;
             child.position_ = {
-                (randfloat() * 2.f - 1.f) * context.get_world_size().x,
-                (randfloat() * 2.f - 1.f) * context.get_world_size().y,
-                (randfloat() * 2.f - 1.f) * context.get_world_size().z
+                randfloat(-context.get_world_size().x / 2.f, context.get_world_size().x / 2.f),
+                randfloat(-context.get_world_size().y / 2.f, context.get_world_size().y / 2.f),
+                randfloat(-context.get_world_size().z / 2.f, context.get_world_size().z / 2.f)
             };
+            child.rotation_ = { randfloat(-1, 1), randfloat(-1, 1), randfloat(-1, 1) };
             child.mutate();
             child.parent_id_ = id_;
             child.time_born_ = context.get_sim_time();
+            child.energy_ = initial_energy_;
             context.add_object(child);
         }
         // if you died or exceeded max lifetime, deactivate yourself (will be removed at next update)
-        else if (energy_ <= 0 || context.get_sim_time() - time_born_ > max_lifetime_) {
+        if (energy_ <= 0 || context.get_sim_time() - time_born_ > max_lifetime_) {
             deactivate();
         }
+
+        // if the number of agents in the simulation is really low, initialize some random neuralagents to keep the population up
+        /*if (context.get_total_num_objects() < 200) {
+            auto child = NeuralAgent();
+            child.position_ = {
+                randfloat(-context.get_world_size().x / 2.f, context.get_world_size().x / 2.f),
+                randfloat(-context.get_world_size().y / 2.f, context.get_world_size().y / 2.f),
+                randfloat(-context.get_world_size().z / 2.f, context.get_world_size().z / 2.f)
+            };
+            child.rotation_ = { randfloat(-1, 1), randfloat(-1, 1), randfloat(-1, 1) };
+            child.time_born_ = context.get_sim_time();
+            context.add_object(child);
+        }*/
     }
 
     void NeuralAgent::mutate(const float mutation_chance) {
         for (int i = 0; i < swarmulator::NeuralAgent::num_hidden_; i++) {
             for (int j = 0; j < swarmulator::NeuralAgent::num_inputs_; j++) {
-                w_in_hidden_(j, i) += randfloat() < mutation_chance ? randfloat() * 2.f - 1.f : 0;
+                if (randfloat() < mutation_chance) {
+                    w_in_hidden_(j, i) += randfloat(-1, 1);
+                    //w_in_hidden_(j, i) = std::clamp(w_in_hidden_(j, i), -5.f, 5.f); // -5 to 5 is good clamp with sigmoid activation
+                }
             }
             for (int k = 0; k < swarmulator::NeuralAgent::num_outputs_; k++) {
-                w_hidden_out_(i, k) += randfloat() < mutation_chance ? randfloat() * 2.f - 1.f : 0;
+                if (randfloat() < mutation_chance) {
+                    w_hidden_out_(i, k) += randfloat(-1, 1);
+                    //w_hidden_out_(i, k) = std::clamp(w_hidden_out_(i, k), -5.f, 5.f);
+                }
             }
-            b_hidden_(0, i) += randfloat() < mutation_chance ? 0 : randfloat() * 2.f - 1.f;
+            if (randfloat() < mutation_chance) {
+                b_hidden_(0, i) += randfloat(-1, 1);
+                //b_hidden_(0, i) = std::clamp(b_hidden_(0, i), -1.f, 1.f); // clamp to prevent overbearing bias
+            }
         }
+
+        /*if (randfloat() < mutation_chance) {
+            context_weight_ += randfloat(-1, 1);
+            // clamp the context weight to prevent feedback loops
+            context_weight_ = std::clamp(context_weight_, -1.f, 1.f);
+        }*/
     }
 
     SimObject::SSBOObject NeuralAgent::to_ssbo() const {
@@ -136,6 +217,8 @@ namespace swarmulator {
     }
 
     std::vector<float> NeuralAgent::log() const {
+        // log output is:
+        // id, parent id, posx, posy, posz, rotx, roty, rotz, sig0, sig1, , <network weights>
         std::vector out = {
             static_cast<float>(id_),
             static_cast<float>(parent_id_),
@@ -145,6 +228,9 @@ namespace swarmulator {
             rotation_.x,
             rotation_.y,
             rotation_.z,
+            signals_[0], // signal 0
+            signals_[1], // signal 1
+            output_(0, 4) // decision
         };
 
         // weight matrices are flattened column-major

@@ -61,12 +61,11 @@ find_package(HDF5 COMPONENTS CXX REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 set(AGENTS_SOURCES
-    src/agent/Boid.cpp
-    src/agent/Boid.h
-        src/agent/ForageAgent.cpp
-        src/agent/ForageAgent.h
-        src/agent/NeuralAgent.cpp
-        src/agent/NeuralAgent.h
+        src/objects/Boid.cpp
+        src/objects/Boid.h
+        src/objects/NeuralAgent.cpp
+        src/objects/NeuralAgent.h
+        src/objects/ForageSource.h
 )
 
 set(LOGGER_SOURCES
@@ -77,6 +76,7 @@ set(LOGGER_SOURCES
 )
 
 set(SIM_SOURCES
+        external/raygui.h
         src/sim/SimObject.h
         src/sim/SimObject.cpp
         src/sim/StaticGrid.h
@@ -90,9 +90,16 @@ set(SIM_SOURCES
 
 add_executable(swarmulator_boids_grid
         src/boids_grid.cpp
-        external/raygui.h
         ${AGENTS_SOURCES}
         ${SIM_SOURCES}
         ${LOGGER_SOURCES}
 )
 target_link_libraries(swarmulator_boids_grid raylib OpenMP::OpenMP_CXX HDF5::HDF5 Eigen3::Eigen)
+
+add_executable(swarmulator_forage
+        src/forage.cpp
+        ${AGENTS_SOURCES}
+        ${SIM_SOURCES}
+        ${LOGGER_SOURCES}
+)
+target_link_libraries(swarmulator_forage raylib OpenMP::OpenMP_CXX HDF5::HDF5 Eigen3::Eigen)

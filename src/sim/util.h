@@ -18,6 +18,11 @@ namespace swarmulator {
         return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
     }
 
+    // get a random float between min and max inclusive
+    inline float randfloat(const float min, const float max) {
+        return min + static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * (max - min);
+    }
+
     /*inline unsigned int init_agent_mesh() {
         const auto vao = rlLoadVertexArray();
         rlEnableVertexArray(vao);

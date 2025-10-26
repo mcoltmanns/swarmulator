@@ -1,17 +1,4 @@
-the instancer works! we can now support many different object types in the same simulation, all rendered on the gpu
-things seem to top out at about 20k objects in the boid simulation depending on how dense stuff gets
-building release mode is a whole different story - can push 100k boids at 20fps
-
-now we just need to get the logging working all nice
-and finish encapsulation of objectinstancer within simulator
-
-logging??
-hdf5
-groups are like folders - can contain datasets, named datatypes, or other groups
-datasets are multidimensional arrays of data elements
-    - dimensions are described by dataspace
-    - data elements are units of data
-    - dataspace and datatype may not be changed after dataset creation
-
-we want fast indexing on both object and timestep
-we know for how long the simulation will run, and we know at which intervals we will log -> we know the number of entries on the time axis
+foraging
+- environment needs to be rich enough to support a stupid population, else no evolution can ever take place
+- agents figure out how to clump in straight lines that circle through high-food regions very quickly (only several thousand iterations in)
+- do they ever

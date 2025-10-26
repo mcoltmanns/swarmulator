@@ -59,25 +59,11 @@ namespace swarmulator {
 
 
     void Simulation::update(const float dt, const bool log) {
-        // remove inactive objects, wrap bounds (donut world)
-        for (auto group_it = object_instancer_.begin(); group_it != object_instancer_.end(); ++group_it) {
-            auto obj_it = group_it->second.objects.begin();
-            while (obj_it != group_it->second.objects.end()) {
-                if (const auto obj_ptr = *obj_it; !obj_ptr->active()) {
-                    obj_it = object_instancer_.remove_object(group_it, obj_it);
-                }
-                else {
-                    obj_ptr->set_position(wrap_position(obj_ptr->get_position(), world_size_));
-                    ++obj_it;
-                }
-            }
-        }
-
         // sort everything (don't seem to be issues here)
         grid_.sort_objects(object_instancer_);
         // begin a logging frame and log dynamic sim attributes if applicable
         if (log) {
-            logger_.queue_begin_frame(total_steps_);
+            logger_.queue_begin_frame(sim_time_);
             logger_.queue_log_sim_data(log_dynamic(), true);
         }
 
@@ -106,6 +92,20 @@ namespace swarmulator {
             }
         }
 
+        // remove inactive objects, wrap bounds (donut world)
+        for (auto group_it = object_instancer_.begin(); group_it != object_instancer_.end(); ++group_it) {
+            auto obj_it = group_it->second.objects.begin();
+            while (obj_it != group_it->second.objects.end()) {
+                if (const auto obj_ptr = *obj_it; !obj_ptr->active()) {
+                    obj_it = object_instancer_.remove_object(group_it, obj_it);
+                }
+                else {
+                    obj_ptr->set_position(wrap_position(obj_ptr->get_position(), world_size_));
+                    ++obj_it;
+                }
+            }
+        }
+
         // update gpu
         object_instancer_.update_gpu();
 
@@ -114,6 +114,7 @@ namespace swarmulator {
             logger_.queue_advance_frame();
         }
         ++total_steps_;
+        sim_time_ += dt;
     }
 
     void Simulation::run() {
@@ -135,6 +136,13 @@ namespace swarmulator {
             if (IsKeyDown(KEY_S)) CameraPitch(&camera_, cam_speed_factor, true, true, false);
             if (IsKeyDown(KEY_Q)) CameraMoveToTarget(&camera_, cam_speed_factor * Vector3Distance(camera_.position, camera_.target));
             if (IsKeyDown(KEY_E)) CameraMoveToTarget(&camera_, -cam_speed_factor * Vector3Distance(camera_.position, camera_.target));
+            // speed up/slow down time if running in fixed time mode
+            if (run_for_ != 0) {
+                if (IsKeyDown(KEY_EQUAL)) time_step_ += 0.001;
+                if (IsKeyDown(KEY_MINUS)) time_step_ = std::max(time_step_ - 0.001f, 0.001f);
+                if (IsKeyDown(KEY_ONE)) time_step_ = 1;
+                if (IsKeyDown(KEY_ZERO)) time_step_ = 0.01;
+            }
 
             // update
             // only log if we're in a logging interval and the logger is enabled
@@ -154,12 +162,17 @@ namespace swarmulator {
             DrawText(TextFormat("%zu objects", object_instancer_.size()), 0, 20, 18, DARKGREEN);
             DrawText(TextFormat("%zu threads", sim_threads_), 0, 40, 18, DARKGREEN);
             DrawText(TextFormat("%zu updates", total_steps_), 0, 60, 18, DARKGREEN);
-            DrawText(TextFormat("%zu log tasks", logger_.tasks_queued()), 0, 80, 18, DARKGREEN);
+            DrawText(TextFormat("%.2f sim time", sim_time_), 0, 80, 18, DARKGREEN);
+            DrawText(TextFormat("%zu log tasks", logger_.tasks_queued()), 0, 100, 18, DARKGREEN);
+            DrawText(TextFormat("%.3f dt", dt), 0, 120, 18, DARKGREEN);
             EndDrawing();
         }
 
         const double fps = static_cast<double>(total_steps_) / (GetTime() - start);
+        std::cout << "Average FPS: " << fps << std::endl << "Enter to close..." << std::endl;
+        if (run_for_ == 0 || total_steps_ >= run_for_) {
+            getchar();
+        }
         CloseWindow();
-        std::cout << "Average FPS: " << fps << std::endl;
     }
 } // swarmulator
