@@ -10,12 +10,10 @@
 
 namespace swarmulator {
     NeuralAgent::NeuralAgent() : SimObject() {
-        interaction_radius_ = 25;
         signals_.fill(0);
     }
 
     NeuralAgent::NeuralAgent(const Vector3 position, const Vector3 rotation) : SimObject(position, rotation) {
-        interaction_radius_ = 25;
         signals_.fill(0);
     }
 
@@ -84,28 +82,6 @@ namespace swarmulator {
         position_ = position_ + rotation_ * move_speed_ * dt;
         // update energy
         energy_ -= (signal_cost_ * (std::abs(signals_[0]) + std::abs(signals_[1])) + basic_cost_) * dt;
-
-        // if you can reproduce, do it (only if that wouldn't make for too many objects)
-        if (energy_ >= reproduction_threshold_) {
-            energy_ -= reproduction_cost_;
-            auto child = *this;
-            child.position_ = {
-                randfloat(-context.get_world_size().x / 2.f, context.get_world_size().x / 2.f),
-                randfloat(-context.get_world_size().y / 2.f, context.get_world_size().y / 2.f),
-                randfloat(-context.get_world_size().z / 2.f, context.get_world_size().z / 2.f)
-            };
-            child.rotation_ = { randfloat(-1, 1), randfloat(-1, 1), randfloat(-1, 1) };
-            child.rotation_ = Vector3Normalize(child.rotation_);
-            child.mutate();
-            child.parent_id_ = id_;
-            child.time_born_ = context.get_sim_time();
-            child.energy_ = initial_energy_;
-            context.add_object(child);
-        }
-        // if you died or exceeded max lifetime, deactivate yourself (will be removed at next update)
-        if (energy_ <= 0 || context.get_sim_time() - time_born_ > max_lifetime_) {
-            deactivate();
-        }
     }
 
     void NeuralAgent::mutate(const float mutation_chance) {

@@ -68,6 +68,8 @@ set(AGENTS_SOURCES
         src/objects/ForageSource.h
         src/objects/PDAgent.cpp
         src/objects/PDAgent.h
+        src/objects/ForageAgent.cpp
+        src/objects/ForageAgent.h
 )
 
 set(LOGGER_SOURCES
@@ -105,3 +107,11 @@ add_executable(swarmulator_forage
         ${LOGGER_SOURCES}
 )
 target_link_libraries(swarmulator_forage raylib OpenMP::OpenMP_CXX HDF5::HDF5 Eigen3::Eigen)
+
+add_executable(swarmulator_pd
+        src/pd.cpp
+        ${AGENTS_SOURCES}
+        ${SIM_SOURCES}
+        ${LOGGER_SOURCES}
+)
+target_link_libraries(swarmulator_pd raylib OpenMP::OpenMP_CXX HDF5::HDF5 Eigen3::Eigen)

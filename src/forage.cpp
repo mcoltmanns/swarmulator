@@ -2,8 +2,8 @@
 #include <omp.h>
 
 
+#include "objects/ForageAgent.h"
 #include "objects/ForageSource.h"
-#include "objects/NeuralAgent.h"
 #include "raylib.h"
 #include "sim/Simulation.h"
 #include "sim/util.h"
@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
                 { 0.86, -0.5, 0.0 },
                 { 0.0f,  1.0f, 0.0f }
     };
-    simulation.new_object_type<swarmulator::NeuralAgent>(tri, vs_src_path, fs_src_path);
+    simulation.new_object_type<swarmulator::ForageAgent>(tri, vs_src_path, fs_src_path);
 
     // add the food
     vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/blue.vert";
@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
         const auto r = Vector3 {
             swarmulator::randfloat(), swarmulator::randfloat(), swarmulator::randfloat()
         };
-        auto obj = swarmulator::NeuralAgent(p, r);
+        auto obj = swarmulator::ForageAgent(p, r);
         simulation.add_object(obj);
     }
 
