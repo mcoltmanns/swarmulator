@@ -35,10 +35,6 @@ namespace swarmulator {
             child.energy_ = initial_energy_;
             context.add_object(child);
         }
-        // if you died or exceeded max lifetime, deactivate yourself (will be removed at next update)
-        if (energy_ <= 0 || context.get_sim_time() - time_born_ > max_lifetime_) {
-            deactivate();
-        }
     }
 
 } // namespace swarmulator

@@ -25,6 +25,12 @@ namespace swarmulator {
     }
 
     void NeuralAgent::update(Simulation &context, const std::list<SimObject *> &neighborhood, float dt) {
+        // if you died or exceeded max lifetime, deactivate yourself and do nothing (will be removed at next update)
+        if (energy_ <= 0 || context.get_sim_time() - time_born_ > max_lifetime_) {
+            deactivate();
+            return;
+        }
+
         input_.setZero(); // zero your input!
         // consider neighbor signals
         for (const auto thing : neighborhood) {
