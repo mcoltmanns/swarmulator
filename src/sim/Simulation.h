@@ -30,7 +30,7 @@ protected:
     // how much time passes per update (0 for real time)
     float time_step_ = 0;
     // how much simulation time has passed
-    float sim_time_ = 0;
+    double sim_time_ = 0;
     // how many updates have been performed (same as number of frames rendered)
     size_t total_steps_ = 0;
     // how many threads the simulation is running on

@@ -1,4 +1,5 @@
 foraging
 - environment needs to be rich enough to support a stupid population, else no evolution can ever take place
 - agents figure out how to clump in straight lines that circle through high-food regions very quickly (only several thousand iterations in)
-- do they ever
+- then eventually they figure out how to coalesce within those straight lines by moving out of line with the main flow until they encounter other agents
+- do they ever figure out how to circle back around?

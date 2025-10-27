@@ -134,6 +134,25 @@ namespace swarmulator {
             dataset.write(values.data(), H5::PredType::NATIVE_INT, memspace, filespace);
         }
 
+        // append a row of unsigned integers to an unlimited-length dataset
+        static void app_uirow(const std::vector<size_t>& values, const H5::DataSet& dataset) {
+            hsize_t dims_current[2];
+            dataset.getSpace().getSimpleExtentDims(dims_current);
+            hsize_t rows = dims_current[0];
+            hsize_t new_rows = rows + 1;
+
+            hsize_t dims_new[2] = { new_rows, dims_current[1] };
+            dataset.extend(dims_new);
+
+            const auto filespace = dataset.getSpace();
+            hsize_t offset[2] = { rows, 0, };
+            hsize_t count[2] = { 1, values.size() };
+            filespace.selectHyperslab(H5S_SELECT_SET, count, offset);
+
+            const auto memspace = H5::DataSpace(2, count);
+            dataset.write(values.data(), H5::PredType::NATIVE_UINT, memspace, filespace);
+        }
+
         // read a row of integers from a dataset
         static std::vector<int> read_irow(const size_t idx, const H5::DataSet& dataset) {
             const auto filespace = dataset.getSpace();
@@ -177,7 +196,7 @@ namespace swarmulator {
         void queue_advance_frame();
         void queue_log_object_data(const std::string &object_type_name, const std::vector<float> &vals, bool dynamic);
         void queue_new_object(const std::string &object_type_name, size_t id);
-        void queue_log_sim_data(std::vector<float> vals, bool dynamic);
+        void queue_log_sim_data(const std::vector<float> &vals, bool dynamic);
 
         [[nodiscard]] std::size_t tasks_queued() { return task_queue_.size(); }
         [[nodiscard]] bool initialized() const { return initialized_; }

@@ -37,7 +37,7 @@ namespace swarmulator {
     class NewObject final : public LogTask {
     public:
         std::string object_type_name;
-        int id;
+        size_t id;
     };
 
     class LogSimData final : public LogTask {

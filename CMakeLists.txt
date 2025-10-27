@@ -66,6 +66,8 @@ set(AGENTS_SOURCES
         src/objects/NeuralAgent.cpp
         src/objects/NeuralAgent.h
         src/objects/ForageSource.h
+        src/objects/PDAgent.cpp
+        src/objects/PDAgent.h
 )
 
 set(LOGGER_SOURCES

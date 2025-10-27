@@ -13,12 +13,10 @@
 namespace swarmulator {
     class NeuralAgent : public SimObject {
     protected:
-        float interaction_radius_ = 10;
-
         // brain shape
         static constexpr unsigned int num_inputs_ = 12; // 6 cardinal dirs, 2 signals from each dir
         static constexpr unsigned int num_hidden_ = 10; // chosen pretty arbitrarily (sort of near the average of 12 and 5)
-        static constexpr unsigned int num_outputs_ = 4; // pitch, yaw, signal 0, signal 1, decision (for pd)
+        static constexpr unsigned int num_outputs_ = 5; // pitch, yaw, signal 0, signal 1, decision (for pd)
 
         // signal output array
         std::array<float, 2> signals_ = {0, 0};
@@ -33,7 +31,7 @@ namespace swarmulator {
         Eigen::MatrixXf w_hidden_out_ = Eigen::MatrixXf::Random(num_hidden_, num_outputs_); // weights from hidden to out
         // random biases on hidden layer
         Eigen::MatrixXf b_hidden_ = Eigen::MatrixXf::Random(1, num_hidden_);
-        float context_weight_ = 0.5; // weight of context layer (strength with which old hidden layer outputs are piped back in at next runthrough) (should probably not be greater than 1)
+        float context_weight_ = randfloat(-1.f, 1.f); // weight of context layer (strength with which old hidden layer outputs are piped back in at next runthrough) (should probably not be greater than 1)
 
         // other params
         static constexpr float initial_energy_ = 2; // how much energy the agents start with

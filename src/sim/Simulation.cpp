@@ -165,6 +165,9 @@ namespace swarmulator {
             DrawText(TextFormat("%.2f sim time", sim_time_), 0, 80, 18, DARKGREEN);
             DrawText(TextFormat("%zu log tasks", logger_.tasks_queued()), 0, 100, 18, DARKGREEN);
             DrawText(TextFormat("%.3f dt", dt), 0, 120, 18, DARKGREEN);
+            if (run_for_ != 0) {
+                DrawText(TextFormat("%.2f%%", 100.f * (static_cast<float>(total_steps_) / static_cast<float>(run_for_))), 0, 140, 18, DARKGREEN);
+            }
             EndDrawing();
         }
 

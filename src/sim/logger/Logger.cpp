@@ -68,7 +68,7 @@ namespace swarmulator {
             // check if our task is to log the creation of a new object
             else if (const auto new_obj = dynamic_cast<NewObject*>(task); new_obj != nullptr) {
                 auto& grp_info = object_groups_[new_obj->object_type_name];
-                app_irow({new_obj->id}, grp_info.meta_object);
+                app_uirow({new_obj->id}, grp_info.meta_object);
             }
             // check if our task is to log some sim data
             else if (const auto log_sim = dynamic_cast<LogSimData*>(task); log_sim != nullptr) {
@@ -125,7 +125,7 @@ namespace swarmulator {
         dims[0] = max_entries_; // index is log entry id
         dims[1] = 1; // value is real sim time
         auto space = H5::DataSpace(2, dims);
-        sim_time_ = file_.createDataSet("time", H5::PredType::NATIVE_FLOAT, space);
+        sim_time_ = file_.createDataSet("time", H5::PredType::NATIVE_DOUBLE, space); // doubles because real sim times can get really long
 
         // static property table
         dims[0] = 1;
@@ -202,7 +202,7 @@ namespace swarmulator {
         chunk_dims[0] = chunk_size_;
         chunk_dims[1] = 1;
         plist.setChunk(2, chunk_dims);
-        const auto object_ids = meta_group.createDataSet("object", H5::PredType::NATIVE_INT, space, plist);
+        const auto object_ids = meta_group.createDataSet("object", H5::PredType::NATIVE_UINT, space, plist);
 
         mem_group.state_dynamic = dynamic_state;
         mem_group.state_static = static_state;
@@ -240,11 +240,11 @@ namespace swarmulator {
 
         const auto task = new NewObject();
         task->object_type_name = object_type_name;
-        task->id = static_cast<int>(id);
+        task->id = id;
         task_queue_.push(task);
     }
 
-    void Logger::queue_log_sim_data(std::vector<float> vals, bool dynamic) {
+    void Logger::queue_log_sim_data(const std::vector<float> &vals, const bool dynamic) {
         init_guard();
 
         const auto task = new LogSimData();
