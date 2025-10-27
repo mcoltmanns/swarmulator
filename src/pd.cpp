@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
     // at a log interval of 20 we get 500k log entries with a 20 time gap between each
 
     // add the prisoners
-    std::string vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/neural.vert";
+    std::string vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/prisoner.vert";
     const std::string fs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/simobject.frag";
     const auto tri = std::vector<Vector3>{
                     { -0.86, -0.5, 0.0 },

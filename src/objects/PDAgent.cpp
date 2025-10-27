@@ -46,4 +46,10 @@ namespace swarmulator {
     }
 
     std::vector<float> PDAgent::log() const { return NeuralAgent::log(); }
+
+    SimObject::SSBOObject PDAgent::to_ssbo() const {
+        auto base = swarmulator::NeuralAgent::to_ssbo();
+        base.info.x = static_cast<float>(team_);
+        return base;
+    }
 }

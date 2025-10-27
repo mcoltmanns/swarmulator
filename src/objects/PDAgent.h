@@ -25,6 +25,8 @@ namespace swarmulator {
         void update(swarmulator::Simulation &context, const std::list<SimObject *> &neighborhood, float dt) override;
 
         [[nodiscard]] std::vector<float> log() const override;
+
+        [[nodiscard]] SimObject::SSBOObject to_ssbo() const override;
     };
 }
 
