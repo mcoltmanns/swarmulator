@@ -25,7 +25,7 @@ namespace swarmulator {
                     const auto dist = Vector3Distance(position_, forager->get_position());
                     constexpr float max_gain = 8.f;
                     const float bonus = 1.f /
-                        (1.f / max_gain + dist * (context.get_total_num_objects() / 200.f)); // 200 is a really vague object cap (depends wildly on forage source interaction radius, among other things)
+                        (1.f / max_gain + dist * (static_cast<float>(context.get_total_num_objects()) / 200.f)); // 200 is a really vague object cap (depends wildly on forage source interaction radius, among other things)
                     // aim for 500-700 foragers max, otherwise the scene becomes too crowded to make good observaitons
                     // the most you can make is the max gain, if you are exactly on the source
                     // then it drops off exponentially with distance

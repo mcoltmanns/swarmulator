@@ -3,6 +3,7 @@
 //
 
 #include "PDAgent.h"
+#include "../sim/Simulation.h"
 #include "raymath.h"
 
 namespace swarmulator {
@@ -25,10 +26,11 @@ namespace swarmulator {
         float defect_pay = 0;
         for (const auto& thing : neighborhood) {
             if (const auto neighbor = dynamic_cast<PDAgent*>(thing); neighbor != nullptr) {
-                const float factor = 1.f / (1.f + Vector3Distance(position_, neighbor->get_position()));
+                constexpr float max_gain = 8.f;
+                const float factor = 1.f / (1.f / max_gain + Vector3Distance(position_, neighbor->get_position() * (static_cast<float>(context.get_total_num_objects()) / 200.f)));
                 if (neighbor->get_team() == 0) {
                     coop_pay += coop_payoff * factor;
-                    defect_pay += defect_payoff * factor; // TODO dynamic payoff tuning (to keep population alive)
+                    defect_pay += defect_payoff * factor;
                 }
                 else {
                     coop_pay -= coop_payoff * factor;

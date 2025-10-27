@@ -172,10 +172,7 @@ namespace swarmulator {
         }
 
         const double fps = static_cast<double>(total_steps_) / (GetTime() - start);
-        std::cout << "Average FPS: " << fps << std::endl << "Enter to close..." << std::endl;
-        if (run_for_ == 0 || total_steps_ >= run_for_) {
-            getchar();
-        }
+        std::cout << "Average FPS: " << fps << std::endl;
         CloseWindow();
     }
 } // swarmulator
