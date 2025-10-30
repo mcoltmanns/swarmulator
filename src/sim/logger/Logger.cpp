@@ -166,23 +166,38 @@ namespace swarmulator {
         struct object_group mem_group;
         // create state group
         const auto state_group = object_group.createGroup("state");
-        // dynamic state table
-        hsize_t dims[2] = {0, object_dynamic_log_width}; // dims[0] is rows, dims[1] is cols
-        hsize_t maxdims[2] = {H5S_UNLIMITED, object_dynamic_log_width};
-        // because the dynamic table is unlimited, we have to create a proplist and set the chunking
-        auto plist = H5::DSetCreatPropList();
-        hsize_t chunk_dims[2] = {chunk_size_, object_dynamic_log_width}; // chunk into however many rows per read
-        plist.setChunk(2, chunk_dims);
-        // we also compress the dynamic object logs, since those are the really huge bits
-        plist.setDeflate(compression_level_); // can be 1-9, higher level -> higher compression but slower io. only makes a difference if lots of repetitive rows are logged, or many rows that are partially similar
-        auto space = H5::DataSpace(2, dims, maxdims);
-        const auto dynamic_state = state_group.createDataSet("dynamic", H5::PredType::NATIVE_FLOAT, space, plist);
 
-        // static state table
-        dims[0] = 1; // these are parameters that do not change for this object group, so we only need one row
-        dims[1] = {object_static_log_width};
-        space = H5::DataSpace(2, dims);
-        const auto static_state = state_group.createDataSet("static", H5::PredType::NATIVE_FLOAT, space);
+        hsize_t dims[2];
+        hsize_t maxdims[2];
+        hsize_t chunk_dims[2];
+        H5::DSetCreatPropList plist;
+        H5::DataSpace space;
+        H5::DataSet dynamic_state, static_state;
+
+        if (object_dynamic_log_width > 0) {
+            // dynamic state table
+            dims[0] = 0;
+            dims[1] = object_dynamic_log_width;
+            maxdims[0] = H5S_UNLIMITED;
+            maxdims[1] = object_dynamic_log_width;
+            // because the dynamic table is unlimited, we have to create a proplist and set the chunking
+            plist = H5::DSetCreatPropList();
+            chunk_dims[0] = chunk_size_;
+            chunk_dims[1] = object_dynamic_log_width;
+            plist.setChunk(2, chunk_dims);
+            // we also compress the dynamic object logs, since those are the really huge bits
+            plist.setDeflate(compression_level_); // can be 1-9, higher level -> higher compression but slower io. only makes a difference if lots of repetitive rows are logged, or many rows that are partially similar
+            space = H5::DataSpace(2, dims, maxdims);
+            dynamic_state = state_group.createDataSet("dynamic", H5::PredType::NATIVE_FLOAT, space, plist);
+        }
+
+        if (object_static_log_width > 0) {
+            // static state table
+            dims[0] = 1; // these are parameters that do not change for this object group, so we only need one row
+            dims[1] = {object_static_log_width};
+            space = H5::DataSpace(2, dims);
+            static_state = state_group.createDataSet("static", H5::PredType::NATIVE_FLOAT, space);
+        }
 
         // index/time segment table
         dims[0] = max_entries_; // index is log entry id
@@ -204,8 +219,12 @@ namespace swarmulator {
         plist.setChunk(2, chunk_dims);
         const auto object_ids = meta_group.createDataSet("object", H5::PredType::NATIVE_UINT, space, plist);
 
-        mem_group.state_dynamic = dynamic_state;
-        mem_group.state_static = static_state;
+        if (object_dynamic_log_width > 0) {
+            mem_group.state_dynamic = dynamic_state;
+        }
+        if (object_static_log_width > 0) {
+            mem_group.state_static = static_state;
+        }
         mem_group.index = time_idx;
         mem_group.meta_object = object_ids;
         object_groups_.insert(std::make_pair(name, mem_group));
@@ -226,6 +245,10 @@ namespace swarmulator {
     }
 
     void Logger::queue_log_object_data(const std::string &object_type_name, const std::vector<float> &vals, const bool dynamic) {
+        if (vals.size() == 0) {
+            return;
+        }
+
         init_guard();
 
         const auto task = new LogObjectData();
@@ -245,6 +268,10 @@ namespace swarmulator {
     }
 
     void Logger::queue_log_sim_data(const std::vector<float> &vals, const bool dynamic) {
+        if (vals.size() == 0) {
+            return;
+        }
+
         init_guard();
 
         const auto task = new LogSimData();

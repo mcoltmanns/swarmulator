@@ -83,6 +83,8 @@ namespace swarmulator {
 
         [[nodiscard]] std::string type_name() const override { return "NeuralAgent"; };
         [[nodiscard]] std::vector<float> log() const override;
+
+        void set_time_born(const double time) { time_born_ = time; }
     };
 
 } // namespace swarmulator

@@ -3,6 +3,7 @@
 
 
 #include "objects/PDAgent.h"
+#include "objects/PDWatcher.h"
 #include "raylib.h"
 #include "sim/Simulation.h"
 #include "sim/util.h"
@@ -11,7 +12,7 @@
 //
 
 int main(int argc, char** argv) {
-    int init_agent_count = 1000;
+    int init_agent_count = 200;
     int window_w = 1080;
     int window_h = 720;
     constexpr Vector3 world_size = {100, 100, 100};
@@ -46,10 +47,10 @@ int main(int argc, char** argv) {
     srand(s);
     std::cout << "Random seed: " << s << std::endl;
 
-    //auto simulation = swarmulator::Simulation(window_w, window_h, world_size, subdivisions, 1, 100000000, "pd.h5", 4, 20); // 100 million (1e8) updates at 0.1 dt each is ten million (1e7) simulation time
+    auto simulation = swarmulator::Simulation(window_w, window_h, world_size, subdivisions, 0.01, 100000000, "pd.h5", 4, 20); // 100 million (1e8) updates at 0.1 dt each is ten million (1e7) simulation time
     // 10 million updates (1e7) at 1 dt each is 10 million simulation time
     // at a log interval of 20 we get 500k log entries with a 20 time gap between each
-    auto simulation = swarmulator::Simulation(window_w, window_h, world_size, subdivisions);
+    //auto simulation = swarmulator::Simulation(window_w, window_h, world_size, subdivisions);
 
     // add the prisoners
     std::string vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/prisoner.vert";
@@ -73,6 +74,11 @@ int main(int argc, char** argv) {
         auto obj = swarmulator::PDAgent(p, r);
         simulation.add_object(obj);
     }
+
+    // add the watcher
+    simulation.new_object_type<swarmulator::PDWatcher>({}, vs_src_path, fs_src_path);
+    const auto watcher = swarmulator::PDWatcher();
+    simulation.add_object(watcher);
 
     simulation.run();
 

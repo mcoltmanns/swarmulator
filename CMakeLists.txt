@@ -70,6 +70,7 @@ set(AGENTS_SOURCES
         src/objects/PDAgent.h
         src/objects/ForageAgent.cpp
         src/objects/ForageAgent.h
+        src/objects/PDWatcher.h
 )
 
 set(LOGGER_SOURCES

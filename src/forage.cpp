@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     srand(s);
     std::cout << "Random seed: " << s << std::endl;
 
-    auto simulation = swarmulator::Simulation(window_w, window_h, world_size, subdivisions, 1, 1000, "forage_small.h5", 4, 1); // 100 million (1e8) updates at 0.1 dt each is ten million (1e7) simulation time
+    auto simulation = swarmulator::Simulation(window_w, window_h, world_size, subdivisions, 1, 100000000, "forage_small.h5", 4, 20); // 100 million (1e8) updates at 0.1 dt each is ten million (1e7) simulation time
     // 10 million updates (1e7) at 1 dt each is 10 million simulation time
     // at a log interval of 20 we get 500k log entries with a 20 time gap between each
 

@@ -113,6 +113,7 @@ namespace swarmulator {
         if (log) {
             logger_.queue_advance_frame();
         }
+
         ++total_steps_;
         sim_time_ += dt;
     }
