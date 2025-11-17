@@ -17,6 +17,7 @@ int main(int argc, char** argv) {
     int window_h = 720;
     constexpr Vector3 world_size = {100, 100, 100};
     constexpr int subdivisions = 20;
+    std::string log_path = "./pd.h5";
 
     if (const auto o = swarmulator::get_opt(argv, argv + argc, "-n")) {
         init_agent_count = std::stoi(o);
@@ -33,6 +34,9 @@ int main(int argc, char** argv) {
     if (const auto o = swarmulator::get_opt(argv, argv + argc, "-p")) {
         omp_set_num_threads(std::max(1, std::min(std::stoi(o), omp_get_max_threads()))); // number of threads used should not be greater than the maximum threads available on device
     }
+    if (const auto o = swarmulator::get_opt(argv, argv + argc, "--logfile")) {
+        log_path = o;
+    }
     if (swarmulator::opt_exists(argv, argv + argc, "--vsync")) {
         SetConfigFlags(FLAG_VSYNC_HINT);
     }
@@ -47,7 +51,7 @@ int main(int argc, char** argv) {
     srand(s);
     std::cout << "Random seed: " << s << std::endl;
 
-    auto simulation = swarmulator::Simulation(window_w, window_h, world_size, subdivisions, 0.01, 100000000, "pd.h5", 4, 20); // 100 million (1e8) updates at 0.1 dt each is ten million (1e7) simulation time
+    auto simulation = swarmulator::Simulation(window_w, window_h, world_size, subdivisions, 0.01, 100000000, log_path, 4, 20); // 100 million (1e8) updates at 0.1 dt each is ten million (1e7) simulation time
     // 10 million updates (1e7) at 1 dt each is 10 million simulation time
     // at a log interval of 20 we get 500k log entries with a 20 time gap between each
     //auto simulation = swarmulator::Simulation(window_w, window_h, world_size, subdivisions);

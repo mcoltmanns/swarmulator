@@ -17,7 +17,7 @@ namespace swarmulator {
         ~ForageSource() override = default;
 
         void update(Simulation &context, const std::list<SimObject *> &neighborhood, const float dt) override {
-            interaction_radius_ = 50; // a little hacky and not very c++-like - what really should happen is we rewrite the constructors
+            interaction_radius_ = 13; // a little hacky and not very c++-like - what really should happen is we rewrite the constructors
             for (const auto& object : neighborhood) {
                 // give energy to any nearby neural agents, inverse weighted depending on their distance to you
                 if (const auto forager = dynamic_cast<NeuralAgent*>(object)) {
@@ -30,7 +30,7 @@ namespace swarmulator {
             }
 
             // just add more agents if we run out
-            if (context.get_total_num_objects() < 200) {
+            if (context.get_total_num_objects() < 50) {
                 auto new_agent = ForageAgent();
                 new_agent.set_position({
                     randfloat(-context.get_world_size().x / 2.f, context.get_world_size().x / 2.f),

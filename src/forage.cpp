@@ -12,11 +12,12 @@
 //
 int main(int argc, char** argv) {
     int init_agent_count = 200;
-    int food_source_count = 1;
+    int food_source_count = 20;
     int window_w = 1080;
     int window_h = 720;
     constexpr Vector3 world_size = {100, 100, 100};
     constexpr int subdivisions = 20;
+    std::string log_path = "./forage.h5";
 
     if (const auto o = swarmulator::get_opt(argv, argv + argc, "-n")) {
         init_agent_count = std::stoi(o);
@@ -33,6 +34,9 @@ int main(int argc, char** argv) {
     if (const auto o = swarmulator::get_opt(argv, argv + argc, "-p")) {
         omp_set_num_threads(std::max(1, std::min(std::stoi(o), omp_get_max_threads()))); // number of threads used should not be greater than the maximum threads available on device
     }
+    if (const auto o = swarmulator::get_opt(argv, argv + argc, "--logfile")) {
+        log_path = o;
+    }
     if (swarmulator::opt_exists(argv, argv + argc, "--vsync")) {
         SetConfigFlags(FLAG_VSYNC_HINT);
     }
@@ -47,7 +51,7 @@ int main(int argc, char** argv) {
     srand(s);
     std::cout << "Random seed: " << s << std::endl;
 
-    auto simulation = swarmulator::Simulation(window_w, window_h, world_size, subdivisions, 1, 100000000, "forage_small.h5", 4, 20); // 100 million (1e8) updates at 0.1 dt each is ten million (1e7) simulation time
+    auto simulation = swarmulator::Simulation(window_w, window_h, world_size, subdivisions, 1, 10000000, log_path, 4, 20); // 100 million (1e8) updates at 0.1 dt each is ten million (1e7) simulation time
     // 10 million updates (1e7) at 1 dt each is 10 million simulation time
     // at a log interval of 20 we get 500k log entries with a 20 time gap between each
 
@@ -82,9 +86,9 @@ int main(int argc, char** argv) {
     // initialize the food sources
     for (int i = 0; i < food_source_count; ++i) {
         const auto p = Vector3 {
-            swarmulator::randfloat(-world_size.x / 4.f, world_size.x / 4.f),
-            swarmulator::randfloat(-world_size.y / 4.f, world_size.y / 4.f),
-            swarmulator::randfloat(-world_size.z / 4.f, world_size.z / 4.f)
+            swarmulator::randfloat(-world_size.x / 2.f, world_size.x / 2.f),
+            swarmulator::randfloat(-world_size.y / 2.f, world_size.y / 2.f),
+            swarmulator::randfloat(-world_size.z / 2.f, world_size.z / 2.f)
         };
         auto obj = swarmulator::ForageSource(p, Vector3UnitX);
         simulation.add_object(obj);

@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.9)
-project(swarmulator_cpp)
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+project(swarmulator_cpp)
 
 # EXTERNAL HEADERS
 set(EXTERNAL_DIR "external")

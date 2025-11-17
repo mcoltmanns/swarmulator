@@ -1,0 +1,42 @@
+we want to test the effects of:
+- bag of words size (8, 16, 32, 64 words)
+- artifact consideration interval (every 10, 100, 1_000, 10_000, 100_000 steps)
+- number of past artifacts to consider (16, 32, 64, 128)
+
+run 3 instances of each simulation
+- fixed timestep 1/update
+- 10 update log interval
+- 10_000_000 updates
+name simulation instances "<scenario>-<instance number>.h5"
+
+for observer:
+    process each instance for each bag of words size (all artifacts, no skip)
+    name artifact files "<scenario>-<instance number>-<word count>.arts.h5"
+
+    run novelty/learnability tests once on each instance, for each word size
+    - once for each lookback length/artifact interval combo
+    name data files "<scenario>-<instance number>-<word count>-<lookback>-<interval>.an.h5"
+        - within the data files, have one group for learnability, one for novelty, one for timestamps
+
+for degrees of change:
+    will need to fit curves to certain "indicator variables" and then take derivatives of those curves
+    a measure has more degrees of change if more derivatives can be taken before the derivative goes flat
+    need a flatness test
+    what indicator variables?
+    - positions of agents in the swarm
+    - density of the swarm
+    - 
+
+for genetic diversity:
+    what is genetic diversity?
+    full variance approach
+        - variance is probably not a bad measure, but use unbiased sample variance (since we calculate the mean from the samples)
+        - variance of a given component is the sum of squared deviations from the sample mean divided by n - 1
+        - then you could take the mean of the variances of all the components and use that as an overall diversity score
+    pca approach
+        - why? read witkowski/ikegami again, but my justification would be that doing pca before taking variances lets you remove unimportant components (pathways that get shut off/outcompeted by other weights)
+        - do pca, take n most important components, then do variance analysis on those
+        - again the issue arises, do changes in these values actually encode the behavior of the swarm?
+
+for signalling complexity:
+

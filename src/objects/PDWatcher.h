@@ -21,7 +21,7 @@ namespace swarmulator {
             active_ = true;
 
             // just add more prisoners if we run out
-            if (context.get_total_num_objects() < 200) {
+            if (context.get_total_num_objects() < 50) {
                 auto new_agent = PDAgent();
                 new_agent.set_position({
                     randfloat(-context.get_world_size().x / 2.f, context.get_world_size().x / 2.f),
