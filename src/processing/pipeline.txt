@@ -23,9 +23,12 @@ for degrees of change:
     a measure has more degrees of change if more derivatives can be taken before the derivative goes flat
     need a flatness test
     what indicator variables?
-    - positions of agents in the swarm
-    - density of the swarm
-    - 
+    - positions of agents in the swarm (x/y/z) vs time
+        - what about rotation too?
+        - variances of positions might be better? not sure
+    - density of the swarm (average neighbor counts) vs time
+    - genetic diversity (genetic variance) vs time
+    - signal change/signal variance vs time
 
 for genetic diversity:
     what is genetic diversity?
@@ -33,10 +36,14 @@ for genetic diversity:
         - variance is probably not a bad measure, but use unbiased sample variance (since we calculate the mean from the samples)
         - variance of a given component is the sum of squared deviations from the sample mean divided by n - 1
         - then you could take the mean of the variances of all the components and use that as an overall diversity score
+        - this score can vary with time 
+            (variance of the nth component at time t v_(nt) is the sum of squared deviations from the mean of that component at a given time divided by n-1 where n is the agent count alive at t)
+            what about taking the mean of a component over all times? is that a better measure? question for jonas
     pca approach
         - why? read witkowski/ikegami again, but my justification would be that doing pca before taking variances lets you remove unimportant components (pathways that get shut off/outcompeted by other weights)
         - do pca, take n most important components, then do variance analysis on those
         - again the issue arises, do changes in these values actually encode the behavior of the swarm?
 
 for signalling complexity:
+    - graph average intensity of each channel over time to get a basic idea
 

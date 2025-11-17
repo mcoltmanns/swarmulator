@@ -4,6 +4,7 @@ from sklearn.preprocessing import StandardScaler
 
 from observer import Observer, train, predict
 
+
 def learnability(artifacts, t, lookback, train_size, train_epochs, obs_width, file, device):
     """
     artifacts before t will be used to build the training set, try to predict t
@@ -58,7 +59,7 @@ def learnability(artifacts, t, lookback, train_size, train_epochs, obs_width, fi
         # now try to predict the artifact at t
         x = np.zeros((1, l, artifact_dim)) # we are predicting one thing based on the stuff that came before it
         y = np.zeros((1, artifact_dim))
-        x[0] = artifacts[t - l : t]
+        x[0] = artifacts[t - l:t]
         y[0] = artifacts[t]
         x = torch.from_numpy(x.astype(np.float32)).to(device)
         y = torch.from_numpy(y.astype(np.float32)).to(device)
@@ -80,6 +81,7 @@ def learnability(artifacts, t, lookback, train_size, train_epochs, obs_width, fi
     write_group.create_dataset("prediction loss", data=losses)
 
     return score
+
 
 def novelty(artifacts, t, lookback, train_size, train_epochs, predict_size, obs_width, file, device):
     """
@@ -167,6 +169,7 @@ def novelty(artifacts, t, lookback, train_size, train_epochs, predict_size, obs_
     write_group.create_dataset("prediction loss", data=losses)
 
     return score
+
 
 """
 arts_file = h5.File(artifact_path, 'r')

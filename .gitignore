@@ -7,3 +7,5 @@ build
 debug
 .idea
 .venv
+.ccls-cache
+src/processing/__pycache__
