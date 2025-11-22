@@ -26,7 +26,7 @@ namespace swarmulator {
         void change_energy(const float amount) { energy_ += amount; }
 
         // plants don't do much
-        void update(Simulation &context, const std::list<SimObject *> &neighborhood, float dt) override {};
+        void update(Simulation &context, const std::list<SimObject *> &neighborhood, float dt) override;
 
         [[nodiscard]] std::string type_name() const override { return "Plant"; };
         [[nodiscard]] std::vector<float> log() const override;
