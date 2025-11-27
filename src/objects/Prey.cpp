@@ -16,7 +16,7 @@ namespace swarmulator {
         interaction_radius_ = 25;
     }
     
-    void Prey::update(Simulation &context, const std::list<SimObject *> &neighborhood, float dt) {
+    void Prey::update(Simulation &context, const std::list<SimObject *> &neighborhood, const float dt) {
         NeuralAgent::update(context, neighborhood, dt); // do normal update (think and move, update energy from base and signal const)
 
         // if you can reproduce, do it

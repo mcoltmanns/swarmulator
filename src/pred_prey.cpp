@@ -5,6 +5,9 @@
 #include <iostream>
 #include <omp.h>
 
+#include "objects/Plant.h"
+#include "objects/Predator.h"
+#include "objects/Prey.h"
 #include "raylib.h"
 #include "sim/Simulation.h"
 #include "sim/util.h"
@@ -93,11 +96,71 @@ int main(int argc, char** argv) {
      */
 
     // fragment shader and triangle mesh for all objects
-    const std::string fs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/simobject.frag";
+    const std::string fs_src_path = "/home/moltmanns/Documents/swarmulator/src/shaders/simobject.frag";
     const auto tri = std::vector<Vector3>{
                     { -0.86, -0.5, 0.0 },
                     { 0.86, -0.5, 0.0 },
                     { 0.0f,  1.0f, 0.0f }
     };
-}
 
+    // vertex shader path for plants (green)
+    const std::string plant_vs_src_path = "/home/moltmanns/Documents/swarmulator/src/shaders/green.vert";
+    // vertex shader for prey (blue)
+    const std::string prey_vs_src_path = "/home/moltmanns/Documents/swarmulator/src/shaders/blue.vert";
+    // vertex shader for predators (red)
+    const std::string pred_vs_src_path = "/home/moltmanns/Documents/swarmulator/src/shaders/red.vert";
+
+    simulation.new_object_type<swarmulator::Plant>(tri, plant_vs_src_path, fs_src_path);
+    simulation.new_object_type<swarmulator::Prey>(tri, prey_vs_src_path, fs_src_path);
+    simulation.new_object_type<swarmulator::Predator>(tri, pred_vs_src_path, fs_src_path);
+
+    // add init agents
+    // pred:prey:plant ratio is 1:2:3
+    const int sixth = init_agent_count / 6;
+    for (int i = 0; i < sixth; i++) {
+        const auto pos = Vector3 {
+            swarmulator::randfloat(-world_size.x / 2.f, world_size.x / 2.f),
+            swarmulator::randfloat(-world_size.y / 2.f, world_size.y / 2.f),
+            swarmulator::randfloat(-world_size.z / 2.f, world_size.z / 2.f)
+        };
+        const auto rot = Vector3 {
+            swarmulator::randfloat(-1, 1),
+            swarmulator::randfloat(-1, 1),
+            swarmulator::randfloat(-1, 1),
+        };
+        auto pred = swarmulator::Predator(pos, rot);
+        simulation.add_object(pred);
+    }
+    for (int i = 0; i < sixth * 2; i++) {
+        const auto pos = Vector3 {
+            swarmulator::randfloat(-world_size.x / 2.f, world_size.x / 2.f),
+            swarmulator::randfloat(-world_size.y / 2.f, world_size.y / 2.f),
+            swarmulator::randfloat(-world_size.z / 2.f, world_size.z / 2.f)
+        };
+        const auto rot = Vector3 {
+            swarmulator::randfloat(-1, 1),
+            swarmulator::randfloat(-1, 1),
+            swarmulator::randfloat(-1, 1),
+        };
+        auto prey = swarmulator::Prey(pos, rot);
+        simulation.add_object(prey);
+    }
+    for (int i = 0; i < sixth * 3; i++) {
+        const auto pos = Vector3 {
+            swarmulator::randfloat(-world_size.x / 2.f, world_size.x / 2.f),
+            swarmulator::randfloat(-world_size.y / 2.f, world_size.y / 2.f),
+            swarmulator::randfloat(-world_size.z / 2.f, world_size.z / 2.f)
+        };
+        const auto rot = Vector3 {
+            swarmulator::randfloat(-1, 1),
+            swarmulator::randfloat(-1, 1),
+            swarmulator::randfloat(-1, 1),
+        };
+        auto plant = swarmulator::Plant(pos, rot);
+        simulation.add_object(plant);
+    }
+
+    simulation.run();
+
+    return 0;
+}

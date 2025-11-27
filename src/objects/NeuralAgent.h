@@ -16,7 +16,7 @@ namespace swarmulator {
         // brain shape
         static constexpr unsigned int num_inputs_ = 12; // 6 cardinal dirs, 2 signals from each dir
         static constexpr unsigned int num_hidden_ = 10; // chosen pretty arbitrarily (sort of near the average of 12 and 5)
-        static constexpr unsigned int num_outputs_ = 5; // pitch, yaw, signal 0, signal 1, decision (for pd)
+        static constexpr unsigned int num_outputs_ = 5; // pitch, yaw, signal 0, signal 1, decision (for pd/pred-prey)
 
         // signal output array
         std::array<float, 2> signals_ = {0, 0};
