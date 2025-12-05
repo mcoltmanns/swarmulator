@@ -13,7 +13,7 @@ namespace swarmulator {
         // plants are very simple
         // they just sit around waiting to be eaten
     protected:
-        static constexpr float initial_energy_ = 10;
+        static constexpr float initial_energy_ = 25;
         float energy_ = initial_energy_;
         double time_born_ = 0;
 
