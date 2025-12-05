@@ -78,6 +78,7 @@ set(AGENTS_SOURCES
         src/objects/Prey.h
         src/objects/Predator.cpp
         src/objects/Predator.h
+        src/objects/PredPreyWatcher.h
 )
 
 set(LOGGER_SOURCES

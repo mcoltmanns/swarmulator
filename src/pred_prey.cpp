@@ -6,6 +6,7 @@
 #include <omp.h>
 
 #include "objects/Plant.h"
+#include "objects/PredPreyWatcher.h"
 #include "objects/Predator.h"
 #include "objects/Prey.h"
 #include "raylib.h"
@@ -13,7 +14,7 @@
 #include "sim/util.h"
 
 int main(int argc, char** argv) {
-    int init_agent_count = 200;
+    int init_agent_count = 400;
     int window_w = 1080;
     int window_h = 720;
     constexpr Vector3 world_size = {100, 100, 100};
@@ -52,7 +53,7 @@ int main(int argc, char** argv) {
     srand(s);
     std::cout << "Random seed: " << s << std::endl;
 
-    auto simulation = swarmulator::Simulation(window_w, window_h, world_size, subdivisions, 0.01, 100000000, log_path, 4, 20); // 100 million (1e8) updates at 0.1 dt each is ten million (1e7) simulation time
+    auto simulation = swarmulator::Simulation(window_w, window_h, world_size, subdivisions, 0.1, 100000000, log_path, 4, 20); // 100 million (1e8) updates at 0.1 dt each is ten million (1e7) simulation time
     // 10 million updates (1e7) at 1 dt each is 10 million simulation time
     // at a log interval of 20 we get 500k log entries with a 20 time gap between each
     //auto simulation = swarmulator::Simulation(window_w, window_h, world_size, subdivisions);
@@ -96,7 +97,7 @@ int main(int argc, char** argv) {
      */
 
     // fragment shader and triangle mesh for all objects
-    const std::string fs_src_path = "/home/moltmanns/Documents/swarmulator/src/shaders/simobject.frag";
+    const std::string fs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/simobject.frag";
     const auto tri = std::vector<Vector3>{
                     { -0.86, -0.5, 0.0 },
                     { 0.86, -0.5, 0.0 },
@@ -104,15 +105,16 @@ int main(int argc, char** argv) {
     };
 
     // vertex shader path for plants (green)
-    const std::string plant_vs_src_path = "/home/moltmanns/Documents/swarmulator/src/shaders/green.vert";
+    const std::string plant_vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/green.vert";
     // vertex shader for prey (blue)
-    const std::string prey_vs_src_path = "/home/moltmanns/Documents/swarmulator/src/shaders/blue.vert";
+    const std::string prey_vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/blue.vert";
     // vertex shader for predators (red)
-    const std::string pred_vs_src_path = "/home/moltmanns/Documents/swarmulator/src/shaders/red.vert";
+    const std::string pred_vs_src_path = "/home/moltma/Documents/swarmulator/src/shaders/red.vert";
 
     simulation.new_object_type<swarmulator::Plant>(tri, plant_vs_src_path, fs_src_path);
     simulation.new_object_type<swarmulator::Prey>(tri, prey_vs_src_path, fs_src_path);
     simulation.new_object_type<swarmulator::Predator>(tri, pred_vs_src_path, fs_src_path);
+    simulation.new_object_type<swarmulator::PredPreyWatcher>({}, plant_vs_src_path, fs_src_path);
 
     // add init agents
     // pred:prey:plant ratio is 1:2:3
@@ -159,6 +161,9 @@ int main(int argc, char** argv) {
         auto plant = swarmulator::Plant(pos, rot);
         simulation.add_object(plant);
     }
+    auto watcher = swarmulator::PredPreyWatcher({0, 0, 0}, {0, 0, 0}, sixth * 3, 1, 0); //  we always need at least 1 predator to keep prey population in check
+    // as long as the plants are abundant enough, there should be no scenario where we run out of prey
+    simulation.add_object(watcher);
 
     simulation.run();
 

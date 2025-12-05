@@ -4,13 +4,16 @@
 
 #include "Plant.h"
 
+#include "raymath.h"
+#include "Prey.h"
+
 namespace swarmulator {
     Plant::Plant() : SimObject() {
-
+        interaction_radius_ = 0;
     }
 
     Plant::Plant(const Vector3 position, const Vector3 rotation) : SimObject(position, rotation) {
-
+        interaction_radius_ = 0;
     }
 
     void Plant::update(Simulation &context, const std::list<SimObject *> &neighborhood, const float dt) {

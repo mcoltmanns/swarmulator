@@ -8,7 +8,7 @@
 #include "NeuralAgent.h"
 
 namespace swarmulator {
-    class Prey : public NeuralAgent {
+    class Prey final : public NeuralAgent {
     protected:
         const float eat_rate_ = 1; // how much energy the prey can sap from a plant per unit time
     public:

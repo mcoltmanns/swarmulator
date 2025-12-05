@@ -10,11 +10,15 @@
 
 namespace swarmulator {
      Predator::Predator() : NeuralAgent() {
-         interaction_radius_ = 25;
+         interaction_radius_ = 15;
+         basic_cost_ = 0.1;
+        max_lifetime_ = 10000;
      }
 
      Predator::Predator(const Vector3 position, const Vector3 rotation) : NeuralAgent(position, rotation) {
-         interaction_radius_ = 25;
+         interaction_radius_ = 15; // if predators can see/have too much of a reach, prey don't get a chance to dodge them
+         basic_cost_ = 0.1; // being a predator is hard work! (idea is like in nature - bigger bodies, bigger energy requirements)
+        max_lifetime_ = 10000;
      }
 
     void Predator::update(Simulation &context, const std::list<SimObject *> &neighborhood, const float dt) {
@@ -55,17 +59,19 @@ namespace swarmulator {
                         // eat if you captured
                         energy_ += prey->get_energy(); // gain its energy
                         prey->deactivate(); // kill the prey
+                        lifetime_prey_kills_++;
                     }
                     break; // only chase one prey per frame
                 }
-                else if (const auto predator = dynamic_cast<Predator*>(neighbor); predator != nullptr && predator->active()) {
+                if (const auto predator = dynamic_cast<Predator*>(neighbor); predator != nullptr && predator->active()) {
                     // chasing, so consume extra energy
-                    energy_ -= predator->get_energy();
+                    energy_ -= chase_cost_ * dt;
                     const float diff = reproduction_threshold_ - predator->get_energy();
                     const float chance = (-0.5f / reproduction_threshold_) * diff + 0.5f;
                     if (randfloat() <= chance) {
                         energy_ += predator->get_energy();
                         predator->deactivate();
+                        lifetime_pred_kills_++;
                     }
                     break;
                 }

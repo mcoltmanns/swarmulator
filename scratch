@@ -1,5 +1,16 @@
+visual observations
 foraging
 - environment needs to be rich enough to support a stupid population, else no evolution can ever take place
 - agents figure out how to clump in straight lines that circle through high-food regions very quickly (only several thousand iterations in)
 - then eventually they figure out how to coalesce within those straight lines by moving out of line with the main flow until they encounter other agents
 - do they ever figure out how to circle back around?
+
+pred-prey
+- again environment needs to be rich enough to support a stupid population
+- sometimes you get oscillation, sometimes not
+    - false - oscillation does evolve
+    - is the 3:2:1 ratio maintained?
+- does clumping emerge like you'd expect?
+- prey exhibits boid-like behavior - much more exploratory than during the base foraging demo (no straight lines, more individual flocks)
+    - probably because of the moving food sources, but greater numbers might also offer refuge from predators
+- not instituting a minimum predator count has one runaway scenario where predators go extinct and prey population explodes

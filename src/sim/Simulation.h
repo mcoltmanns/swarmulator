@@ -100,6 +100,12 @@ public:
         }
     }
 
+    // get the number of simobjects of a given type in the simulation
+    template<class T>
+    size_t get_object_type_count() const {
+        return object_instancer_.group_size<T>();
+    }
+
     // add a simobject of a registered type to the simulation
     // the object passed is copied, and management is taken over by the instancer
     // if the simulation was set up to log, also logs object addition

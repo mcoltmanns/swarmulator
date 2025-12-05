@@ -150,7 +150,7 @@ namespace swarmulator {
             check_t_subtype_simobject;
 
             const auto gid = get_gid<T>();
-            return object_groups_[gid].objects.size();
+            return object_groups_.at(gid).objects.size();
         }
     };
 }

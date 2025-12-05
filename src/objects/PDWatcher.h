@@ -38,8 +38,8 @@ namespace swarmulator {
             }
         }
 
-        std::vector<float> log() const override { return {}; }
-        std::vector<float> static_log() const override { return {}; };
+        [[nodiscard]] std::vector<float> log() const override { return {}; }
+        [[nodiscard]] std::vector<float> static_log() const override { return {}; };
     };
 
 } // namespace swarmulator
