@@ -132,3 +132,12 @@ add_executable(swarmulator_pred_prey
         ${LOGGER_SOURCES}
 )
 target_link_libraries(swarmulator_pred_prey raylib OpenMP::OpenMP_CXX HDF5::HDF5 Eigen3::Eigen)
+
+add_executable(swarmulator_replay
+        src/replay/Replay.cpp
+        src/replay/Replay.h
+        ${AGENTS_SOURCES}
+        ${SIM_SOURCES}
+        ${LOGGER_SOURCES}
+)
+target_link_libraries(swarmulator_replay raylib OpenMP::OpenMP_CXX HDF5::HDF5 Eigen3::Eigen)
