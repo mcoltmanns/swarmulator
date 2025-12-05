@@ -7,58 +7,86 @@ Save feature vectors to another H5 file.
 
 args are:
     input file
-    object group name in input file
     output file
-    feature number
+    feature number (how many features to create)
+    any number of space-separated object group names to exclude from artifact generation
+
+what if you have different object types in your swarm (several object type names, possibly with different width dynamic logs)?
+apply one round of bag of words over each group to get uniform-length artifacts over all groups
+then apply bag of words over those artifacts
 """
 import sys
 import h5py
 from sklearn.cluster import MiniBatchKMeans
 import numpy as np
-from tqdm import tqdm
+from tqdm import tqdm # progress bar
 
 in_file = h5py.File(sys.argv[1], 'r')
-group = in_file['objects'][sys.argv[2]]
-out_file = h5py.File(sys.argv[3], 'w')
+out_file = h5py.File(sys.argv[2], 'w')
 
-feature_count = int(sys.argv[4])
+feature_count = int(sys.argv[3])
+
+exclude_groups = sys.argv[4:len(sys.argv)] if len(sys.argv) > 3 else []
 
 global_time_idx = in_file['time']
-
-info = group['state']['dynamic']
-group_index = group['index']
 
 artifacts = [] # array of sim artifacts
 times = [] # map artifacts to their sim time
 
 # minibatchkmeans lets us do batched processing (good for memory)
-# but it can give biased results if we don't shuffle, so do three passes over each dataset, shuffling the chunks each time
+# but it can give biased results if we don't shuffle, so do passes (epochs) over each dataset, shuffling the chunks each time
 batch_size = 50_000 # 50k is a solid number
 epochs = 1 # tests show no drift after 1 epoch
-kmeans = MiniBatchKMeans(n_clusters=feature_count, batch_size=batch_size)
-batch_indices = list(range(0, info.shape[0], batch_size)) # indexes of the batches for training
 
 # first step is to filter the data to only what we want
 # since we're analyzing the output of the swarm as a whole, we only want agent position, rotation, and signals
 # NeuralAgent log entries are:
 # id, parent id, position x, y, z, rotation x, y, z, signal a, signal b, energy, genes
-# so for each entry in info we want entry[2:10]
+# so for each entry in info we want entry[2:10] (indices should also be valid for anything that inherits neuralagent)
 # and then partial fit the kmeans model
-prev_centers = None
-for epoch in range(epochs):
-    np.random.shuffle(batch_indices) # shuffle the batch indices
-    # fit on the current shuffle
-    for start in tqdm(batch_indices, desc=f'Fitting (epoch {epoch}/{epochs})', unit="batch"):
-        end = min(start + batch_size, info.shape[0])
-        batch = info[start:end, 2:10]
-        kmeans.partial_fit(batch)
+for name, group in in_file['objects'].items(): # go over every group in the simulation
+    if name in exclude_groups:
+        print(name, "is excluded. Skipping")
+        continue
+    if 'dynamic' not in group['state'].keys():
+        print(name, "has no dynamic state info. Skipping")
+        continue
+    group_artifacts = []
+    info = group['state']['dynamic'] # dynamic state information for this group over the course of the whole simulation
+    group_index = group['index'] # group time indexing information
+    kmeans = MiniBatchKMeans(n_clusters=feature_count, batch_size=batch_size)
+    prev_centers = None
+    batch_indices = list(range(0, info.shape[0], batch_size)) # start indices of the batches of a given size for this group
+    for epoch in range(epochs):
+        np.random.shuffle(batch_indices) # shuffle the batch indices
+        # fit on the current shuffle
+        for start in tqdm(batch_indices, desc=f'Fitting {name} (epoch {epoch}/{epochs})', unit="batch"):
+            end = min(start + batch_size, info.shape[0])
+            batch = info[start:end, 2:10]
+            kmeans.partial_fit(batch)
 
-    # calculate the drift since the last epoch
-    if prev_centers is not None:
-        drift = np.linalg.norm(kmeans.cluster_centers_ - prev_centers)
-        print(f'\tDrift: {drift}')
-    prev_centers = kmeans.cluster_centers_
+        # calculate the drift since the last pass
+        if prev_centers is not None:
+            drift = np.linalg.norm(kmeans.cluster_centers_ - prev_centers)
+            print(f'\tDrift: {drift}')
+        prev_centers = kmeans.cluster_centers_
 
+    with tqdm(total=len(group_index), desc=f"Generating artifacts {name}", unit="entry") as pbar:
+        i = 0
+        for idx_pair in group_index:
+            # get the segment for this log entry from the filtered state table
+            start = idx_pair[0]
+            length = idx_pair[1]
+            segment = info[start : start + length, 2:10]
+
+            clusters = kmeans.predict(segment)
+            group_artifacts.append(np.bincount(clusters, minlength=feature_count))
+
+            pbar.update()
+
+    out_file.create_dataset(f"arts_{name}", data=group_artifacts) # ha ha farts
+
+"""
 with tqdm(total=len(group_index), desc="Generating artifacts", unit="entry") as pbar:
     i = 0
     for idx_pair in group_index: # lazy load
@@ -80,4 +108,5 @@ with tqdm(total=len(group_index), desc="Generating artifacts", unit="entry") as 
 out_file.create_dataset('times', data=times)
 out_file.create_dataset('features', data=artifacts)
 print('Done')
+    """
 out_file.close()

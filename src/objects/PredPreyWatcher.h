@@ -18,6 +18,7 @@ namespace swarmulator {
         int min_plants_ = 0;
         int min_pred_ = 0;
         int min_prey_ = 0;
+        int miracle_factor_ = 10; // how many more times agents than the minimum to add once the minimum is reached
     public:
         PredPreyWatcher() = default;
         PredPreyWatcher(const Vector3 p, const Vector3 r, const int min_plants, const int min_pred, const int min_prey) : SimObject(p, r), min_plants_(min_plants), min_pred_(min_pred), min_prey_(min_prey) {}
@@ -28,37 +29,41 @@ namespace swarmulator {
             active_ = true;
 
             if (context.get_object_type_count<Predator>() < min_pred_) {
-                auto new_agent = Predator();
-                new_agent.set_position({
-                    randfloat(-context.get_world_size().x / 2.f, context.get_world_size().x / 2.f),
-                    randfloat(-context.get_world_size().y / 2.f, context.get_world_size().y / 2.f),
-                    randfloat(-context.get_world_size().z / 2.f, context.get_world_size().z / 2.f)
-                });
-                new_agent.set_rotation({
-                    randfloat(-1, 1),
-                    randfloat(-1, 1),
-                    randfloat(-1, 1),
-                });
-                new_agent.set_time_born(context.get_sim_time());
-                context.add_object(new_agent);
-                std::cout << "added predator" << std::endl;
+                for (int i = 0; i < min_pred_ * miracle_factor_; i++) {
+                    auto new_agent = Predator();
+                    new_agent.set_position({
+                        randfloat(-context.get_world_size().x / 2.f, context.get_world_size().x / 2.f),
+                        randfloat(-context.get_world_size().y / 2.f, context.get_world_size().y / 2.f),
+                        randfloat(-context.get_world_size().z / 2.f, context.get_world_size().z / 2.f)
+                    });
+                    new_agent.set_rotation({
+                        randfloat(-1, 1),
+                        randfloat(-1, 1),
+                        randfloat(-1, 1),
+                    });
+                    new_agent.set_time_born(context.get_sim_time());
+                    context.add_object(new_agent);
+                }
+                std::cout << "predator population adjusted" << std::endl;
             }
 
             if (context.get_object_type_count<Prey>() < min_prey_) {
-                auto new_agent = Prey();
-                new_agent.set_position({
-                    randfloat(-context.get_world_size().x / 2.f, context.get_world_size().x / 2.f),
-                    randfloat(-context.get_world_size().y / 2.f, context.get_world_size().y / 2.f),
-                    randfloat(-context.get_world_size().z / 2.f, context.get_world_size().z / 2.f)
-                });
-                new_agent.set_rotation({
-                    randfloat(-1, 1),
-                    randfloat(-1, 1),
-                    randfloat(-1, 1),
-                });
-                new_agent.set_time_born(context.get_sim_time());
-                context.add_object(new_agent);
-                std::cout << "added prey" << std::endl;
+                for (int i = 0; i < min_prey_ * miracle_factor_; i++) {
+                    auto new_agent = Prey();
+                    new_agent.set_position({
+                        randfloat(-context.get_world_size().x / 2.f, context.get_world_size().x / 2.f),
+                        randfloat(-context.get_world_size().y / 2.f, context.get_world_size().y / 2.f),
+                        randfloat(-context.get_world_size().z / 2.f, context.get_world_size().z / 2.f)
+                    });
+                    new_agent.set_rotation({
+                        randfloat(-1, 1),
+                        randfloat(-1, 1),
+                        randfloat(-1, 1),
+                    });
+                    new_agent.set_time_born(context.get_sim_time());
+                    context.add_object(new_agent);
+                }
+                std::cout << "prey population adjusted" << std::endl;
             }
 
             if (context.get_object_type_count<Plant>() < min_plants_) {
@@ -80,6 +85,7 @@ namespace swarmulator {
 
         [[nodiscard]] std::vector<float> log() const override { return {}; }
         [[nodiscard]] std::vector<float> static_log() const override { return {}; }
+        [[nodiscard]] std::string type_name() const override { return "PredPreyWatcher"; }
     };
 
 } // namespace swarmulator
