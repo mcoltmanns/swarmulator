@@ -18,6 +18,7 @@ then apply bag of words over those artifacts
 import sys
 import h5py
 from sklearn.cluster import MiniBatchKMeans
+from sklearn.decomposition import PCA, IncrementalPCA
 import numpy as np
 from tqdm import tqdm # progress bar
 
@@ -40,11 +41,19 @@ batch_size = 50_000 # 50k is a solid number
 epochs = 1 # tests show no drift after 1 epoch
 
 # first step is to create per-object artifact series
-# since we're analyzing the output of the swarm as a whole, we only want agent position, rotation, and signals
+# since we're analyzing the output of the swarm as a whole, we only want agent position, rotation, and signals (genes don't matter because those are not the output of the swarm, so we don't pull them in)
 # NeuralAgent log entries are:
 # id, parent id, position x, y, z, rotation x, y, z, signal a, signal b, energy, genes
 # so for each entry in info we want entry[2:10] (indices should also be valid for anything that inherits neuralagent)
 # and then partial fit the kmeans model
+
+"""
+is bag of words acceptable for feature extraction here?
+- each log entry (agent log entry) is a "sentence"
+- bag of words ignores the order of words in sentences, but this does not matter because the order of the data is the same over every sentence
+the issue is that we have a variable length code for each time step (the raw data, concatenation of all live simobjects at that time)
+but we want a fixed-length code per timestep
+"""
 for name, group in in_file['objects'].items(): # go over every group in the simulation
     if name in exclude_groups:
         print(name, "is excluded. Skipping")
@@ -92,8 +101,14 @@ for name, group in in_file['objects'].items(): # go over every group in the simu
 # because the artifacts were created with different kmeans models, we have to fit a new one
 # now we are down to one artifact per timestep, so we no longer need to batch by time
 # this time around, the batches are constructed across the object groups
-# FIXME something is wrong here. maybe it's better to take averages?
-# does it even matter how these are combined?
+"""
+with this process, too much information is lost
+for an artifact width of 20:
+the complete 20-wide state of each object group is condensed down into a mapping to exactly one artifact of 20
+so unless you have a high number of object groups, you end up with very sparse final artifacts
+and either way that's still huge information loss!
+"""
+"""
 epochs = 1 # more epochs here?
 kmeans = MiniBatchKMeans(n_clusters=feature_count, batch_size=batch_size)
 prev_centers = None
@@ -122,37 +137,52 @@ with tqdm(total=len(global_time_idx), desc=f"Generating aggregate artifacts", un
         for gname in include_groups:
             ipt.append(out_file[f"arts_{gname}"][i])
         clusters = kmeans.predict(ipt)
+        print("ipt:", ipt, "\n", "clusters:", clusters)
         artifacts.append(np.bincount(clusters, minlength=feature_count))
         times.append(global_time_idx[i])
         i += 1
 
         pbar.update()
+"""
+
+"""
+what if instead of doing kmeans again we did pca?
+we have a known input size (feature vector width * object group count)
+and a known output size (feature vector width)
+so pca should not be so bad
+do ipca
+"""
+# following snippet plots information retained per component
+# we fit a pca on the same number of components out as in and then save the cumsums which gives us a measure of how much information is lost for a given number of components
+test_pca = IncrementalPCA(n_components=feature_count * len(include_groups), batch_size=batch_size)
+pca = IncrementalPCA(n_components=feature_count, batch_size=batch_size)
+batch_indices = list(range(0, out_file[f"arts_{include_groups[0]}"].shape[0], batch_size)) # batch indices are the same for all object groups
+for start in tqdm(batch_indices, desc=f'Fitting diagnostic and real PCA', unit="batch"):
+    end = min(start + batch_size, out_file[f"arts_{include_groups[0]}"].shape[0])
+    batch = [[] for i in range(end - start)] # each batch entry should be abcd if we had two groups whose entries were ab and cd
+    # within each batch, iterate over all object groups
+    for name in include_groups:
+        group_artifacts = out_file[f"arts_{name}"] # all artifacts in this batch for this object group
+        group_batch = group_artifacts[start : end]
+        for i in range(len(group_batch)):
+            batch_art = group_batch[i] # grab one artifact from this group's batch
+            for elem in batch_art:
+                batch[i].append(elem) # append it to the aggregate artifact in the master batch
+    test_pca.partial_fit(batch)
+    pca.partial_fit(batch)
+out_file.create_dataset('pca_cumsum', data=test_pca.explained_variance_ratio_.cumsum())
+
+# now transform the data through the real pca
+for i in tqdm(range(out_file[f"arts_{include_groups[0]}"].shape[0]), desc="Transforming aggregate artifacts with PCA", unit="artifact"):
+    agg_art = []
+    for name in include_groups:
+        group_artifact = out_file[f"arts_{name}"][i]
+        for elem in group_artifact:
+            agg_art.append(elem)
+    artifacts.append(pca.transform([agg_art])[0])
+    times.append(global_time_idx[i])
 
 out_file.create_dataset('times', data=times)
 out_file.create_dataset('features', data=artifacts)
 print('Done')
 out_file.close()
-
-"""
-with tqdm(total=len(group_index), desc="Generating artifacts", unit="entry") as pbar:
-    i = 0
-    for idx_pair in group_index: # lazy load
-        # get real time for this log entry
-        real_time = global_time_idx[i]
-        i += 1
-        times.append(real_time)
-
-        # get the segment for this log entry from the filtered state table
-        start = idx_pair[0]
-        length = idx_pair[1]
-        segment = info[start:start + length, 2:10] # also a lazy load
-
-        clusters = kmeans.predict(segment)
-        artifacts.append(np.bincount(clusters))
-
-        pbar.update()
-
-out_file.create_dataset('times', data=times)
-out_file.create_dataset('features', data=artifacts)
-print('Done')
-    """
