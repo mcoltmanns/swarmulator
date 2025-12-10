@@ -45,6 +45,7 @@ epochs = 1 # tests show no drift after 1 epoch
 # NeuralAgent log entries are:
 # id, parent id, position x, y, z, rotation x, y, z, signal a, signal b, energy, genes
 # so for each entry in info we want entry[2:10] (indices should also be valid for anything that inherits neuralagent)
+# these are the position, rotation, and signal of an agent
 # and then partial fit the kmeans model
 
 """
@@ -96,6 +97,7 @@ for name, group in in_file['objects'].items(): # go over every group in the simu
             pbar.update()
 
     out_file.create_dataset(f"arts_{name}", data=group_artifacts) # ha ha farts
+    out_file.create_dataset(f"centroids_{name}", data=kmeans.cluster_centers_)
 
 # then we merge the per-object series into one master series
 # because the artifacts were created with different kmeans models, we have to fit a new one
@@ -171,6 +173,30 @@ for start in tqdm(batch_indices, desc=f'Fitting diagnostic and real PCA', unit="
     test_pca.partial_fit(batch)
     pca.partial_fit(batch)
 out_file.create_dataset('pca_cumsum', data=test_pca.explained_variance_ratio_.cumsum())
+# also calculate at what reduction level we retain 90% or greater information
+best_w = 1
+for info_kept in test_pca.explained_variance_ratio_.cumsum():
+    if info_kept < 0.9:
+        best_w += 1
+    else:
+        break
+
+pca_90 = None
+artifacts_90 = None
+if input("enter y to fit 90% accurate pca, any other key to skip ") == "y":
+    pca_90 = IncrementalPCA(n_components=best_w, batch_size=batch_size)
+    artifacts_90 = []
+    for start in tqdm(batch_indices, desc=f'Fitting 90% accurate PCA (feature width {best_w})', unit="batch"):
+        end = min(start + batch_size, out_file[f"arts_{include_groups[0]}"].shape[0])
+        batch = [[] for i in range(end - start)]
+        for name in include_groups:
+            group_artifacts = out_file[f"arts_{name}"]
+            group_batch = group_artifacts[start : end]
+            for i in range(len(group_batch)):
+                batch_art = group_batch[i]
+                for elem in batch_art:
+                    batch[i].append(elem)
+        pca_90.partial_fit(batch)
 
 # now transform the data through the real pca
 for i in tqdm(range(out_file[f"arts_{include_groups[0]}"].shape[0]), desc="Transforming aggregate artifacts with PCA", unit="artifact"):
@@ -180,9 +206,13 @@ for i in tqdm(range(out_file[f"arts_{include_groups[0]}"].shape[0]), desc="Trans
         for elem in group_artifact:
             agg_art.append(elem)
     artifacts.append(pca.transform([agg_art])[0])
+    if pca_90 is not None:
+        artifacts_90.append(pca_90.transform([agg_art])[0])
     times.append(global_time_idx[i])
 
 out_file.create_dataset('times', data=times)
 out_file.create_dataset('features', data=artifacts)
+if artifacts_90 is not None:
+    out_file.create_dataset('features_90', data=artifacts_90)
 print('Done')
 out_file.close()
