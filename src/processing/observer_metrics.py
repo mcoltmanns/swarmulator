@@ -5,7 +5,7 @@ from sklearn.preprocessing import StandardScaler
 from observer import Observer, train, predict
 
 
-def learnability(artifacts, t, lookback, train_size, train_epochs, obs_width, file, device):
+def learnability(artifacts, t, lookback, train_size, skip, train_epochs, obs_width, file, device):
     """
     artifacts before t will be used to build the training set, try to predict t
     system should become more predictable as the lookback increases (observer can see farther into the past)
@@ -14,7 +14,8 @@ def learnability(artifacts, t, lookback, train_size, train_epochs, obs_width, fi
     :param artifacts: bag-of-words simulation artifacts
     :param t: time to predict at
     :param lookback: how many artifacts make up a feature/how long is the past
-    :param train_size: training set size
+    :param train_size: training set size (how many past/future instances to train on)
+    :param skip: how many log entries to skip between log entries used (>= 0)
     :param train_epochs: how many epochs to train for (more than 25 shouldn't be necessary)
     :param obs_width: width of observer hidden layers (more than 256 gives OOM) (best results seem to be 128)
     :param file: h5 file or group object to write to
@@ -195,3 +196,4 @@ data_file.create_dataset('learnability', data=learnabilities)
 data_file.create_dataset('time', data=times_sampled)
 data_file.close()
 """
+
