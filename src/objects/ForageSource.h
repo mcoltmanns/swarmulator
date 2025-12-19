@@ -24,8 +24,8 @@ namespace swarmulator {
                     // base reward is inverse distance to source
                     const float base = 1.f / (1.f + Vector3Distance(position_, forager->get_position()));
                     // tune is a logistic between 0-1 centered on the maximum number of agents we want
-                    //const float tune = 1.f / (1.f + std::exp(0.5f * (static_cast<float>(context.get_total_num_objects()) - 500.f)));
-                    forager->change_energy(base * dt);
+                    const float tune = 1.f / (1.f + std::exp(0.5f * (static_cast<float>(context.get_total_num_objects()) - 500.f)));
+                    forager->change_energy(base * tune * dt);
                 }
             }
 

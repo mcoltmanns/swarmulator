@@ -8,15 +8,15 @@
 
 namespace swarmulator {
     PDAgent::PDAgent() : NeuralAgent() {
-        interaction_radius_ = 15; // if this value is too large there are never enough blind spots for cooperators to come together
-                                 // but on the other hand if it's too small cooperators never find each other
     }
 
     PDAgent::PDAgent(const Vector3 position, const Vector3 rotation) : NeuralAgent(position, rotation) {
-        interaction_radius_ = 15;
     }
 
     void PDAgent::update(swarmulator::Simulation &context, const std::list<SimObject *> &neighborhood, float dt) {
+        interaction_radius_ = 5; // if this value is too large there are never enough blind spots for cooperators to come together
+                                 // but on the other hand if it's too small cooperators never find each other
+
         NeuralAgent::update(context, neighborhood, dt); // do normal update (think, move update energy based on costs)
 
         // set your team according to what the network decided
