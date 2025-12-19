@@ -15,7 +15,7 @@ def learnability(artifacts, t, lookback, train_size, skip, train_epochs, obs_wid
     :param t: time to predict at
     :param lookback: how many artifacts make up a feature/how long is the past
     :param train_size: training set size (how many past/future instances to train on)
-    :param skip: how many log entries to skip between log entries used (>= 0)
+    :param skip: how many log entries to skip between log entries used (>= 0) (0 is normal behavior)
     :param train_epochs: how many epochs to train for (more than 25 shouldn't be necessary)
     :param obs_width: width of observer hidden layers (more than 256 gives OOM) (best results seem to be 128)
     :param file: h5 file or group object to write to

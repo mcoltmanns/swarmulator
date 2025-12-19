@@ -24,26 +24,28 @@ namespace swarmulator {
                     // base reward is inverse distance to source
                     const float base = 1.f / (1.f + Vector3Distance(position_, forager->get_position()));
                     // tune is a logistic between 0-1 centered on the maximum number of agents we want
-                    const float tune = 1.f / (1.f + std::exp(0.5f * (static_cast<float>(context.get_total_num_objects()) - 500.f)));
-                    forager->change_energy(base * tune * dt);
+                    //const float tune = 1.f / (1.f + std::exp(0.5f * (static_cast<float>(context.get_total_num_objects()) - 500.f)));
+                    forager->change_energy(base * dt);
                 }
             }
 
             // just add more agents if we run out
-            if (context.get_total_num_objects() < 50) {
-                auto new_agent = ForageAgent();
-                new_agent.set_position({
-                    randfloat(-context.get_world_size().x / 2.f, context.get_world_size().x / 2.f),
-                    randfloat(-context.get_world_size().y / 2.f, context.get_world_size().y / 2.f),
-                    randfloat(-context.get_world_size().z / 2.f, context.get_world_size().z / 2.f)
-                });
-                new_agent.set_rotation({
-                    randfloat(-1, 1),
-                    randfloat(-1, 1),
-                    randfloat(-1, 1),
-                });
-                new_agent.set_time_born(context.get_sim_time());
-                context.add_object(new_agent);
+            if (context.get_total_num_objects() < 10) {
+                for (int i = 0; i < 50; i++) {
+                    auto new_agent = ForageAgent();
+                    new_agent.set_position({
+                        randfloat(-context.get_world_size().x / 2.f, context.get_world_size().x / 2.f),
+                        randfloat(-context.get_world_size().y / 2.f, context.get_world_size().y / 2.f),
+                        randfloat(-context.get_world_size().z / 2.f, context.get_world_size().z / 2.f)
+                    });
+                    new_agent.set_rotation({
+                        randfloat(-1, 1),
+                        randfloat(-1, 1),
+                        randfloat(-1, 1),
+                    });
+                    new_agent.set_time_born(context.get_sim_time());
+                    context.add_object(new_agent);
+                }
             }
         }
     };
