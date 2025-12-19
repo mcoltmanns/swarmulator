@@ -21,20 +21,23 @@ namespace swarmulator {
             active_ = true;
 
             // just add more prisoners if we run out
+            // if less than 10 add until 50
             if (context.get_total_num_objects() < 50) {
-                auto new_agent = PDAgent();
-                new_agent.set_position({
-                    randfloat(-context.get_world_size().x / 2.f, context.get_world_size().x / 2.f),
-                    randfloat(-context.get_world_size().y / 2.f, context.get_world_size().y / 2.f),
-                    randfloat(-context.get_world_size().z / 2.f, context.get_world_size().z / 2.f)
-                });
-                new_agent.set_rotation({
-                    randfloat(-1, 1),
-                    randfloat(-1, 1),
-                    randfloat(-1, 1),
-                });
-                new_agent.set_time_born(context.get_sim_time());
-                context.add_object(new_agent);
+            while (context.get_total_num_objects() < 100) {
+                    auto new_agent = PDAgent();
+                    new_agent.set_position({
+                        randfloat(-context.get_world_size().x / 2.f, context.get_world_size().x / 2.f),
+                        randfloat(-context.get_world_size().y / 2.f, context.get_world_size().y / 2.f),
+                        randfloat(-context.get_world_size().z / 2.f, context.get_world_size().z / 2.f)
+                    });
+                    new_agent.set_rotation({
+                        randfloat(-1, 1),
+                        randfloat(-1, 1),
+                        randfloat(-1, 1),
+                    });
+                    new_agent.set_time_born(context.get_sim_time());
+                    context.add_object(new_agent);
+                }
             }
         }
 

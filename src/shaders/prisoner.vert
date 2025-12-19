@@ -23,9 +23,11 @@ out vec4 frag_color;
 void main() {
     sim_object object = objects[gl_InstanceID];
 
+    // info < 0.5 shows blue
     if (object.info.x < 0.5) {
         frag_color.rgb = vec3(0.0, 0.0, 1.0);
     }
+    // info > 0.5 shows red
     else {
         frag_color.rgb = vec3(1.0, 0.0, 0.0);
     }

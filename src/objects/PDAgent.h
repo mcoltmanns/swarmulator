@@ -12,8 +12,8 @@ namespace swarmulator {
     private:
         int team_ = 0; // 0 is cooperate, 1 is defect
 
-        static constexpr float coop_payoff = 0.8f; // defect payoff should always be higher than coop payoff
-        static constexpr float defect_payoff = 1.f;
+        static constexpr float coop_payoff = 1.f; // defect payoff should always be higher than coop payoff
+        static constexpr float defect_payoff = 1.1f;
 
     public:
         PDAgent();
