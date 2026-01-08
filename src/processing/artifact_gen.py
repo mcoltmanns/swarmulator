@@ -12,13 +12,19 @@ args are:
     any number of space-separated object group names to exclude from artifact generation
 
 what if you have different object types in your swarm (several object type names, possibly with different width dynamic logs)?
-apply one round of bag of words over each group to get uniform-length artifacts over all groups
-then apply bag of words over those artifacts
+two different methods applied:
+    method A concatenates all artifacts at a given timestep, then does PCA to shrink them back down to the original artifact size
+    method B looks at the centroids from all object groups, and merges nearest neighbors until back down to the original artifact size
+both methods have information loss measures, but they are not directly comparable
+also a third method:
+    method C simply concatenates artifacts across groups (no compression)
+
+the old method for merging object type artifact series was to apply bag of words again over the artifact series, but this produced garbage
 """
 import sys
 import h5py
 from sklearn.cluster import MiniBatchKMeans
-from sklearn.decomposition import PCA, IncrementalPCA
+from sklearn.decomposition import IncrementalPCA
 import numpy as np
 from tqdm import tqdm # progress bar
 
@@ -32,7 +38,7 @@ include_groups = []
 
 global_time_idx = in_file['time']
 
-artifacts = [] # array of sim artifacts
+artifacts_PCA = [] # array of sim artifacts
 times = [] # map artifacts to their sim time
 
 # minibatchkmeans lets us do batched processing (good for memory)
@@ -69,6 +75,7 @@ for name, group in in_file['objects'].items(): # go over every group in the simu
     kmeans = MiniBatchKMeans(n_clusters=feature_count, batch_size=batch_size)
     prev_centers = None
     batch_indices = list(range(0, info.shape[0], batch_size)) # start indices of the batches of a given size for this group
+    # fit the kmeans model
     for epoch in range(epochs):
         np.random.shuffle(batch_indices) # shuffle the batch indices
         # fit on the current shuffle
@@ -84,15 +91,19 @@ for name, group in in_file['objects'].items(): # go over every group in the simu
         prev_centers = kmeans.cluster_centers_
 
     with tqdm(total=len(group_index), desc=f"Generating artifacts {name}", unit="entry") as pbar:
-        i = 0
         for idx_pair in group_index:
             # get the segment for this log entry from the filtered state table
             start = idx_pair[0]
             length = idx_pair[1]
-            segment = info[start : start + length, 2:10] # all the log entries belonging to one time step
-            # map each entry to a centroid, then count the number of times each centroid was mapped to
-            clusters = kmeans.predict(segment)
-            group_artifacts.append(np.bincount(clusters, minlength=feature_count))
+            # if log entry has no data, skip and append an empty artifact
+            if length == 0:
+                group_artifacts.append(np.zeros((feature_count)))
+                print(f'no data at entry {start}')
+            else:
+                segment = info[start: start + length, 2:10] # all the log entries belonging to one time step
+                # map each entry to a centroid, then count the number of times each centroid was mapped to
+                clusters = kmeans.predict(segment)
+                group_artifacts.append(np.bincount(clusters, minlength=feature_count))
 
             pbar.update()
 
@@ -100,66 +111,18 @@ for name, group in in_file['objects'].items(): # go over every group in the simu
     out_file.create_dataset(f"centroids_{name}", data=kmeans.cluster_centers_)
 
 # then we merge the per-object series into one master series
-# because the artifacts were created with different kmeans models, we have to fit a new one
-# now we are down to one artifact per timestep, so we no longer need to batch by time
-# this time around, the batches are constructed across the object groups
 """
-with this process, too much information is lost
-for an artifact width of 20:
-the complete 20-wide state of each object group is condensed down into a mapping to exactly one artifact of 20
-so unless you have a high number of object groups, you end up with very sparse final artifacts
-and either way that's still huge information loss!
-"""
-"""
-epochs = 1 # more epochs here?
-kmeans = MiniBatchKMeans(n_clusters=feature_count, batch_size=batch_size)
-prev_centers = None
-# so the batch size will be the number of object groups in the simulation, which won't be very big at all
-# but we still have to do batched, because for very long simulations or large feature counts the total artifact array might be too large to load in memory
-for name in include_groups:
-    group_artifacts = out_file[f"arts_{name}"]
-    batch_indices = list(range(0, group_artifacts.shape[0], batch_size))
-    for epoch in range(epochs):
-        np.random.shuffle(batch_indices)
-        for start in batch_indices:
-            end = min(start + batch_size, group_artifacts.shape[0])
-            batch = group_artifacts[start:end]
-            kmeans.partial_fit(batch)
-
-        if prev_centers is not None:
-            drift = np.linalg.norm(kmeans.cluster_centers_ - prev_centers)
-            print(f'\tDrift: {drift}')
-        prev_centers = kmeans.cluster_centers_
-
-# then generate one aggregate artifact per timestep
-with tqdm(total=len(global_time_idx), desc=f"Generating aggregate artifacts", unit="artifact") as pbar:
-    i = 0
-    for time in global_time_idx:
-        ipt = []
-        for gname in include_groups:
-            ipt.append(out_file[f"arts_{gname}"][i])
-        clusters = kmeans.predict(ipt)
-        print("ipt:", ipt, "\n", "clusters:", clusters)
-        artifacts.append(np.bincount(clusters, minlength=feature_count))
-        times.append(global_time_idx[i])
-        i += 1
-
-        pbar.update()
-"""
-
-"""
-what if instead of doing kmeans again we did pca?
+method A: PCA merge
 we have a known input size (feature vector width * object group count)
 and a known output size (feature vector width)
 so pca should not be so bad
 do ipca
 """
-# following snippet plots information retained per component
 # we fit a pca on the same number of components out as in and then save the cumsums which gives us a measure of how much information is lost for a given number of components
 test_pca = IncrementalPCA(n_components=feature_count * len(include_groups), batch_size=batch_size)
 pca = IncrementalPCA(n_components=feature_count, batch_size=batch_size)
 batch_indices = list(range(0, out_file[f"arts_{include_groups[0]}"].shape[0], batch_size)) # batch indices are the same for all object groups
-for start in tqdm(batch_indices, desc=f'Fitting diagnostic and real PCA', unit="batch"):
+for start in tqdm(batch_indices, desc='Fitting diagnostic and real PCA', unit="batch"):
     end = min(start + batch_size, out_file[f"arts_{include_groups[0]}"].shape[0])
     batch = [[] for i in range(end - start)] # each batch entry should be abcd if we had two groups whose entries were ab and cd
     # within each batch, iterate over all object groups
@@ -181,38 +144,55 @@ for info_kept in test_pca.explained_variance_ratio_.cumsum():
     else:
         break
 
-pca_90 = None
-artifacts_90 = None
-if input("enter y to fit 90% accurate pca, any other key to skip ") == "y":
-    pca_90 = IncrementalPCA(n_components=best_w, batch_size=batch_size)
-    artifacts_90 = []
-    for start in tqdm(batch_indices, desc=f'Fitting 90% accurate PCA (feature width {best_w})', unit="batch"):
-        end = min(start + batch_size, out_file[f"arts_{include_groups[0]}"].shape[0])
-        batch = [[] for i in range(end - start)]
-        for name in include_groups:
-            group_artifacts = out_file[f"arts_{name}"]
-            group_batch = group_artifacts[start : end]
-            for i in range(len(group_batch)):
-                batch_art = group_batch[i]
-                for elem in batch_art:
-                    batch[i].append(elem)
-        pca_90.partial_fit(batch)
+# it's not much more work, so also fit a reduction that retains at least 90% of the information
+pca_90 = IncrementalPCA(n_components=best_w, batch_size=batch_size)
+artifacts_PCA_90 = []
+for start in tqdm(batch_indices, desc=f'Fitting 90% accurate PCA (feature width {best_w})', unit="batch"):
+    end = min(start + batch_size, out_file[f"arts_{include_groups[0]}"].shape[0])
+    batch = [[] for i in range(end - start)]
+    for name in include_groups:
+        group_artifacts = out_file[f"arts_{name}"]
+        group_batch = group_artifacts[start : end]
+        for i in range(len(group_batch)):
+            batch_art = group_batch[i]
+            for elem in batch_art:
+                batch[i].append(elem)
+    pca_90.partial_fit(batch)
 
-# now transform the data through the real pca
+# now transform the data through the max compression and 90% pcas
+# method C also happens here, since we aggregate artifacts anyways
+artifacts_concat = []
 for i in tqdm(range(out_file[f"arts_{include_groups[0]}"].shape[0]), desc="Transforming aggregate artifacts with PCA", unit="artifact"):
     agg_art = []
     for name in include_groups:
         group_artifact = out_file[f"arts_{name}"][i]
         for elem in group_artifact:
             agg_art.append(elem)
-    artifacts.append(pca.transform([agg_art])[0])
-    if pca_90 is not None:
-        artifacts_90.append(pca_90.transform([agg_art])[0])
+    artifacts_concat.append(agg_art)
+    artifacts_PCA.append(pca.transform([agg_art])[0])
+    artifacts_PCA_90.append(pca_90.transform([agg_art])[0])
     times.append(global_time_idx[i])
 
+"""
+Method B: centroid merging
+centroids from different groups do not necessarily have the same dimension, and the dimensions do not necessarily encode the same things
+so we can only merge centroids that belong to the same group
+
+while the total number of centroids is greater than the goal artifact width:
+    find the euclidean closest pair in each group
+    from those pairs, take the closest
+    merge the pair:
+        create a new centroid that is the average of the pair
+        at every timestep, assign the sum of the two artifact components belonging to the pair to the new centroid
+        delete the old pair
+"""
+include_centroids = []
+for name in include_groups:
+    include_centroids.append(out_file[f'centroids_{name}'])
+
 out_file.create_dataset('times', data=times)
-out_file.create_dataset('features', data=artifacts)
-if artifacts_90 is not None:
-    out_file.create_dataset('features_90', data=artifacts_90)
+out_file.create_dataset('features_direct', data=artifacts_concat)
+out_file.create_dataset('features_PCA', data=artifacts_PCA)
+out_file.create_dataset('features_PCA_90', data=artifacts_PCA_90)
 print('Done')
 out_file.close()
