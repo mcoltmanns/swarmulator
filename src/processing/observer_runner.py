@@ -9,7 +9,7 @@ from tqdm import tqdm
 import torch
 from sklearn.preprocessing import StandardScaler
 
-from learnability import learnability, novelty
+from observer_measures import learnability, novelty
 
 artifact_path = sys.argv[1]
 data_save_path = sys.argv[2]
