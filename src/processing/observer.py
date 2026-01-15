@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from tqdm import tqdm
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 class Observer(nn.Module):
     def __init__(self, input_dim: int, hidden_dim: int, num_layers: int):
@@ -27,6 +27,7 @@ class Observer(nn.Module):
         out = self.final(out[:, -1, :])
 
         return out
+
 
 def train(model, learning_rate, x_train, y_train, epochs=200):
     criterion = nn.MSELoss()
@@ -52,6 +53,7 @@ def train(model, learning_rate, x_train, y_train, epochs=200):
             print(f"Epoch {epoch + 1}/{epochs}, Loss: {train_losses[epoch]:.3f}")
 
     return train_losses
+
 
 def predict(model, x, y):
     outs = model(x)
