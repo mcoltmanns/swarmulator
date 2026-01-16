@@ -15,8 +15,7 @@ artifact_path = sys.argv[1]
 data_save_path = sys.argv[2]
 lookback = int(sys.argv[3])
 samples = int(sys.argv[4])
-training_size = int(sys.argv[5])
-step = int(sys.argv[6])
+step = int(sys.argv[5])
 obs_hidden_layers = 2
 train_epochs = 50
 
@@ -31,28 +30,44 @@ scaler = StandardScaler()
 scaler.fit(arts)
 arts = scaler.transform(arts)
 
-sample_inds = np.linspace(training_size, len(arts) - training_size, samples, endpoint=False, dtype=int)
+chunk_starts, chunk_size = np.linspace(0, len(arts), samples, endpoint=False, dtype='int', retstep=True)
 
-ls = []
-ltls = []
+steps = list(range(step, step * 10, step))
 
-ns = []
-ntls = []
+with tqdm(desc=f"{artifact_path}", total=samples * len(steps)) as bar:
+    for s in steps:
+        ls = []
+        lls = []
+        ltls = []
 
-with tqdm(desc=f"{artifact_path}", total=len(sample_inds), unit="sample") as bar:
-    for i in sample_inds:
-        score, lookbacks, losses, training_losses = learnability(arts, i, lookback, step, training_size, train_epochs)
-        ls.append(score)
-        ltls.append(training_losses)
+        ns = []
+        nls = []
+        ntls = []
 
-        score, losses, training_tosses = novelty(arts, i, lookback, step, training_size, training_size, train_epochs)
-        ns.append(score)
-        ntls.append(training_losses)
+        for chunk_start in chunk_starts:
+            t = int(chunk_start + chunk_size / 2)
+            print(f'sample from {chunk_start} to {chunk_start + chunk_size}, centerpoint {t}')
+            score, lookbacks, losses, training_losses = learnability(arts, t, lookback, s, chunk_start, train_epochs)
+            if score is not None and training_losses is not None:
+                ls.append(score)
+                lls.append(losses)
+                ltls.append(training_losses)
 
-        bar.update()
+            score, losses, training_tosses = novelty(arts, t, lookback, s, chunk_start, 10_000, train_epochs)
+            if score is not None and training_losses is not None:
+                ns.append(score)
+                nls.append(losses)
+                ntls.append(training_losses)
 
-data_file.create_dataset("learnability", data=ls)
-data_file.create_dataset("novelty", data=ns)
-data_file.create_dataset("training losses learnability", data=ltls)
-data_file.create_dataset("training losses novelty", data=ntls)
+            bar.update()
+
+        data_file.create_dataset(f"learnability_step{s}", data=ls)
+        data_file.create_dataset(f"novelty_step{s}", data=ns)
+        data_file.create_dataset(f"l_learnability_step{s}", data=lls)
+        data_file.create_dataset(f"l_novelty_step{s}", data=nls)
+        data_file.create_dataset(f"tl_learnability_step_{s}", data=ltls)
+        data_file.create_dataset(f"tl_novelty_step_{s}", data=ntls)
+
+data_file.create_dataset("chunk_start", data=chunk_starts)
+data_file.create_dataset("chunk_size", data=chunk_size)
 data_file.close()
