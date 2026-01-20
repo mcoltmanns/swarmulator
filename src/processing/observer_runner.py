@@ -1,7 +1,3 @@
-"""
-test the effect of observer width on prediction quality
-start with a width of 1, double until passed limit
-"""
 import sys
 import h5py as h5
 import numpy as np
@@ -16,7 +12,6 @@ data_save_path = sys.argv[2]
 lookback = int(sys.argv[3])
 samples = int(sys.argv[4])
 step = int(sys.argv[5])
-obs_hidden_layers = 2
 train_epochs = 50
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -32,9 +27,9 @@ arts = scaler.transform(arts)
 
 chunk_starts, chunk_size = np.linspace(0, len(arts), samples, endpoint=False, dtype='int', retstep=True)
 
-steps = list(range(step, step * 10, step))
+steps = list(range(step, step * 20, step))
 
-with tqdm(desc=f"{artifact_path}", total=samples * len(steps)) as bar:
+with tqdm(desc=f"{artifact_path}", total=len(steps) * len(chunk_starts)) as bar:
     for s in steps:
         ls = []
         lls = []
@@ -47,13 +42,15 @@ with tqdm(desc=f"{artifact_path}", total=samples * len(steps)) as bar:
         for chunk_start in chunk_starts:
             t = int(chunk_start + chunk_size / 2)
             print(f'sample from {chunk_start} to {chunk_start + chunk_size}, centerpoint {t}')
+            print('learnability')
             score, lookbacks, losses, training_losses = learnability(arts, t, lookback, s, chunk_start, train_epochs)
             if score is not None and training_losses is not None:
                 ls.append(score)
                 lls.append(losses)
                 ltls.append(training_losses)
 
-            score, losses, training_tosses = novelty(arts, t, lookback, s, chunk_start, 10_000, train_epochs)
+            print('novelty')
+            score, losses, training_tosses = novelty(arts, t, lookback, s, chunk_start, 5_000, train_epochs)
             if score is not None and training_losses is not None:
                 ns.append(score)
                 nls.append(losses)

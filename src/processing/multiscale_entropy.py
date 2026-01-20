@@ -4,14 +4,14 @@ import numpy as np
 import EntropyHub as eh
 import sys
 import time
-import matplotlib.pyplot as plt
 
 
 def mvmse(artifacts):
     params = eh.MSobject('MvPermEn') # gets undefined entropy values with sampleentropy
     # find out - why is mv permutation entropy the measure we want here? see Ahmed & Mandic 2011
     # sample 10 complexity scales, although we could probably do more. number of scales doesn't seem to affect runtime.
-    entropy, ci = eh.MvMSEn(artifacts, params, Scales=10)
+    # what space are the scales in? i think temporal
+    entropy, ci = eh.MvMSEn(artifacts, params, Scales=20)
 
     return entropy, ci
 
@@ -22,7 +22,7 @@ samples = 16384
 data_save_name = sys.argv[3]
 
 arts = h5.File(artifact_path, 'r')['features_PCA']
-data_file = h5.File(data_save_path, 'w')
+data_file = h5.File(data_save_path, 'a')
 
 # according to the following snippet, 16384 samples of the space seems to be good.
 # the analysis takes just about 200 seconds, and the spacing between the samples comes out to 30 log steps
@@ -47,7 +47,7 @@ print(arts_sampled.shape)
 start = time.time()
 entropy, complexity_idx = mvmse(arts_sampled)
 print(round(time.time() - start), 'seconds')
-data_file.create_dataset(data_save_name, data=entropy)
-data_file.create_dataset(f'{data_save_name}_ci', data=complexity_idx)
-plt.plot(entropy)
-plt.show()
+g = data_file.require_group(data_save_name)
+g.create_dataset("entropy", data=entropy)
+g.create_dataset('complexity index', data=complexity_idx)
+data_file.close()
