@@ -49,9 +49,6 @@ for path in series:
     x = np.arange(raw_start, raw_end, dtype='int')
     x *= step
 
-    if samples > 0:
-        x, data = minmax_downsample(x, data, samples)
-
     burnin = int(len(data) * 0.1)
     print(f'burnin {burnin}')
     f = KalmanFilter(dim_x=1, dim_z=1) # univariate time series
@@ -72,16 +69,24 @@ for path in series:
         x_rest.append(f.x[0])
         f.update([y])
 
-    y_filtered = [0] + list(data[:burnin]) + x_rest
+    # what is the right order to do this in?
+    # ask jonas again, but i think filter -> sample is better.
+    # filter-sample is probably more accurate, because the filter should be applied to the whole data whereas the sampling is just to make the visualization comprehensible.
+    # do precise visualization by zooming in on regions of interest.
+
+    y_filtered = np.array([0] + list(data[:burnin]) + x_rest)
+
+    if samples > 0:
+        x, y_filtered = minmax_downsample(x, y_filtered, samples)
 
     all_x.append(x)
     all_y.append(y_filtered)
 
 for x, y in zip(all_x, all_y):
-    plt.xlim(min(x), max(x))
     plt.plot(x, y)
-    print(np.corrcoef(x, y, rowvar=False)[0,1])
-#plt.show()
+
+plt.xlim(min([min(x) for x in all_x]), max([max(x) for x in all_x]))
+
 savename = f'{y_name}_v_{x_name}_{raw_start}-{raw_end}_s{samples}.pdf'
 plt.savefig(savename, bbox_inches='tight')
 print(f'saved at {savename}')
