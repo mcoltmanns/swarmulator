@@ -5,10 +5,11 @@ import sys
 from filterpy.kalman import KalmanFilter
 from tqdm import tqdm
 
-# args are <path to file> <number of samples> <x delta> <x name> <y name> <raw start index> <raw end index> <paths to all data series to plot in file>
+# args are <path to file> <x delta> <x name> <y name> <sample count> <raw start index> <raw end index> <paths to all data series to plot in file>
 # plotted series must have same domains, and are absolute paths
 # x delta is the amount the x axis changes between two data points
 # this runs the time series through a kalman filter to make it a little easier on the eyes
+# pass -1 to sample everything
 
 
 def minmax_downsample(x, y, n_bins):
@@ -22,10 +23,10 @@ def minmax_downsample(x, y, n_bins):
 
 
 in_file = h5.File(sys.argv[1], 'r')
-samples = int(sys.argv[2])
-step = int(sys.argv[3])
-x_name = sys.argv[4]
-y_name = sys.argv[5]
+step = int(sys.argv[2])
+x_name = sys.argv[3]
+y_name = sys.argv[4]
+samples = int(sys.argv[5])
 raw_start = int(sys.argv[6])
 raw_end = int(sys.argv[7])
 series = sys.argv[8:]
@@ -36,16 +37,20 @@ last_domain = None
 
 for path in series:
     split = path.rfind('/')
-    print(path[0:split])
-    print(path[split + 1:])
-    group = in_file[path[0:split]]
-    data = group[path[split + 1:]][raw_start:raw_end]
+    if split != 0:
+        group = in_file[path[0:split]]
+        data = group[path[split + 1:]][raw_start:raw_end]
+    else:
+        data = in_file[path[split + 1:]][raw_start:raw_end]
     domain = data.shape[0]
     if last_domain is not None and domain != last_domain:
         print('domains wrong')
         exit()
     x = np.arange(raw_start, raw_end, dtype='int')
     x *= step
+
+    if samples > 0:
+        x, data = minmax_downsample(x, data, samples)
 
     burnin = int(len(data) * 0.1)
     print(f'burnin {burnin}')
@@ -75,5 +80,9 @@ for path in series:
 for x, y in zip(all_x, all_y):
     plt.xlim(min(x), max(x))
     plt.plot(x, y)
-plt.show()
+    print(np.corrcoef(x, y, rowvar=False)[0,1])
+#plt.show()
+savename = f'{y_name}_v_{x_name}_{raw_start}-{raw_end}_s{samples}.pdf'
+plt.savefig(savename, bbox_inches='tight')
+print(f'saved at {savename}')
 in_file.close()
