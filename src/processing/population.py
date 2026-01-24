@@ -1,19 +1,21 @@
 import sys
 import h5py as h5
-from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-# args are <path to sim file> <path to save plot> <title of plot> <names of object groups of which you want to plot population>
+# args are <path to sim file>
+# for every object under objects, builds a population time series
 
-file = h5.File(sys.argv[1], 'r')
+file = h5.File(sys.argv[1], 'a')
 
 global_time_idx = file['time']
 
-max_pop = 0
-
-for gname in sys.argv[4:]:
-    group = file['objects'][gname]
-    info = group['state']['dynamic']
+for name, group in file['objects'].items():
+    try:
+        info = group['state']['dynamic']
+    except KeyError:
+        continue
+    if group.__contains__('pop'):
+        continue
     group_index = group['index']
 
     time = []
@@ -33,13 +35,6 @@ for gname in sys.argv[4:]:
 
         pop.append(len(segment))
 
-    max_pop = max(max_pop, max(pop))
+    group.create_dataset('pop', data=pop)
 
-    plt.plot(time, pop, label=gname, alpha=0.7, linewidth=0.3)
-
-plt.xlabel('time')
-plt.ylabel('population')
-plt.legend(loc='upper right')
-plt.ylim(0, max_pop + 10)
-plt.title(sys.argv[3])
-plt.savefig(sys.argv[2])
+file.close()
