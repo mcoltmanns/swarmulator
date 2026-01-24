@@ -97,6 +97,7 @@ def learnability(artifacts, t, past_length, step, training_start, epochs=25, obs
         lookbacks.append(current_past_length)
         losses.append(loss)
 
+        # here we don't use a decay, since we're only predicting one thing
         if loss < most_uncertainty:
             score += 1
             most_uncertainty = loss
@@ -164,11 +165,31 @@ def novelty(artifacts, t, past_length, step, training_start, predict_size, epoch
     preds, losses = predict(observer, x, y)
 
     score = 0
+    """
+    # this was the original method for calculating novelty:
+    # increase the score whenever you make a worse guess
+    # this had the issue that series where an early guess was really bad, but subsequent guesses still got worse relative to each other would score low
+    # gave really really low scores for long lookaheads
     least_uncertainty = -np.inf
     for loss in losses:
         if loss > least_uncertainty:
             score += 1
             least_uncertainty = loss
     score /= len(losses)
+    """
+    # one alternate idea is to compare to the average loss for the window
+    # but this loses the notion of time
+    # what we can do instead is give the worst guess an exponential decay, that way subsequent worst guesses can replace it
+    least_uncertainty = -np.inf
+    for loss in losses:
+        least_uncertainty /= 2.0
+        if loss > least_uncertainty:
+            score += 1
+            least_uncertainty = loss
+    score /= len(losses)
+
+    # or what about fitting a line to the losses and seeing how close it is to vertical?
+    # slope approaching infinity would be perfectly novel (losses increase)
+    # slope approaching -infinity would be completely non novel (losses decrease)
 
     return score, losses, train_losses
