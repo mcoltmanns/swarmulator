@@ -2,7 +2,6 @@ import h5py as h5
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
-from filterpy.kalman import KalmanFilter
 from tqdm import tqdm
 
 # args are <path to file> <x delta> <x name> <y name> <sample count> <raw start index> <raw end index> <paths to all data series to plot in file>
@@ -49,42 +48,11 @@ for path in series:
     x = np.arange(raw_start, raw_end, dtype='int')
     x *= step
 
-    try:
-        burnin = int(len(data) * 0.1)
-        print(f'burnin {burnin}')
-        f = KalmanFilter(dim_x=1, dim_z=1) # univariate time series
-        f.F = np.array([[1.]])
-        f.H = np.array([[1.]])
-
-        # fit the filter
-        q_var = np.var(data[:burnin])
-        f.Q = np.array([[q_var]])
-        f.R = np.array([[q_var]])
-
-        x_rest = list()
-        f.x = np.array([0])
-        f.P *= 10
-        y_test = data[burnin:]
-        for y in tqdm(y_test[:-1]):
-            f.predict()
-            x_rest.append(f.x[0])
-            f.update([y])
-
-        # what is the right order to do this in?
-        # ask jonas again, but i think filter -> sample is better.
-        # filter-sample is probably more accurate, because the filter should be applied to the whole data whereas the sampling is just to make the visualization comprehensible.
-        # do precise visualization by zooming in on regions of interest.
-
-        y_filtered = np.array([0] + list(data[:burnin]) + x_rest)
-    except Exception:
-        print('filter broke! falling back to raw data')
-        y_filtered = data
-
     if samples > 0:
-        x, y_filtered = minmax_downsample(x, y_filtered, samples)
+        x, data = minmax_downsample(x, data, samples)
 
     all_x.append(x)
-    all_y.append(y_filtered)
+    all_y.append(data)
 
 for x, y in zip(all_x, all_y):
     plt.plot(x, y)
