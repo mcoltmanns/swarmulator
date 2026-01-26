@@ -42,6 +42,7 @@ artifact_path = sys.argv[1]
 data_save_path = sys.argv[2]
 samples = 16384
 data_save_name = sys.argv[3]
+kind = sys.argv[4]
 
 arts = h5.File(artifact_path, 'r')['features_PCA']
 data_file = h5.File(data_save_path, 'a')
@@ -65,19 +66,11 @@ data_file = h5.File(data_save_path, 'a')
 sample_inds = np.linspace(0, len(arts), num=samples, dtype=np.int32, endpoint=False)
 arts_sampled = np.array(arts[sample_inds])
 
-print('sample')
+print(kind)
 start = time.time()
-entropy, complexity_idx = mvmse(arts_sampled, 'MvSampEn')
+entropy, complexity_idx = mvmse(arts_sampled, kind)
 print(round(time.time() - start), 'seconds')
 g = data_file.require_group(data_save_name)
-g.create_dataset("sample entropy", data=entropy)
-g.create_dataset('sample complexity index', data=complexity_idx)
-
-print('permutation')
-start = time.time()
-entropy, complexity_idx = mvmse(arts_sampled, 'MvPermEn')
-print(round(time.time() - start), 'seconds')
-g = data_file.require_group(data_save_name)
-g.create_dataset("sample entropy", data=entropy)
-g.create_dataset('sample complexity index', data=complexity_idx)
+g.create_dataset(f'{kind} entropy', data=entropy)
+g.create_dataset(f'{kind} complexity index', data=complexity_idx)
 data_file.close()
