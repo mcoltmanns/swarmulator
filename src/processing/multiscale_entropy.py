@@ -6,12 +6,34 @@ import sys
 import time
 
 
-def mvmse(artifacts):
-    params = eh.MSobject('MvPermEn') # gets undefined entropy values with sampleentropy
+def mvmse(artifacts, en_type):
+    params = eh.MSobject(en_type)
     # find out - why is mv permutation entropy the measure we want here? see Ahmed & Mandic 2011
     # sample 10 complexity scales, although we could probably do more. number of scales doesn't seem to affect runtime.
     # what space are the scales in? i think temporal
-    entropy, ci = eh.MvMSEn(artifacts, params, Scales=20)
+    # the scales are temporal. scale 1 is every step, scale 2 every other, etc.
+    # because of our sampling, base skip is 30
+    # with a max scale of 200, skip is 30*200 = 6000 / 500000 = only 1.2% of the simulation
+
+    # for sample entropy:
+    # from ahmed/mandic - a monotonically decreasing entropy means the time series only contains information at the smalles scales, typical of either completely random or completely predictable series
+    # A multivariate system exhibiting long-range correlations and complex generating dynamics is characterized by either a constant multivariate sample entropy or it exhibits a monotonic increase in multivariate sample entropy with the scale factor.
+
+    # permutation entropy measures the number of unique orderings of state we see within the sliding time window
+    # many orderings of state at low scale means there are many different behaviors when viewed at a small timescale
+    # few orderings of state at high scale means there are few different behaviors at a large timescale
+    # that's what we expect from anything really - correlate to sigma parameter
+
+    # sample entropy more or less measures the similarity of patterns between vectors
+    # so a low sample entropy means that there are many similar patterns / many similar versions of the state space
+    # a high sample entropy means there are few similarities
+    # probably for the kind of open-endedness we want we would want entropy to increase with scale - the agents aren't evolving new capabilities, but on the timescale of the swarm we want to see new arrangements
+
+    # we have to normalize artifacts for entropy to work
+    norm = np.linalg.norm(artifacts, axis=1)
+    arts_normed = artifacts / norm[:, np.newaxis]
+
+    entropy, ci = eh.MvMSEn(arts_normed, params, Scales=20, Plotx=False)
 
     return entropy, ci
 
@@ -41,13 +63,21 @@ data_file = h5.File(data_save_path, 'a')
 #     sample_count *= 2
 
 sample_inds = np.linspace(0, len(arts), num=samples, dtype=np.int32, endpoint=False)
-arts_sampled = arts[sample_inds]
+arts_sampled = np.array(arts[sample_inds])
 
-print(arts_sampled.shape)
+print('sample')
 start = time.time()
-entropy, complexity_idx = mvmse(arts_sampled)
+entropy, complexity_idx = mvmse(arts_sampled, 'MvSampEn')
 print(round(time.time() - start), 'seconds')
 g = data_file.require_group(data_save_name)
-g.create_dataset("entropy", data=entropy)
-g.create_dataset('complexity index', data=complexity_idx)
+g.create_dataset("sample entropy", data=entropy)
+g.create_dataset('sample complexity index', data=complexity_idx)
+
+print('permutation')
+start = time.time()
+entropy, complexity_idx = mvmse(arts_sampled, 'MvPermEn')
+print(round(time.time() - start), 'seconds')
+g = data_file.require_group(data_save_name)
+g.create_dataset("sample entropy", data=entropy)
+g.create_dataset('sample complexity index', data=complexity_idx)
 data_file.close()
