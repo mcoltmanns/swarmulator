@@ -7,8 +7,6 @@ from tqdm import tqdm
 
 file = h5.File(sys.argv[1], 'a')
 
-global_time_idx = file['time']
-
 for name, group in file['objects'].items():
     try:
         info = group['state']['dynamic']
@@ -18,15 +16,12 @@ for name, group in file['objects'].items():
         continue
     group_index = group['index']
 
-    time = []
     pop = []
 
     i = 0
     for idx_pair in tqdm(group_index):
         # get the real time for this log entry
-        real_time = global_time_idx[i]
         i += 1
-        time.append(real_time)
 
         # get the segment for this log entry from the state table
         start = idx_pair[0]

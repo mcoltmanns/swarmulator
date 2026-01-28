@@ -9,8 +9,6 @@ from tqdm import tqdm
 
 file = h5.File(sys.argv[1], 'a')
 
-global_time_idx = file['time']
-
 max_neighbors = 0
 
 for gname in sys.argv[2:]:
@@ -19,15 +17,12 @@ for gname in sys.argv[2:]:
     group_index = group['index']
     group_range = group['state']['static'][0][0]
 
-    time = []
     avg_neighbor_count = []
 
     i = 0
     for idx_pair in tqdm(group_index):
         # get the real time for this log entry
-        real_time = global_time_idx[i]
         i += 1
-        time.append(real_time)
 
         # get the segment for this log entry from the state table
         start = idx_pair[0]
