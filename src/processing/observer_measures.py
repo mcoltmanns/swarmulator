@@ -177,9 +177,8 @@ def novelty(artifacts, t, past_length, step, training_start, predict_size, epoch
             least_uncertainty = loss
     score /= len(losses)
     """
-    # one alternate idea is to compare to the average loss for the window
-    # but this loses the notion of time
-    # what we can do instead is give the worst guess an exponential decay, that way subsequent worst guesses can replace it
+    # another idea is give the worst guess an exponential decay, that way subsequent worst guesses can replace it
+    """
     least_uncertainty = -np.inf
     for loss in losses:
         least_uncertainty /= 2.0
@@ -187,9 +186,15 @@ def novelty(artifacts, t, past_length, step, training_start, predict_size, epoch
             score += 1
             least_uncertainty = loss
     score /= len(losses)
+    """
 
-    # or what about fitting a line to the losses and seeing how close it is to vertical?
-    # slope approaching infinity would be perfectly novel (losses increase)
-    # slope approaching -infinity would be completely non novel (losses decrease)
+    # or, since the paper uses expectations which are basically just averages, take the average loss so far and see if your guess is worse
+    rolling_sum = 0
+    for loss, i in enumerate(losses):
+        prev_avg = rolling_sum / (i + 1)
+        if loss > prev_avg:
+            score += 1
+        rolling_sum += loss
+    score /= len(losses)
 
     return score, losses, train_losses
