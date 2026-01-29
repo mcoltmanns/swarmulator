@@ -21,6 +21,19 @@ def minmax_downsample(x, y, n_bins):
     return x[idx], y[idx]
 
 
+def avg_downsample(x, y, window_w):
+    n_windows = len(y) // window_w
+
+    y_trim = y[:n_windows * window_w]
+
+    y_windows = y_trim.reshape(n_windows, window_w)
+    y_avg = y_windows.mean(axis=1)
+    y_var = y_windows.var(axis=1, ddof=0)
+
+    idx = np.round(np.linspace(0, len(x) - 1, n_windows)).astype(int)
+    return x[idx], y_avg, y_var
+
+
 in_file = h5.File(sys.argv[1], 'r')
 step = int(sys.argv[2])
 x_name = sys.argv[3]
@@ -32,6 +45,7 @@ series = sys.argv[8:]
 
 all_x = []
 all_y = []
+all_var = []
 last_domain = None
 
 for path in series:
@@ -49,17 +63,27 @@ for path in series:
     x *= step
 
     if samples > 0:
-        x, data = minmax_downsample(x, data, samples)
+        # x, data = minmax_downsample(x, data, samples)
+        window_w = int(len(data) / samples)
+        x, data, var = avg_downsample(x, data, window_w)
 
     all_x.append(x)
     all_y.append(data)
+    all_var.append(var)
 
-for x, y in zip(all_x, all_y):
-    plt.plot(x, y)
+for x, y, var, name in zip(all_x, all_y, all_var, series):
+    plt.plot(x, y, label=name, alpha=0.7)
+    plt.fill_between(x, y - var, y + var, alpha=0.5)
 
 plt.xlim(min([min(x) for x in all_x]), max([max(x) for x in all_x]))
+max_y = max([max(y) for y in all_y])
+#plt.ylim(0, max_y + max_y * 0.1)
+plt.ylim(0, 1.1)
+plt.xlabel(x_name)
+plt.ylabel(y_name)
+plt.legend()
 
-savename = f'{y_name}_v_{x_name}_{raw_start}-{raw_end}_s{samples}.pdf'
+savename = f'{sys.argv[1]}_{y_name}_v_{x_name}_{raw_start}-{raw_end}_s{samples}.pdf'
 plt.savefig(savename, bbox_inches='tight')
 print(f'saved at {savename}')
 in_file.close()
