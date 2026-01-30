@@ -22,6 +22,8 @@ def minmax_downsample(x, y, n_bins):
 
 
 def avg_downsample(x, y, window_w):
+    if window_w == 0:
+        return x, y, 0
     n_windows = len(y) // window_w
 
     y_trim = y[:n_windows * window_w]
@@ -70,6 +72,7 @@ for path in series:
     all_x.append(x)
     all_y.append(data)
     all_var.append(var)
+    print(np.mean(var))
 
 for x, y, var, name in zip(all_x, all_y, all_var, series):
     plt.plot(x, y, label=name, alpha=0.7)

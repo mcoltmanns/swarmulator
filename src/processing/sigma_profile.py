@@ -14,7 +14,8 @@ def friction(deltas):
 log_path = sys.argv[1]
 data_save_path = sys.argv[2]
 step = int(sys.argv[3])
-exclude_objects = sys.argv[4:] if len(sys.argv) > 4 else []
+max_pop = float(sys.argv[4])
+exclude_objects = sys.argv[5:] if len(sys.argv) > 5 else []
 
 in_file = h5.File(log_path, "r")
 out_file = h5.File(data_save_path, "w")
@@ -102,7 +103,7 @@ for name, group in in_file['objects'].items():
     group_satisfactions[name] = np.array(group_satisfactions[name]) / float(group_max_pop)
 
 # take system satisfaction as the current total population over its maximum
-system_satisfaction = np.array(system_satisfaction) / float(np.max(system_satisfaction))
+system_satisfaction = np.array(system_satisfaction) / max_pop
 
 for k, v in avg_satisfactions.items():
     out_file.create_dataset(f'{k}_avg_satisfaction', data=v)
