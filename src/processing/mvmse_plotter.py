@@ -8,7 +8,10 @@ in_file = h5.File(sys.argv[1], 'r')
 # first plot sample entropy
 for e in range(3, 5):
     width = 2 ** e
-    sampen = in_file[f'width{width}']['MvSampEn entropy'][()]
+    try:
+        sampen = in_file[f'width{width}']['MvSampEn entropy'][()]
+    except Exception:
+        continue
     ci = in_file[f'width{width}']['MvSampEn complexity index'][()]
     plt.plot([x for x in range(0, len(sampen))], sampen, label=f'SampEn (w={width}, ci={round(ci, 2)})')
 

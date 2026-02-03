@@ -62,7 +62,7 @@ for scenario in ['forage', 'pd', 'pred-prey']:
             ]
 
             plt.legend(handles=color_handles + marker_handles, ncol=3)
-            plt.ylim(0, 1)
+            plt.ylim(0, max(np.max(ls), np.max(ns)) + 0.1 * max(np.max(ls), np.max(ns)))
             plt.xlim(0, max(x))
             plt.savefig(f'{base_path}/{scenario}/{i}_{width}_observer.pdf')
             plt.close()
