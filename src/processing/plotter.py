@@ -79,9 +79,10 @@ for x, y, var, name in zip(all_x, all_y, all_var, series):
     plt.fill_between(x, y - var, y + var, alpha=0.5)
 
 plt.xlim(min([min(x) for x in all_x]), max([max(x) for x in all_x]))
-max_y = max([max(y) for y in all_y])
-#plt.ylim(0, max_y + max_y * 0.1)
-plt.ylim(0, 1.1)
+max_y = max([max(y) for y in np.array(all_y) + np.array(all_var)])
+min_y = min([min(y) for y in np.array(all_y) - np.array(all_var)])
+plt.ylim(min_y * 1.1, max_y * 1.1)
+#plt.ylim(0, 1.1)
 plt.xlabel(x_name)
 plt.ylabel(y_name)
 plt.legend()
